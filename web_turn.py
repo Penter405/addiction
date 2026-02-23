@@ -11,7 +11,8 @@ class tree():
         self.data=None
         self.children = []
 human=tree("human")
-
+#the tree will shown in UI(after first action created or log in(we dont do log in now, but we do after first action created)), looks like normal. which means user probably not a coding guy. so we show normal tree.
+#as tree shown, every node can be tap, after tapping, we need to init_action_of_base_demand() when he tap action object. if he tap base demand, we show "do you want delete the base demand?". after last children of tree class object. shows a "+" addition ,which means add action or base demand.
 base_demand=[]
 for i in range(1, 11):
     base_demand.append(i)#these means most known human base demand
@@ -30,5 +31,5 @@ def init_action_of_base_demand():
     #separate cp_value to short time and long time
     #when user is not init a action, but at least second time see the action. make sure he know if short time cp_value <0, habit will be give up by your brain, force him make short time cp_value at least >0, this is when it long cp_value >0, which means good habit. if long cp_value <0,which mean bad habit, so we force user make short time cp_value <0 instead.
     #at any time, we let user know habit can be separate to 4 part, 提示 -> 渴望 -> 回應 -> 獎賞,and when user init action, they should make cp_value object to these 4 part, will be remember but it wont change cp_value score.
-    
+
     pass

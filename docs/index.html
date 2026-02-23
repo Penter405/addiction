@@ -3,103 +3,125 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>原子習慣：CP值與四階段重塑系統</title>
+    <title>原子習慣：大腦行為樹與性價比系統</title>
     <style>
         :root {
-            --bg-color: #F8F9FA;
+            --bg-color: #F4F7F6;
             --text-main: #2C3E50;
-            --cue: #95A5A6;     /* 提示 */
-            --craving: #F39C12; /* 渴望 */
-            --response: #8E44AD;/* 回應 */
-            --reward: #E74C3C;  /* 獎賞 */
+            --cue: #95A5A6;     
+            --craving: #F39C12; 
+            --response: #8E44AD;
+            --reward: #E74C3C;  
             --good: #2ECC71;
             --bad: #E74C3C;
             --st-color: #3498DB;
             --lt-color: #34495E;
+            --card-bg: #FFFFFF;
         }
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-main);
+            background-color: var(--bg-color); color: var(--text-main);
             margin: 0; padding: 20px;
         }
 
         .container {
-            max-width: 1100px; margin: 0 auto; background: white;
-            padding: 30px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            max-width: 1200px; margin: 0 auto; background: transparent;
         }
 
         h1, h2, h3 { text-align: center; }
-        .text-center { text-align: center; }
         
         button {
-            padding: 10px 20px; font-size: 1rem; color: white; background: var(--text-main);
-            border: none; border-radius: 8px; cursor: pointer; transition: 0.3s;
+            padding: 8px 16px; font-size: 1rem; color: white; background: var(--text-main);
+            border: none; border-radius: 8px; cursor: pointer; transition: 0.2s;
         }
-        button:hover { opacity: 0.8; }
+        button:hover { opacity: 0.8; transform: translateY(-1px); }
         button.primary { background: var(--st-color); }
         button.success { background: var(--good); }
+        button.danger { background: var(--bad); }
+        button.outline { background: transparent; border: 2px dashed var(--text-main); color: var(--text-main); }
 
         input, select {
-            width: 100%; padding: 12px; margin: 8px 0; box-sizing: border-box;
+            width: 100%; padding: 10px; margin: 5px 0; box-sizing: border-box;
             border: 2px solid #ddd; border-radius: 8px; font-size: 1rem;
         }
 
-        .step { display: none; animation: fadeIn 0.5s ease; }
-        .step.active { display: block; }
+        .view { display: none; animation: fadeIn 0.4s ease; }
+        .view.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* 四階段橫向 Pipeline UI */
+        /* ================= Tree UI ================= */
+        .tree-container {
+            display: flex; flex-direction: column; gap: 20px; margin-top: 30px;
+        }
+        .demand-node {
+            background: var(--card-bg); border-radius: 12px; padding: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05); border-left: 6px solid var(--st-color);
+        }
+        .demand-header {
+            display: flex; justify-content: space-between; align-items: center;
+            font-size: 1.3rem; font-weight: bold; cursor: pointer; padding-bottom: 10px; border-bottom: 2px solid #eee;
+        }
+        .demand-header:hover { color: var(--bad); } /* 提示點擊可刪除 */
+        .demand-header::after { content: '🗑️ (點擊刪除需求)'; font-size: 0.8rem; opacity: 0; transition: 0.2s; }
+        .demand-header:hover::after { opacity: 1; }
+
+        .actions-list {
+            display: flex; flex-wrap: wrap; gap: 15px; margin-top: 15px;
+        }
+        .action-node {
+            background: #F8F9FA; border: 1px solid #ddd; border-radius: 8px; padding: 12px 20px;
+            cursor: pointer; transition: 0.2s; position: relative;
+            display: flex; flex-direction: column; align-items: center; min-width: 120px;
+        }
+        .action-node:hover { background: #EDF2F8; border-color: var(--st-color); transform: scale(1.02); }
+        .action-cp { font-size: 0.85rem; color: #7f8c8d; margin-top: 5px; font-weight: bold; }
+        .action-cp.good { color: var(--good); }
+        .action-cp.bad { color: var(--bad); }
+
+        .add-btn {
+            background: #E8F8F5; color: var(--good); border: 2px dashed var(--good);
+            display: flex; align-items: center; justify-content: center; font-weight: bold;
+        }
+        .add-btn:hover { background: var(--good); color: white; }
+
+        /* ================= 4-Stage Editor ================= */
+        .editor-header {
+            background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); margin-bottom: 20px;
+        }
         .pipeline-container {
-            display: flex; gap: 15px; margin: 30px 0; overflow-x: auto; padding-bottom: 10px;
+            display: flex; gap: 15px; overflow-x: auto; padding-bottom: 10px;
         }
         .stage-box {
-            flex: 1; min-width: 200px; border-radius: 10px; padding: 15px;
-            display: flex; flex-direction: column; min-height: 250px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05); border-top: 5px solid;
-            background: #FAFAFA; transition: 0.3s;
+            flex: 1; min-width: 220px; border-radius: 10px; padding: 15px; display: flex; flex-direction: column; min-height: 250px;
+            background: white; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border-top: 5px solid; transition: 0.2s;
         }
-        .stage-box.dragover { background: #E8F8F5; transform: scale(1.02); }
-        
+        .stage-box.dragover { background: #F4F6F6; transform: scale(1.02); }
         #stage-cue { border-color: var(--cue); }
         #stage-craving { border-color: var(--craving); }
         #stage-response { border-color: var(--response); }
         #stage-reward { border-color: var(--reward); }
 
-        .stage-title { font-weight: bold; font-size: 1.2rem; margin-bottom: 10px; text-align: center; }
-        .stage-desc { font-size: 0.85rem; color: #7f8c8d; text-align: center; margin-bottom: 15px; }
+        .drop-zone { flex: 1; border: 2px dashed #ccc; border-radius: 8px; padding: 10px; display: flex; flex-direction: column; gap: 8px; min-height: 100px; }
 
-        .drop-zone { flex: 1; border: 2px dashed #ccc; border-radius: 8px; padding: 10px; display: flex; flex-direction: column; gap: 10px; }
-
-        /* CP Token (物件) */
         .token-creator {
-            background: #EDF2F8; padding: 20px; border-radius: 10px; margin-bottom: 20px;
-            display: flex; gap: 15px; align-items: center; flex-wrap: wrap;
+            background: #EDF2F8; padding: 20px; border-radius: 10px; margin-bottom: 20px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
         }
         .cp-token {
-            padding: 8px 12px; border-radius: 20px; color: white; cursor: grab;
-            font-size: 0.9rem; font-weight: bold; display: flex; justify-content: space-between;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2); user-select: none;
+            padding: 8px 12px; border-radius: 20px; color: white; cursor: grab; font-size: 0.9rem; font-weight: bold;
+            display: flex; justify-content: space-between; box-shadow: 0 2px 5px rgba(0,0,0,0.2); user-select: none; position: relative;
         }
         .cp-token:active { cursor: grabbing; }
         .st-token { background: var(--st-color); }
         .lt-token { background: var(--lt-color); }
+        .token-del { margin-left: 10px; cursor: pointer; color: #fff; opacity: 0.7; }
+        .token-del:hover { opacity: 1; }
 
-        /* 記分板與狀態區 */
         .score-board {
-            display: flex; justify-content: space-around; background: #eee;
-            padding: 15px; border-radius: 10px; margin: 20px 0; font-size: 1.2rem; font-weight: bold;
+            display: flex; justify-content: space-around; background: white; padding: 15px; border-radius: 10px;
+            margin: 20px 0; font-size: 1.2rem; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.05);
         }
-        .score-st { color: var(--st-color); }
-        .score-lt { color: var(--lt-color); }
 
-        /* Tree UI */
-        .tree-view {
-            background: #2C3E50; color: white; padding: 20px; border-radius: 10px; margin-top: 30px;
-            font-family: monospace; font-size: 1.1rem; white-space: pre; overflow-x: auto;
-        }
-        
         .alert-box {
             background: #FDEDEC; border-left: 5px solid var(--bad); padding: 15px; margin: 20px 0;
             color: #C0392B; display: none; font-weight: bold; border-radius: 5px;
@@ -109,151 +131,235 @@
 <body>
 
 <div class="container">
-    
-    <!-- Step 1: Base Demand & Action Init -->
-    <div id="step-1" class="step active">
-        <h1>🌲 習慣底層架構系統 (Human Tree)</h1>
-        <p class="text-center">每一個習慣，都是為了解決某個底層需求 (Base Demand) 的方案 (Action)。</p>
+
+    <!-- View 1: 樹狀圖 (Human Tree Dashboard) -->
+    <div id="view-tree" class="view active">
+        <h1>🧠 大腦底層需求與習慣樹 (Human Tree)</h1>
+        <p class="text-center">大腦會根據性價比 (CP Value) 自動將行動排序。<br>點擊 <strong>行動節點</strong> 進行編輯；點擊 <strong>底層需求名稱</strong> 可刪除該需求。</p>
         
-        <div style="max-width: 500px; margin: 0 auto;">
-            <label>1. 底層需求 (Base Demand)</label>
-            <input type="text" id="demand-input" placeholder="例：紓解工作壓力、獲得社交認同...">
-            
-            <label>2. 採取的行動/習慣 (Action)</label>
-            <input type="text" id="action-input" placeholder="例：抽菸、健身、吃甜食...">
-            
-            <label>3. 這是什麼屬性的習慣？</label>
-            <select id="habit-type">
-                <option value="bad">❌ 壞習慣 (想戒除，長期 CP 值 < 0)</option>
-                <option value="good">✅ 好習慣 (想培養，長期 CP 值 > 0)</option>
-            </select>
-            
-            <button class="primary" onclick="initAction()" style="width: 100%; margin-top: 20px;">初始化習慣結構</button>
+        <div id="tree-render-area" class="tree-container">
+            <!-- JS 將在這裡渲染樹狀圖 -->
         </div>
+
+        <button class="outline" onclick="addBaseDemand()" style="width: 100%; margin-top: 20px; padding: 15px; font-size: 1.1rem;">
+            ➕ 新增底層需求 (Base Demand)
+        </button>
     </div>
 
-    <!-- Step 2: 4-Stage Loop & CP Builder -->
-    <div id="step-2" class="step">
-        <h2>習慣迴路：<span id="display-action" style="color:var(--st-color);"></span></h2>
-        <p class="text-center">底層需求：<span id="display-demand" style="font-weight:bold;"></span> | 屬性：<span id="display-type"></span></p>
-        
-        <!-- CP Token 產生器 -->
+    <!-- View 2: 編輯器 (init_action_of_base_demand) -->
+    <div id="view-editor" class="view">
+        <div class="editor-header">
+            <button onclick="goToTree()" style="background: var(--cue); margin-bottom: 15px;">⬅️ 返回大腦樹</button>
+            <h2 id="editor-title">初始化/編輯習慣</h2>
+            <div style="display: flex; gap: 15px;">
+                <div style="flex: 1;">
+                    <label>行動名稱 (Action):</label>
+                    <input type="text" id="action-name" placeholder="例如：抽菸、跑步、喝水...">
+                </div>
+            </div>
+            <p style="color: #7f8c8d; font-size: 0.9rem; margin-top: 10px;">
+                💡 習慣的養成取決於 4 個階段。請將 CP 值物件拖曳到對應的階段中 (這不會影響總分，但能幫你釐清)。<br>
+                💡 <strong style="color: var(--text-main);">好習慣的長期 CP > 0，壞習慣的長期 CP < 0。系統將強制檢核！</strong>
+            </p>
+        </div>
+
+        <!-- Token 創造器 -->
         <div class="token-creator">
-            <div style="flex: 2; min-width: 200px;">
-                <input type="text" id="cp-name" placeholder="CP 變數名稱 (例：看到甜點店、多巴胺分泌、變胖...)">
-            </div>
-            <div style="flex: 1; min-width: 100px;">
-                <input type="number" id="cp-score" placeholder="分數 (+/-)">
-            </div>
-            <div style="flex: 1; min-width: 150px;">
-                <select id="cp-time">
-                    <option value="st">短期 CP (Short-term)</option>
-                    <option value="lt">長期 CP (Long-term)</option>
-                </select>
-            </div>
-            <button class="primary" onclick="createCPToken()">建立 CP 物件</button>
+            <input type="text" id="cp-name" placeholder="CP 變數名稱 (例：看到甜點、多巴胺、變胖)" style="flex: 2; min-width: 200px;">
+            <input type="number" id="cp-score" placeholder="分數 (+/-)" style="flex: 1; min-width: 100px;">
+            <select id="cp-time" style="flex: 1; min-width: 150px;">
+                <option value="st">短期 CP (Short-term)</option>
+                <option value="lt">長期 CP (Long-term)</option>
+            </select>
+            <button class="primary" onclick="createCPToken()">➕ 建立 CP 物件</button>
         </div>
 
-        <div id="token-dock" style="min-height: 50px; border: 2px dashed #999; padding: 10px; border-radius: 8px; margin-bottom: 20px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
-            <span style="color: #777;">（新產生的 CP 物件會在這裡，請拖曳到下方四個階段中）</span>
+        <div id="token-dock" class="drop-zone" style="min-height: 60px; border-color: var(--st-color); flex-direction: row; flex-wrap: wrap;" ondragover="allowDrop(event)" ondrop="drop(event, 'dock')" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)">
+            <span style="color: #999; margin: auto;">(未分類的 CP 物件會放在這裡，請拖曳到下方)</span>
         </div>
 
-        <!-- 4階段 Pipeline (左至右) -->
+        <!-- 4階段 Pipeline -->
         <div class="pipeline-container">
-            <!-- 提示 -->
             <div class="stage-box" id="stage-cue">
-                <div class="stage-title" style="color: var(--cue);">1. 提示 (Cue)</div>
-                <div class="stage-desc">觸發大腦的起點<br>(時間、地點、情緒)</div>
+                <div style="color: var(--cue); font-weight: bold; text-align: center;">1. 提示 (Cue)</div>
                 <div class="drop-zone" id="zone-cue" ondragover="allowDrop(event)" ondrop="drop(event, 'cue')" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)"></div>
             </div>
-            <!-- 渴望 -->
             <div class="stage-box" id="stage-craving">
-                <div class="stage-title" style="color: var(--craving);">2. 渴望 (Craving)</div>
-                <div class="stage-desc">想改變狀態的動力<br>(預期能解決需求)</div>
+                <div style="color: var(--craving); font-weight: bold; text-align: center;">2. 渴望 (Craving)</div>
                 <div class="drop-zone" id="zone-craving" ondragover="allowDrop(event)" ondrop="drop(event, 'craving')" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)"></div>
             </div>
-            <!-- 回應 -->
             <div class="stage-box" id="stage-response">
-                <div class="stage-title" style="color: var(--response);">3. 回應 (Response)</div>
-                <div class="stage-desc">實際執行的動作<br>(阻力與摩擦力)</div>
+                <div style="color: var(--response); font-weight: bold; text-align: center;">3. 回應 (Response)</div>
                 <div class="drop-zone" id="zone-response" ondragover="allowDrop(event)" ondrop="drop(event, 'response')" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)"></div>
             </div>
-            <!-- 獎賞 -->
             <div class="stage-box" id="stage-reward">
-                <div class="stage-title" style="color: var(--reward);">4. 獎賞 (Reward)</div>
-                <div class="stage-desc">最終獲得的回饋<br>(短期爽度/長期代價)</div>
+                <div style="color: var(--reward); font-weight: bold; text-align: center;">4. 獎賞 (Reward)</div>
                 <div class="drop-zone" id="zone-reward" ondragover="allowDrop(event)" ondrop="drop(event, 'reward')" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)"></div>
             </div>
         </div>
 
-        <!-- 記分板 -->
         <div class="score-board">
-            <div>短期總 CP 值：<span id="score-st-total" class="score-st">0</span></div>
-            <div>長期總 CP 值：<span id="score-lt-total" class="score-lt">0</span></div>
+            <div style="color: var(--st-color);">短期 CP：<span id="score-st">0</span></div>
+            <div style="color: var(--lt-color);">長期 CP：<span id="score-lt">0</span></div>
+            <div>大腦最終評估：<span id="score-final">0</span> <small>(短 + 長*0.1)</small></div>
         </div>
 
-        <!-- 系統強制校正警告區 -->
         <div id="alert-box" class="alert-box"></div>
 
-        <div style="text-align: center;">
-            <button class="success" onclick="validateAndShowTree()" style="font-size: 1.2rem; padding: 15px 40px;">系統校正與檢核 (Check)</button>
-        </div>
-    </div>
-
-    <!-- Step 3: Final Tree Display -->
-    <div id="step-3" class="step">
-        <h2>🌐 你的行為決策樹 (Human Action Tree)</h2>
-        <p class="text-center">大腦會自動在同一個需求下，選擇「總合性價比」最高的選項。<br>這就是你在 Python 結構中 `human.children[-1].data` 的最終模樣：</p>
-        
-        <div class="tree-view" id="tree-display"></div>
-        
-        <button class="primary" onclick="location.reload()" style="margin-top: 30px;">測試其他習慣</button>
+        <button class="success" onclick="saveAction()" style="width: 100%; font-size: 1.2rem; padding: 15px;">💾 儲存並寫入大腦</button>
     </div>
 
 </div>
 
 <script>
-    // Python 結構模擬
-    let treeData = {
-        name: "human",
-        demand: "",
-        actionName: "",
-        habitType: "",
-        actionsMap: {} // 存放不同方案的 CP 值
-    };
+    // ==========================================
+    // 系統資料結構 (模擬 Python Tree 與 Dict)
+    // ==========================================
+    let humanTree = [
+        {
+            id: generateId(),
+            name: "紓解壓力 (Stress Relief)",
+            actions: [
+                { id: generateId(), name: "抽菸", cp: 1.0, st: 20, lt: -100, isNew: false, tokens: [
+                    { id: generateId(), name: "尼古丁放鬆", score: 20, timeType: 'st', stage: 'reward' },
+                    { id: generateId(), name: "肺部受損", score: -100, timeType: 'lt', stage: 'reward' }
+                ]},
+                { id: generateId(), name: "深呼吸", cp: 1.5, st: 5, lt: 10, isNew: false, tokens: [
+                    { id: generateId(), name: "平靜感", score: 5, timeType: 'st', stage: 'reward' },
+                    { id: generateId(), name: "心肺健康", score: 10, timeType: 'lt', stage: 'reward' }
+                ]}
+            ]
+        },
+        {
+            id: generateId(),
+            name: "獲得社交認同 (Social Approval)",
+            actions: [
+                { id: generateId(), name: "狂刷短影音", cp: 1.5, st: 15, lt: -50, isNew: false, tokens: [] }
+            ]
+        }
+    ];
 
-    let cpTokens = []; // 存放所有的 token
+    // 編輯器全局狀態
+    let currentDemandId = null;
+    let currentActionId = null; // 如果是 null 代表是新增
+    let currentTokens = [];
     let draggedTokenId = null;
 
-    // 隨機產生 ID 的 Helper
     function generateId() { return Math.random().toString(36).substr(2, 9); }
 
-    // Step 1 -> Step 2
-    function initAction() {
-        const demand = document.getElementById('demand-input').value.trim();
-        const action = document.getElementById('action-input').value.trim();
-        const type = document.getElementById('habit-type').value;
+    // ==========================================
+    // View 1: 樹狀圖渲染邏輯
+    // ==========================================
+    function renderTree() {
+        const area = document.getElementById('tree-render-area');
+        area.innerHTML = '';
 
-        if(!demand || !action) return alert("請填寫需求與行動！");
+        humanTree.forEach(demand => {
+            // 每次渲染前，根據 CP 值對 Action 進行降冪排序 (模擬 C++ Map)
+            demand.actions.sort((a, b) => b.cp - a.cp);
 
-        treeData.demand = demand;
-        treeData.actionName = action;
-        treeData.habitType = type;
+            const dNode = document.createElement('div');
+            dNode.className = 'demand-node';
+            
+            // 標題 (點擊刪除)
+            const header = document.createElement('div');
+            header.className = 'demand-header';
+            header.innerText = `Base Demand: ${demand.name}`;
+            header.onclick = () => deleteDemand(demand.id);
+            dNode.appendChild(header);
 
-        document.getElementById('display-demand').innerText = demand;
-        document.getElementById('display-action').innerText = action;
-        document.getElementById('display-type').innerHTML = type === 'bad' ? '❌ 壞習慣' : '✅ 好習慣';
+            // 行動列表
+            const aList = document.createElement('div');
+            aList.className = 'actions-list';
 
-        // 模擬樹裡本來就存有幾個預設的大腦行動 (Python 的 for i in range(1, 11))
-        treeData.actionsMap = {
-            "Action 1 (發呆)": { cp: 0.5 },
-            "Action 2 (滑手機)": { cp: 2.5 }
-        };
+            demand.actions.forEach(act => {
+                const aNode = document.createElement('div');
+                aNode.className = 'action-node';
+                aNode.onclick = () => openEditor(demand.id, act.id);
+                
+                const typeClass = act.lt >= 0 ? 'good' : 'bad';
+                const typeIcon = act.lt >= 0 ? '✅' : '❌';
 
-        switchStep(2);
+                aNode.innerHTML = `
+                    <strong>${act.name}</strong>
+                    <div class="action-cp ${typeClass}">${typeIcon} 總 CP: ${act.cp.toFixed(1)}</div>
+                `;
+                aList.appendChild(aNode);
+            });
+
+            // 新增行動的 [+] 按鈕
+            const addBtn = document.createElement('div');
+            addBtn.className = 'action-node add-btn';
+            addBtn.innerText = '➕ 新增行動';
+            addBtn.onclick = () => openEditor(demand.id, null);
+            aList.appendChild(addBtn);
+
+            dNode.appendChild(aList);
+            area.appendChild(dNode);
+        });
     }
 
-    // 創建 CP Token
+    function addBaseDemand() {
+        const name = prompt("請輸入新的底層需求 (例如：逃避現實、尋求刺激)：");
+        if(name) {
+            humanTree.push({ id: generateId(), name: name, actions: [] });
+            renderTree();
+        }
+    }
+
+    function deleteDemand(dId) {
+        if(confirm("確定要刪除這個底層需求以及它所有的習慣行動嗎？")) {
+            humanTree = humanTree.filter(d => d.id !== dId);
+            renderTree();
+        }
+    }
+
+    // ==========================================
+    // View 2: 編輯器邏輯 (init_action_of_base_demand)
+    // ==========================================
+    function openEditor(dId, aId) {
+        currentDemandId = dId;
+        currentActionId = aId;
+        currentTokens = [];
+        document.getElementById('alert-box').style.display = 'none';
+
+        // 清空 DOM 上的舊 Tokens
+        ['zone-cue', 'zone-craving', 'zone-response', 'zone-reward', 'token-dock'].forEach(id => {
+            const zone = document.getElementById(id);
+            // 保留提示文字，移除 token
+            Array.from(zone.children).forEach(child => {
+                if(child.classList.contains('cp-token')) child.remove();
+            });
+        });
+
+        if (aId) {
+            // 編輯現有行動
+            const demand = humanTree.find(d => d.id === dId);
+            const action = demand.actions.find(a => a.id === aId);
+            document.getElementById('editor-title').innerText = `編輯習慣：${action.name}`;
+            document.getElementById('action-name').value = action.name;
+            
+            // 載入 Tokens 並渲染到對應的 Stage
+            currentTokens = JSON.parse(JSON.stringify(action.tokens)); // Deep copy
+            currentTokens.forEach(t => renderToken(t));
+        } else {
+            // 新增行動
+            document.getElementById('editor-title').innerText = `為此需求建立新習慣`;
+            document.getElementById('action-name').value = '';
+        }
+
+        updateScores();
+        switchView('view-editor');
+    }
+
+    function goToTree() { switchView('view-tree'); renderTree(); }
+
+    function switchView(viewId) {
+        document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+        document.getElementById(viewId).classList.add('active');
+    }
+
+    // Token 邏輯
     function createCPToken() {
         const name = document.getElementById('cp-name').value.trim();
         const score = parseFloat(document.getElementById('cp-score').value);
@@ -261,155 +367,135 @@
 
         if(!name || isNaN(score)) return alert("請填寫完整的名稱與分數！");
 
-        const token = {
-            id: 't_' + generateId(),
-            name: name,
-            score: score,
-            timeType: timeType,
-            stage: null // 尚未分配 stage
-        };
+        const token = { id: 't_' + generateId(), name, score, timeType, stage: 'dock' };
+        currentTokens.push(token);
+        renderToken(token);
 
-        cpTokens.push(token);
-        renderToken(token, 'token-dock');
-
-        document.getElementById('cp-name').value = '';
-        document.getElementById('cp-score').value = '';
+        document.getElementById('cp-name').value = ''; document.getElementById('cp-score').value = '';
         updateScores();
     }
 
-    // 將 Token 渲染到畫面上
-    function renderToken(token, containerId) {
+    function renderToken(token) {
         const el = document.createElement('div');
         el.className = `cp-token ${token.timeType === 'st' ? 'st-token' : 'lt-token'}`;
-        el.id = token.id;
-        el.draggable = true;
-        el.innerHTML = `<span>${token.name}</span> <span>${token.score > 0 ? '+'+token.score : token.score}</span>`;
+        el.id = token.id; el.draggable = true;
         
-        el.addEventListener('dragstart', (e) => {
-            draggedTokenId = token.id;
-            setTimeout(() => el.style.opacity = '0.5', 0);
-        });
-        el.addEventListener('dragend', (e) => { el.style.opacity = '1'; });
+        el.innerHTML = `
+            <span>${token.name} (${token.score > 0 ? '+'+token.score : token.score})</span>
+            <span class="token-del" onclick="deleteToken('${token.id}')">✖</span>
+        `;
+        
+        el.addEventListener('dragstart', () => { draggedTokenId = token.id; setTimeout(() => el.style.opacity = '0.5', 0); });
+        el.addEventListener('dragend', () => { el.style.opacity = '1'; });
 
-        document.getElementById(containerId).appendChild(el);
+        const targetZone = token.stage === 'dock' ? 'token-dock' : `zone-${token.stage}`;
+        document.getElementById(targetZone).appendChild(el);
     }
 
-    // Drag & Drop 邏輯
+    function deleteToken(tId) {
+        currentTokens = currentTokens.filter(t => t.id !== tId);
+        document.getElementById(tId).remove();
+        updateScores();
+    }
+
+    // Drag & Drop
     function allowDrop(ev) { ev.preventDefault(); }
-    function dragEnter(ev) { ev.currentTarget.parentElement.classList.add('dragover'); }
-    function dragLeave(ev) { ev.currentTarget.parentElement.classList.remove('dragover'); }
+    function dragEnter(ev) { ev.currentTarget.classList.add('dragover'); }
+    function dragLeave(ev) { ev.currentTarget.classList.remove('dragover'); }
     
     function drop(ev, stage) {
         ev.preventDefault();
-        ev.currentTarget.parentElement.classList.remove('dragover');
-        
+        ev.currentTarget.classList.remove('dragover');
         if (draggedTokenId) {
-            const tokenEl = document.getElementById(draggedTokenId);
-            ev.currentTarget.appendChild(tokenEl);
-            
-            // 更新資料內的 stage
-            const tokenData = cpTokens.find(t => t.id === draggedTokenId);
-            if(tokenData) tokenData.stage = stage;
-            
+            ev.currentTarget.appendChild(document.getElementById(draggedTokenId));
+            const token = currentTokens.find(t => t.id === draggedTokenId);
+            if(token) token.stage = stage;
             draggedTokenId = null;
         }
     }
 
-    // 計算分數
     function updateScores() {
-        let stTotal = cpTokens.filter(t => t.timeType === 'st').reduce((acc, curr) => acc + curr.score, 0);
-        let ltTotal = cpTokens.filter(t => t.timeType === 'lt').reduce((acc, curr) => acc + curr.score, 0);
+        let st = currentTokens.filter(t => t.timeType === 'st').reduce((acc, curr) => acc + curr.score, 0);
+        let lt = currentTokens.filter(t => t.timeType === 'lt').reduce((acc, curr) => acc + curr.score, 0);
+        let final = st + (lt * 0.1); // 大腦偏誤折扣
 
-        document.getElementById('score-st-total').innerText = stTotal;
-        document.getElementById('score-lt-total').innerText = ltTotal;
-        
-        return { stTotal, ltTotal };
+        document.getElementById('score-st').innerText = st;
+        document.getElementById('score-lt').innerText = lt;
+        document.getElementById('score-final').innerText = final.toFixed(1);
+
+        return { st, lt, final };
     }
 
     // ==========================================
-    // 核心校正邏輯 (The CP Validation Force Rule)
+    // 儲存與強制防護邏輯 (The Enforcement Rule)
     // ==========================================
-    function validateAndShowTree() {
-        const alertBox = document.getElementById('alert-box');
-        const { stTotal, ltTotal } = updateScores();
+    function saveAction() {
+        const actionName = document.getElementById('action-name').value.trim();
+        if(!actionName) return alert("請填寫行動名稱！");
+
+        const { st, lt, final } = updateScores();
+        const demand = humanTree.find(d => d.id === currentDemandId);
         
-        // 檢查是否所有 token 都已經放入四個階段中
-        const unassigned = cpTokens.filter(t => !t.stage);
-        if(unassigned.length > 0) {
-            alertBox.innerHTML = `⚠️ 請將上方的 CP 物件拖曳到下方「提示、渴望、回應、獎賞」的對應階段中！這不會影響總分，但能幫你釐清在哪個階段下手。`;
-            alertBox.style.display = 'block';
-            return;
-        }
+        // 判斷好習慣還是壞習慣 (基於長期 CP)
+        const isGoodHabit = lt >= 0; 
+        
+        // 尋找現有的 Action 以判斷是否為「第二次看見 (非 init)」
+        let existingAction = demand.actions.find(a => a.id === currentActionId);
+        let isNew = existingAction ? existingAction.isNew : true;
 
-        // 規則 1：如果是壞習慣，強迫短期 CP 值必須 < 0
-        if(treeData.habitType === 'bad' && stTotal >= 0) {
-            alertBox.innerHTML = `🚨【系統校正攔截】這是一個「壞習慣」！<br>
-            你的短期 CP 值目前是 ${stTotal} (>=0)。<br>
-            只要短期 CP 是正的，大腦的多巴胺迴路就不會放棄！<br>
-            👉 <b>請繼續建立負面的短期 CP (摩擦力/懲罰)，並拖曳進去，直到短期 CP 變成負數！</b>`;
-            alertBox.style.display = 'block';
-            return;
-        }
+        const alertBox = document.getElementById('alert-box');
 
-        // 規則 2：如果是好習慣，強迫短期 CP 值必須 > 0
-        if(treeData.habitType === 'good' && stTotal <= 0) {
-            alertBox.innerHTML = `🚨【系統校正攔截】這是一個「好習慣」！<br>
-            你的短期 CP 值目前是 ${stTotal} (<=0)。<br>
-            大腦是短視的，如果短期太痛苦且沒獎勵，大腦絕對無法堅持！<br>
-            👉 <b>請繼續建立正面的短期 CP (立即獎勵/降低難度)，並拖曳進去，直到短期 CP 變成正數！</b>`;
-            alertBox.style.display = 'block';
-            return;
+        // ★ 核心強制規則：如果是第二次編輯 (!isNew)，強制檢核 ST 分數！
+        if (!isNew) {
+            if (isGoodHabit && st <= 0) {
+                alertBox.innerHTML = `🚨【強制防護】這是一個「好習慣 (長期 > 0)」！<br>
+                但目前你的短期 CP 是 ${st}。大腦是短視的，如果短期 CP $\le 0$，大腦會立刻放棄！<br>
+                👉 <b>請加入「短期獎勵或降低難度 (ST > 0)」，直到短期 CP 變成正數！</b>`;
+                alertBox.style.display = 'block';
+                return; // 阻擋儲存
+            }
+            if (!isGoodHabit && st >= 0) {
+                alertBox.innerHTML = `🚨【強制防護】這是一個「壞習慣 (長期 < 0)」！<br>
+                但目前你的短期 CP 是 ${st}。只要短期 CP 還是正的，大腦就會繼續這個壞習慣！<br>
+                👉 <b>請加入「短期摩擦力或懲罰 (ST < 0)」，直到短期 CP 變成負數！</b>`;
+                alertBox.style.display = 'block';
+                return; // 阻擋儲存
+            }
+        } else {
+            // 如果是第一次新增，我們給予提示，但允許儲存 (存完後 isNew 就會變成 false)
+            if (isGoodHabit && st <= 0) {
+                alert("系統提示：你正在建立一個好習慣，但短期 CP 沒有大於 0。大腦很容易放棄喔！(下次編輯時將強制修正)");
+            } else if (!isGoodHabit && st >= 0) {
+                alert("系統提示：你正在紀錄一個壞習慣，但短期 CP 還是正的。大腦還是會繼續做！(下次編輯時將強制修正)");
+            }
         }
 
         alertBox.style.display = 'none';
 
-        // 通過檢核，將這個新習慣寫入大腦清單中 (模擬 Map)
-        // 最終的大腦決策分 = 短期 CP + (長期 CP * 0.1 偏誤折價)
-        let finalBrainScore = stTotal + (ltTotal * 0.1);
-        treeData.actionsMap[treeData.actionName] = { 
-            cp: finalBrainScore.toFixed(2), 
-            st: stTotal, 
-            lt: ltTotal 
-        };
+        // 寫入/更新 Tree 資料
+        if (existingAction) {
+            existingAction.name = actionName;
+            existingAction.st = st;
+            existingAction.lt = lt;
+            existingAction.cp = final;
+            existingAction.tokens = currentTokens;
+            existingAction.isNew = false; // 編輯過一次後，永遠不再是 New
+        } else {
+            demand.actions.push({
+                id: generateId(),
+                name: actionName,
+                st: st, lt: lt, cp: final,
+                tokens: currentTokens,
+                isNew: false // 建立完就當作已存在，下次點開就是第二次
+            });
+        }
 
-        renderTree();
-        switchStep(3);
+        alert("✅ 已成功寫入大腦神經網路！");
+        goToTree();
     }
 
-    // 渲染 Python 樹狀結構
-    function renderTree() {
-        const treeDiv = document.getElementById('tree-display');
-        
-        // 將 Map 排序 (Sort by cp_value)
-        const sortedActions = Object.entries(treeData.actionsMap)
-            .sort((a, b) => b[1].cp - a[1].cp); // 降冪排序
-
-        let output = `└── human (root)\n`;
-        output += `    └── base_demand: ${treeData.demand}\n`;
-        output += `        └── data_name: "action for the base demand"\n`;
-        output += `        └── data (Sorted by Brain CP Value):\n`;
-        
-        sortedActions.forEach(([name, data], index) => {
-            const isTarget = name === treeData.actionName;
-            const prefix = isTarget ? '✨ ' : '   ';
-            output += `            ${prefix}${index + 1}. [${name}]\n`;
-            if (isTarget) {
-                output += `                  ├─ 短期 CP: ${data.st}\n`;
-                output += `                  ├─ 長期 CP: ${data.lt}\n`;
-                output += `                  └─ 大腦最終評估總 CP: ${data.cp}\n`;
-            } else {
-                output += `                  └─ 大腦最終評估總 CP: ${data.cp}\n`;
-            }
-        });
-
-        treeDiv.innerText = output;
-    }
-
-    function switchStep(stepNum) {
-        document.querySelectorAll('.step').forEach(el => el.classList.remove('active'));
-        document.getElementById(`step-${stepNum}`).classList.add('active');
-    }
-
+    // 初始化渲染
+    renderTree();
 </script>
 </body>
 </html>
