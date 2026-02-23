@@ -3,559 +3,411 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>原子習慣：底層需求與性價比重塑系統</title>
+    <title>原子習慣：CP值與四階段重塑系統</title>
     <style>
         :root {
-            --primary: #4A90E2;
-            --danger: #E74C3C;
-            --success: #2ECC71;
-            --dark: #2C3E50;
-            --light: #F5F7FA;
-            --warning: #F39C12;
-            --gray: #BDC3C7;
+            --bg-color: #F8F9FA;
+            --text-main: #2C3E50;
+            --cue: #95A5A6;     /* 提示 */
+            --craving: #F39C12; /* 渴望 */
+            --response: #8E44AD;/* 回應 */
+            --reward: #E74C3C;  /* 獎賞 */
+            --good: #2ECC71;
+            --bad: #E74C3C;
+            --st-color: #3498DB;
+            --lt-color: #34495E;
         }
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--light);
-            color: var(--dark);
-            margin: 0;
-            padding: 20px;
-            display: flex;
-            justify-content: center;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0; padding: 20px;
         }
 
         .container {
-            max-width: 900px;
-            width: 100%;
-            background: white;
-            padding: 40px;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            max-width: 1100px; margin: 0 auto; background: white;
+            padding: 30px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);
         }
 
-        h1, h2, h3 { text-align: center; color: var(--primary); }
-        h2.danger { color: var(--danger); }
-        h2.success { color: var(--success); }
+        h1, h2, h3 { text-align: center; }
         .text-center { text-align: center; }
-
+        
         button {
-            display: block;
-            margin: 20px auto;
-            padding: 12px 24px;
-            font-size: 1.1rem;
-            color: white;
-            background-color: var(--primary);
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: 0.3s;
+            padding: 10px 20px; font-size: 1rem; color: white; background: var(--text-main);
+            border: none; border-radius: 8px; cursor: pointer; transition: 0.3s;
         }
-        button:hover { background-color: #357ABD; }
-        button.danger-btn { background-color: var(--danger); }
-        button.success-btn { background-color: var(--success); }
+        button:hover { opacity: 0.8; }
+        button.primary { background: var(--st-color); }
+        button.success { background: var(--good); }
 
-        input[type="text"], input[type="number"] {
-            width: calc(100% - 24px);
-            padding: 12px;
-            margin: 8px 0;
-            border: 2px solid #ECF0F1;
-            border-radius: 8px;
-            font-size: 1rem;
-            transition: 0.3s;
+        input, select {
+            width: 100%; padding: 12px; margin: 8px 0; box-sizing: border-box;
+            border: 2px solid #ddd; border-radius: 8px; font-size: 1rem;
         }
-        input:focus { border-color: var(--primary); outline: none; }
 
         .step { display: none; animation: fadeIn 0.5s ease; }
         .step.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* 習慣迴路與拖曳區塊 */
-        .loop-container {
-            background: #FFF8E1;
-            border: 3px dashed var(--warning);
-            border-radius: 15px;
-            padding: 20px;
-            margin: 20px 0;
-            position: relative;
-            transition: background 0.3s;
+        /* 四階段橫向 Pipeline UI */
+        .pipeline-container {
+            display: flex; gap: 15px; margin: 30px 0; overflow-x: auto; padding-bottom: 10px;
         }
-        .loop-container.dragover { background: #FFE082; }
+        .stage-box {
+            flex: 1; min-width: 200px; border-radius: 10px; padding: 15px;
+            display: flex; flex-direction: column; min-height: 250px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05); border-top: 5px solid;
+            background: #FAFAFA; transition: 0.3s;
+        }
+        .stage-box.dragover { background: #E8F8F5; transform: scale(1.02); }
+        
+        #stage-cue { border-color: var(--cue); }
+        #stage-craving { border-color: var(--craving); }
+        #stage-response { border-color: var(--response); }
+        #stage-reward { border-color: var(--reward); }
 
-        .loop-flow {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-            font-size: 1.1rem;
-            font-weight: bold;
-            color: #D35400;
-        }
-        .loop-node {
-            background: white;
-            padding: 15px;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-            text-align: center;
-            border-left: 5px solid var(--warning);
-        }
-        .arrow-down { text-align: center; font-size: 1.5rem; color: var(--warning); margin: -5px 0; }
+        .stage-title { font-weight: bold; font-size: 1.2rem; margin-bottom: 10px; text-align: center; }
+        .stage-desc { font-size: 0.85rem; color: #7f8c8d; text-align: center; margin-bottom: 15px; }
 
-        /* 拖曳物件 */
+        .drop-zone { flex: 1; border: 2px dashed #ccc; border-radius: 8px; padding: 10px; display: flex; flex-direction: column; gap: 10px; }
+
+        /* CP Token (物件) */
         .token-creator {
-            display: flex;
-            gap: 10px;
-            background: #F8F9FA;
-            padding: 20px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            align-items: center;
-            flex-wrap: wrap;
+            background: #EDF2F8; padding: 20px; border-radius: 10px; margin-bottom: 20px;
+            display: flex; gap: 15px; align-items: center; flex-wrap: wrap;
         }
-        .drag-token {
-            padding: 10px 20px;
-            border-radius: 20px;
-            color: white;
-            font-weight: bold;
-            cursor: grab;
-            display: inline-block;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-            animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            user-select: none;
-            z-index: 10;
+        .cp-token {
+            padding: 8px 12px; border-radius: 20px; color: white; cursor: grab;
+            font-size: 0.9rem; font-weight: bold; display: flex; justify-content: space-between;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2); user-select: none;
         }
-        .drag-token:active { cursor: grabbing; }
-        .token-st { background: var(--primary); }
-        .token-lt { background: var(--danger); }
-        @keyframes popIn { from { transform: scale(0); } to { transform: scale(1); } }
+        .cp-token:active { cursor: grabbing; }
+        .st-token { background: var(--st-color); }
+        .lt-token { background: var(--lt-color); }
 
-        /* 天平系統 CSS */
-        .scale-wrapper {
-            position: relative; width: 100%; height: 250px; margin: 40px 0;
-            display: flex; flex-direction: column; align-items: center; justify-content: flex-end;
+        /* 記分板與狀態區 */
+        .score-board {
+            display: flex; justify-content: space-around; background: #eee;
+            padding: 15px; border-radius: 10px; margin: 20px 0; font-size: 1.2rem; font-weight: bold;
         }
-        .scale-stand { width: 12px; height: 160px; background: #7F8C8D; border-radius: 6px 6px 0 0; }
-        .scale-base { width: 120px; height: 20px; background: var(--dark); border-radius: 10px 10px 0 0; }
-        .scale-beam {
-            position: absolute; top: 60px; left: calc(50% - 150px); width: 300px; height: 8px;
-            background: var(--dark); border-radius: 4px; transform-origin: center center;
-            transition: transform 1s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        .fulcrum {
-            position: absolute; top: 50px; left: 50%; transform: translateX(-50%);
-            width: 0; height: 0; border-left: 15px solid transparent; border-right: 15px solid transparent; border-bottom: 20px solid var(--danger); z-index: 2;
-        }
-        .pan-container {
-            position: absolute; top: 0; width: 100px; display: flex; flex-direction: column; align-items: center;
-            transform-origin: top center; transition: transform 1s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        .left-pan { left: 0; transform: translateX(-50%); }
-        .right-pan { right: 0; transform: translateX(50%); }
-        .pan-string { width: 2px; height: 60px; background: #95A5A6; }
-        .pan-box {
-            width: 100%; background: white; border: 3px solid var(--dark); border-top: none;
-            border-radius: 0 0 8px 8px; padding: 10px 0; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        }
-        .pan-box::before { content: ''; position: absolute; top: -3px; left: -3px; right: -3px; height: 3px; background: var(--dark); }
-        .weight-label { font-size: 0.9rem; font-weight: bold; color: var(--gray); }
-        .score-label { font-size: 1.8rem; font-weight: bold; margin-top: 5px; color: var(--dark); }
+        .score-st { color: var(--st-color); }
+        .score-lt { color: var(--lt-color); }
 
-        .bias-watermark {
-            position: absolute; top: 50%; left: 110%; transform: translateY(-50%);
-            font-size: 2.5rem; font-weight: bold; color: var(--danger); opacity: 0.8; transition: 0.5s;
+        /* Tree UI */
+        .tree-view {
+            background: #2C3E50; color: white; padding: 20px; border-radius: 10px; margin-top: 30px;
+            font-family: monospace; font-size: 1.1rem; white-space: pre; overflow-x: auto;
         }
-        .bias-watermark.struck { text-decoration: line-through; color: var(--gray); opacity: 0.2; }
-
-        .item-list { padding: 0; list-style: none; margin-top: 20px; }
-        .item-list li { background: #eee; margin: 5px 0; padding: 10px; border-radius: 5px; display: flex; justify-content: space-between; }
-        .score-pos { color: var(--success); font-weight: bold; }
-        .score-neg { color: var(--danger); font-weight: bold; }
-
+        
+        .alert-box {
+            background: #FDEDEC; border-left: 5px solid var(--bad); padding: 15px; margin: 20px 0;
+            color: #C0392B; display: none; font-weight: bold; border-radius: 5px;
+        }
     </style>
 </head>
 <body>
 
 <div class="container">
     
-    <!-- Step 1: 定義底層需求與壞習慣 -->
+    <!-- Step 1: Base Demand & Action Init -->
     <div id="step-1" class="step active">
-        <h1>原子習慣：底層需求分析</h1>
-        <p class="text-center">習慣只是大腦為了解決某個「底層需求」所找到的快捷方案。</p>
+        <h1>🌲 習慣底層架構系統 (Human Tree)</h1>
+        <p class="text-center">每一個習慣，都是為了解決某個底層需求 (Base Demand) 的方案 (Action)。</p>
         
-        <div style="max-width: 500px; margin: 30px auto;">
-            <label>1. 你真正的「底層需求 / 慾望」是什麼？</label>
-            <input type="text" id="desire-input" placeholder="例如：工作壓力大想放鬆、無聊想找點刺激...">
+        <div style="max-width: 500px; margin: 0 auto;">
+            <label>1. 底層需求 (Base Demand)</label>
+            <input type="text" id="demand-input" placeholder="例：紓解工作壓力、獲得社交認同...">
             
-            <label style="margin-top: 20px; display: block;">2. 為了滿足這個需求，你目前採取了什麼「壞習慣」？</label>
-            <input type="text" id="habit-input" placeholder="例如：吃高熱量宵夜、熬夜滑短影音...">
+            <label>2. 採取的行動/習慣 (Action)</label>
+            <input type="text" id="action-input" placeholder="例：抽菸、健身、吃甜食...">
             
-            <button onclick="goToStep(2)">進入迴路解析</button>
+            <label>3. 這是什麼屬性的習慣？</label>
+            <select id="habit-type">
+                <option value="bad">❌ 壞習慣 (想戒除，長期 CP 值 < 0)</option>
+                <option value="good">✅ 好習慣 (想培養，長期 CP 值 > 0)</option>
+            </select>
+            
+            <button class="primary" onclick="initAction()" style="width: 100%; margin-top: 20px;">初始化習慣結構</button>
         </div>
     </div>
 
-    <!-- Step 2: 認識迴路與建立分數 Token (Drag & Drop) -->
+    <!-- Step 2: 4-Stage Loop & CP Builder -->
     <div id="step-2" class="step">
-        <h2>大腦的習慣評價系統</h2>
-        <p class="text-center">請為「<span class="hl-habit" style="color:var(--danger);font-weight:bold;"></span>」寫下短期與長期分數，並<strong style="color:var(--primary);">將產生的方塊拖曳到下方的「習慣迴路」中</strong>，讓大腦認知到這些代價。</p>
-
-        <!-- 創造 Token 的控制面板 -->
+        <h2>習慣迴路：<span id="display-action" style="color:var(--st-color);"></span></h2>
+        <p class="text-center">底層需求：<span id="display-demand" style="font-weight:bold;"></span> | 屬性：<span id="display-type"></span></p>
+        
+        <!-- CP Token 產生器 -->
         <div class="token-creator">
-            <div style="flex: 1;">
-                <input type="text" id="token-name" placeholder="好處/壞處名稱 (例：變胖、好舒壓)">
-                <input type="number" id="token-score" placeholder="分數 (很爽填正數，很慘填負數)">
+            <div style="flex: 2; min-width: 200px;">
+                <input type="text" id="cp-name" placeholder="CP 變數名稱 (例：看到甜點店、多巴胺分泌、變胖...)">
             </div>
-            <div style="display: flex; flex-direction: column; gap: 10px;">
-                <button onclick="createToken('st')" style="margin:0; padding: 8px 15px;">製作【短期】方塊</button>
-                <button onclick="createToken('lt')" class="danger-btn" style="margin:0; padding: 8px 15px;">製作【長期】方塊</button>
+            <div style="flex: 1; min-width: 100px;">
+                <input type="number" id="cp-score" placeholder="分數 (+/-)">
+            </div>
+            <div style="flex: 1; min-width: 150px;">
+                <select id="cp-time">
+                    <option value="st">短期 CP (Short-term)</option>
+                    <option value="lt">長期 CP (Long-term)</option>
+                </select>
+            </div>
+            <button class="primary" onclick="createCPToken()">建立 CP 物件</button>
+        </div>
+
+        <div id="token-dock" style="min-height: 50px; border: 2px dashed #999; padding: 10px; border-radius: 8px; margin-bottom: 20px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+            <span style="color: #777;">（新產生的 CP 物件會在這裡，請拖曳到下方四個階段中）</span>
+        </div>
+
+        <!-- 4階段 Pipeline (左至右) -->
+        <div class="pipeline-container">
+            <!-- 提示 -->
+            <div class="stage-box" id="stage-cue">
+                <div class="stage-title" style="color: var(--cue);">1. 提示 (Cue)</div>
+                <div class="stage-desc">觸發大腦的起點<br>(時間、地點、情緒)</div>
+                <div class="drop-zone" id="zone-cue" ondragover="allowDrop(event)" ondrop="drop(event, 'cue')" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)"></div>
+            </div>
+            <!-- 渴望 -->
+            <div class="stage-box" id="stage-craving">
+                <div class="stage-title" style="color: var(--craving);">2. 渴望 (Craving)</div>
+                <div class="stage-desc">想改變狀態的動力<br>(預期能解決需求)</div>
+                <div class="drop-zone" id="zone-craving" ondragover="allowDrop(event)" ondrop="drop(event, 'craving')" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)"></div>
+            </div>
+            <!-- 回應 -->
+            <div class="stage-box" id="stage-response">
+                <div class="stage-title" style="color: var(--response);">3. 回應 (Response)</div>
+                <div class="stage-desc">實際執行的動作<br>(阻力與摩擦力)</div>
+                <div class="drop-zone" id="zone-response" ondragover="allowDrop(event)" ondrop="drop(event, 'response')" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)"></div>
+            </div>
+            <!-- 獎賞 -->
+            <div class="stage-box" id="stage-reward">
+                <div class="stage-title" style="color: var(--reward);">4. 獎賞 (Reward)</div>
+                <div class="stage-desc">最終獲得的回饋<br>(短期爽度/長期代價)</div>
+                <div class="drop-zone" id="zone-reward" ondragover="allowDrop(event)" ondrop="drop(event, 'reward')" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)"></div>
             </div>
         </div>
 
-        <!-- 產生的 Token 會放在這 -->
-        <div id="token-dock" style="min-height: 60px; border: 2px dashed #ccc; padding: 10px; border-radius: 8px; margin-bottom: 20px; display: flex; gap: 10px; flex-wrap: wrap;">
-            <span style="color: #999; line-height: 40px;">（產生的方塊會出現在這裡，請用滑鼠將它拖曳到下方黃色虛線的迴路中）</span>
+        <!-- 記分板 -->
+        <div class="score-board">
+            <div>短期總 CP 值：<span id="score-st-total" class="score-st">0</span></div>
+            <div>長期總 CP 值：<span id="score-lt-total" class="score-lt">0</span></div>
         </div>
 
-        <!-- 習慣迴路 Drop Zone -->
-        <div class="loop-container" id="loop-dropzone" ondragover="allowDrop(event)" ondrop="drop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)">
-            <h3 style="margin-top:0; color: #D35400;">🔄 人類預設習慣迴路 (拖曳至此處寫入大腦)</h3>
-            <div class="loop-flow">
-                <div class="loop-node">1. 觸發底層需求：<strong class="hl-desire" style="color:var(--primary);"></strong></div>
-                <div class="arrow-down">⬇️</div>
-                <div class="loop-node">2. 執行高性價比方案：<strong class="hl-habit" style="color:var(--danger);"></strong></div>
-                <div class="arrow-down">⬇️</div>
-                <div class="loop-node">3. 預期心理分泌多巴胺 (以為性價比極高)</div>
-                <div class="arrow-down">⬇️</div>
-                <div class="loop-node" id="reward-node">4. 實際獲得爽度與長期代價 (請把方塊丟進來)</div>
-            </div>
-        </div>
+        <!-- 系統強制校正警告區 -->
+        <div id="alert-box" class="alert-box"></div>
 
-        <button id="btn-see-scale" onclick="goToStep(3)" style="display: none; width: 100%;">查看大腦天平</button>
-    </div>
-
-    <!-- 共用天平區塊 -->
-    <div id="scale-section" class="step">
-        <h2 id="scale-title"></h2>
-        <div class="scale-wrapper">
-            <div class="fulcrum"></div>
-            <div class="scale-beam" id="beam">
-                <div class="pan-container left-pan" id="panLeft">
-                    <div class="pan-string"></div>
-                    <div class="pan-box">
-                        <div class="weight-label">短期 (誘惑力)</div>
-                        <div class="score-label" id="st-total">0</div>
-                    </div>
-                </div>
-                <div class="pan-container right-pan" id="panRight">
-                    <div class="pan-string"></div>
-                    <div class="pan-box">
-                        <div class="weight-label">長期 (阻力)</div>
-                        <div class="score-label" id="lt-total">0</div>
-                        <div class="bias-watermark" id="bias-mark">× ⅒</div>
-                    </div>
-                </div>
-            </div>
-            <div class="scale-stand"></div>
-            <div class="scale-base"></div>
-        </div>
-        
-        <div style="display:flex; gap:20px; justify-content:center;">
-            <ul class="item-list" id="st-list" style="flex:1; max-width: 300px;"></ul>
-            <ul class="item-list" id="lt-list" style="flex:1; max-width: 300px;"></ul>
+        <div style="text-align: center;">
+            <button class="success" onclick="validateAndShowTree()" style="font-size: 1.2rem; padding: 15px 40px;">系統校正與檢核 (Check)</button>
         </div>
     </div>
 
-    <!-- Step 3: 看見真實偏誤 -->
+    <!-- Step 3: Final Tree Display -->
     <div id="step-3" class="step">
-        <p class="text-center" style="font-size:1.2rem; color: var(--danger); font-weight: bold;">
-            看見了嗎？右邊(長期)被打了一折！<br>這就是為什麼理智上你知道不好，但大腦還是覺得它「性價比超高」。
-        </p>
-        <button onclick="removeBias()" class="danger-btn">戳破大腦的盲點 (拿掉 1/10 偏誤)</button>
-    </div>
-
-    <!-- Step 4: 駭入系統 (增加摩擦力) -->
-    <div id="step-4" class="step">
-        <h2 class="danger">駭入系統：讓壞習慣破產</h2>
-        <p class="text-center">我們已經拿掉未來的濾鏡，但只要「短期總分還是正的」，多巴胺迴路就會運作。<br>請在現實中<strong>強行增加短期的摩擦力 (負分)</strong>，直到左邊短期變成負數！</p>
+        <h2>🌐 你的行為決策樹 (Human Action Tree)</h2>
+        <p class="text-center">大腦會自動在同一個需求下，選擇「總合性價比」最高的選項。<br>這就是你在 Python 結構中 `human.children[-1].data` 的最終模樣：</p>
         
-        <div style="max-width: 500px; margin: 0 auto; background: white; padding: 20px; border-radius: 10px; border: 2px solid var(--danger);">
-            <input type="text" id="friction-name" placeholder="增加物理阻力 (例：把APP刪掉、把零食鎖起來)">
-            <input type="number" id="friction-score" placeholder="請填寫不爽度 (負數，例如：-50)">
-            <button onclick="addFriction()" class="danger-btn">施加短期阻力</button>
-        </div>
-    </div>
-
-    <!-- Step 5: 遞迴 - 尋找新的高性價比方案 -->
-    <div id="step-5" class="step">
-        <h2 class="success">壞習慣迴路已打破！但需求還在...</h2>
-        <p class="text-center" style="font-size: 1.1rem; line-height: 1.6;">
-            太棒了！你的大腦現在判定「<span class="hl-habit" style="color:var(--danger);"></span>」性價比極低。<br>
-            <strong>但是，你的底層需求「<span class="hl-desire" style="color:var(--primary); font-weight:bold;"></span>」並沒有消失！</strong><br>
-            如果不給大腦一個新的替代方案，它很快又會回去找壞習慣。
-        </p>
-
-        <div style="max-width: 600px; margin: 30px auto; background: #E8F8F5; padding: 30px; border-radius: 15px; border-left: 5px solid var(--success);">
-            <h3>請設計一個【全新習慣】</h3>
-            <p>這個行為必須能解決「<span class="hl-desire"></span>」，且長期有益、短期也不能太痛苦。</p>
-            <input type="text" id="new-habit-input" placeholder="例如：改吃無糖優格、去樓下散步10分鐘、深呼吸...">
-            
-            <div style="display:flex; gap: 10px; margin-top:15px;">
-                <input type="number" id="new-st-score" placeholder="短期分數 (例: 20)">
-                <input type="number" id="new-lt-score" placeholder="長期分數 (例: 80)">
-            </div>
-            <button onclick="evaluateNewHabit()" class="success-btn">驗證新習慣的性價比</button>
-        </div>
-    </div>
-
-    <!-- Step 6: 最終成功 -->
-    <div id="step-6" class="step">
-        <h2 class="success">🎉 習慣重塑成功！</h2>
-        <p class="text-center" style="font-size:1.2rem;">
-            你成功用全新的<strong>「<span id="final-new-habit" style="color:var(--primary);"></span>」</strong><br>
-            取代了原本的「<span class="hl-habit" style="text-decoration:line-through; color:var(--gray);"></span>」！<br>
-            它不僅能滿足「<span class="hl-desire"></span>」的需求，且整體性價比極高！
-        </p>
+        <div class="tree-view" id="tree-display"></div>
         
-        <div class="loop-container" style="background: #E8F8F5; border-color: var(--success);">
-            <h3 style="margin-top:0; color: var(--success);">✨ 你的全新自動導航迴路</h3>
-            <div class="loop-flow">
-                <div class="loop-node" style="border-color: var(--success);">1. 產生需求：<strong class="hl-desire"></strong></div>
-                <div class="arrow-down" style="color: var(--success);">⬇️</div>
-                <div class="loop-node" style="border-color: var(--success); background: var(--success); color: white;">2. 自動執行：<strong id="final-new-habit-2"></strong></div>
-                <div class="arrow-down" style="color: var(--success);">⬇️</div>
-                <div class="loop-node" style="border-color: var(--success);">3. 獲得健康的多巴胺與長遠回報</div>
-            </div>
-        </div>
-
-        <button onclick="location.reload()" style="background: var(--dark);">重啟系統，設計下一個習慣</button>
+        <button class="primary" onclick="location.reload()" style="margin-top: 30px;">測試其他習慣</button>
     </div>
 
 </div>
 
 <script>
-    // 系統狀態變數
-    let desire = "";
-    let badHabit = "";
-    let isBiased = true;
-    let stList = [];
-    let ltList = [];
-    
-    // 拖曳狀態
-    let draggedTokenData = null;
+    // Python 結構模擬
+    let treeData = {
+        name: "human",
+        demand: "",
+        actionName: "",
+        habitType: "",
+        actionsMap: {} // 存放不同方案的 CP 值
+    };
 
-    function goToStep(step) {
-        if(step === 2) {
-            desire = document.getElementById('desire-input').value.trim();
-            badHabit = document.getElementById('habit-input').value.trim();
-            if(!desire || !badHabit) return alert("請填寫需求與壞習慣！");
-            
-            document.querySelectorAll('.hl-desire').forEach(el => el.innerText = desire);
-            document.querySelectorAll('.hl-habit').forEach(el => el.innerText = badHabit);
-        }
+    let cpTokens = []; // 存放所有的 token
+    let draggedTokenId = null;
 
-        if(step === 3) {
-            if(stList.length === 0 || ltList.length === 0) return alert("請至少拖曳一個短期與一個長期的方塊到迴路中！");
-            document.getElementById('scale-title').innerText = `分析壞習慣：「${badHabit}」`;
-            document.getElementById('scale-section').classList.add('active');
-            updateScale();
-        }
+    // 隨機產生 ID 的 Helper
+    function generateId() { return Math.random().toString(36).substr(2, 9); }
 
-        if(step === 4) {
-            document.getElementById('step-3').classList.remove('active');
-        }
+    // Step 1 -> Step 2
+    function initAction() {
+        const demand = document.getElementById('demand-input').value.trim();
+        const action = document.getElementById('action-input').value.trim();
+        const type = document.getElementById('habit-type').value;
 
-        document.querySelectorAll('.step').forEach(el => {
-            if(el.id.startsWith('step-')) el.classList.remove('active');
-        });
-        document.getElementById(`step-${step}`).classList.add('active');
+        if(!demand || !action) return alert("請填寫需求與行動！");
+
+        treeData.demand = demand;
+        treeData.actionName = action;
+        treeData.habitType = type;
+
+        document.getElementById('display-demand').innerText = demand;
+        document.getElementById('display-action').innerText = action;
+        document.getElementById('display-type').innerHTML = type === 'bad' ? '❌ 壞習慣' : '✅ 好習慣';
+
+        // 模擬樹裡本來就存有幾個預設的大腦行動 (Python 的 for i in range(1, 11))
+        treeData.actionsMap = {
+            "Action 1 (發呆)": { cp: 0.5 },
+            "Action 2 (滑手機)": { cp: 2.5 }
+        };
+
+        switchStep(2);
     }
 
-    // ==========================================
-    // Drag & Drop 邏輯
-    // ==========================================
-    function createToken(type) {
-        const nameInput = document.getElementById('token-name');
-        const scoreInput = document.getElementById('token-score');
-        const name = nameInput.value.trim();
-        const score = parseInt(scoreInput.value);
+    // 創建 CP Token
+    function createCPToken() {
+        const name = document.getElementById('cp-name').value.trim();
+        const score = parseFloat(document.getElementById('cp-score').value);
+        const timeType = document.getElementById('cp-time').value;
 
         if(!name || isNaN(score)) return alert("請填寫完整的名稱與分數！");
 
-        // 產生拖曳方塊
-        const token = document.createElement('div');
-        token.className = `drag-token ${type === 'st' ? 'token-st' : 'token-lt'}`;
-        token.draggable = true;
-        token.innerText = `${name} (${score > 0 ? '+'+score : score})`;
-        
-        // 為了支援手機，加入點擊直接寫入的功能
-        token.title = "你可以拖曳我，或者直接點擊我加入迴路！";
-        
-        // 儲存資料
-        const tokenData = { type, name, score };
-        
-        // Drag events
-        token.addEventListener('dragstart', (e) => {
-            draggedTokenData = tokenData;
-            setTimeout(() => token.style.opacity = '0.5', 0);
-        });
-        token.addEventListener('dragend', (e) => {
-            token.style.opacity = '1';
-        });
+        const token = {
+            id: 't_' + generateId(),
+            name: name,
+            score: score,
+            timeType: timeType,
+            stage: null // 尚未分配 stage
+        };
 
-        // Click fallback (for mobile)
-        token.addEventListener('click', () => {
-            draggedTokenData = tokenData;
-            processDrop();
-            token.remove();
-        });
+        cpTokens.push(token);
+        renderToken(token, 'token-dock');
 
-        const dock = document.getElementById('token-dock');
-        if(dock.querySelector('span')) dock.innerHTML = ''; // 移除提示字
-        dock.appendChild(token);
-
-        nameInput.value = '';
-        scoreInput.value = '';
+        document.getElementById('cp-name').value = '';
+        document.getElementById('cp-score').value = '';
+        updateScores();
     }
 
+    // 將 Token 渲染到畫面上
+    function renderToken(token, containerId) {
+        const el = document.createElement('div');
+        el.className = `cp-token ${token.timeType === 'st' ? 'st-token' : 'lt-token'}`;
+        el.id = token.id;
+        el.draggable = true;
+        el.innerHTML = `<span>${token.name}</span> <span>${token.score > 0 ? '+'+token.score : token.score}</span>`;
+        
+        el.addEventListener('dragstart', (e) => {
+            draggedTokenId = token.id;
+            setTimeout(() => el.style.opacity = '0.5', 0);
+        });
+        el.addEventListener('dragend', (e) => { el.style.opacity = '1'; });
+
+        document.getElementById(containerId).appendChild(el);
+    }
+
+    // Drag & Drop 邏輯
     function allowDrop(ev) { ev.preventDefault(); }
-    function dragEnter(ev) { document.getElementById('loop-dropzone').classList.add('dragover'); }
-    function dragLeave(ev) { document.getElementById('loop-dropzone').classList.remove('dragover'); }
+    function dragEnter(ev) { ev.currentTarget.parentElement.classList.add('dragover'); }
+    function dragLeave(ev) { ev.currentTarget.parentElement.classList.remove('dragover'); }
     
-    function drop(ev) {
+    function drop(ev, stage) {
         ev.preventDefault();
-        document.getElementById('loop-dropzone').classList.remove('dragover');
-        if(draggedTokenData) {
-            // 找出原本在 dock 的對應 dom 並移除
-            const tokens = document.querySelectorAll('.drag-token');
-            tokens.forEach(t => {
-                if(t.innerText.includes(draggedTokenData.name)) t.remove();
-            });
-            processDrop();
-        }
-    }
-
-    function processDrop() {
-        // 將資料寫入 List
-        if(draggedTokenData.type === 'st') stList.push(draggedTokenData);
-        else ltList.push(draggedTokenData);
+        ev.currentTarget.parentElement.classList.remove('dragover');
         
-        // 視覺回饋
-        const rewardNode = document.getElementById('reward-node');
-        const originalText = rewardNode.innerText;
-        rewardNode.innerText = `✔️ 已寫入大腦：${draggedTokenData.name}`;
-        rewardNode.style.background = "#D4EFDF";
-        setTimeout(() => {
-            rewardNode.innerText = "4. 實際獲得爽度與長期代價 (可繼續拖曳方塊)";
-            rewardNode.style.background = "white";
-        }, 1500);
-
-        draggedTokenData = null;
-        renderLists();
-
-        if(stList.length > 0 && ltList.length > 0) {
-            document.getElementById('btn-see-scale').style.display = 'block';
+        if (draggedTokenId) {
+            const tokenEl = document.getElementById(draggedTokenId);
+            ev.currentTarget.appendChild(tokenEl);
+            
+            // 更新資料內的 stage
+            const tokenData = cpTokens.find(t => t.id === draggedTokenId);
+            if(tokenData) tokenData.stage = stage;
+            
+            draggedTokenId = null;
         }
     }
 
-    // ==========================================
-    // 天平引擎與核心邏輯
-    // ==========================================
-    function renderLists() {
-        const createHTML = (items) => items.map(item => `
-            <li>
-                <span>${item.name}</span>
-                <span class="${item.score >= 0 ? 'score-pos' : 'score-neg'}">${item.score >= 0 ? '+' : ''}${item.score}</span>
-            </li>
-        `).join('');
+    // 計算分數
+    function updateScores() {
+        let stTotal = cpTokens.filter(t => t.timeType === 'st').reduce((acc, curr) => acc + curr.score, 0);
+        let ltTotal = cpTokens.filter(t => t.timeType === 'lt').reduce((acc, curr) => acc + curr.score, 0);
 
-        document.getElementById('st-list').innerHTML = createHTML(stList);
-        document.getElementById('lt-list').innerHTML = createHTML(ltList);
-    }
-
-    function updateScale() {
-        const stSum = stList.reduce((acc, curr) => acc + curr.score, 0);
-        const ltSum = ltList.reduce((acc, curr) => acc + curr.score, 0);
-
-        document.getElementById('st-total').innerText = stSum;
-        document.getElementById('lt-total').innerText = ltSum;
-
-        let leftForce = stSum; 
-        let rightForce = ltSum < 0 ? Math.abs(ltSum) : 0; 
-
-        if (isBiased) rightForce = rightForce * 0.1;
-
-        let diff = rightForce - leftForce; 
-        let angle = diff * 0.3; 
-        if (angle > 30) angle = 30;
-        if (angle < -30) angle = -30;
-
-        const beam = document.getElementById('beam');
-        const panLeft = document.getElementById('panLeft');
-        const panRight = document.getElementById('panRight');
-
-        beam.style.transform = `rotate(${angle}deg)`;
-        panLeft.style.transform = `translateX(-50%) rotate(${-angle}deg)`;
-        panRight.style.transform = `translateX(50%) rotate(${-angle}deg)`;
-    }
-
-    function removeBias() {
-        const biasMark = document.getElementById('bias-mark');
-        biasMark.classList.add('struck');
-        isBiased = false;
+        document.getElementById('score-st-total').innerText = stTotal;
+        document.getElementById('score-lt-total').innerText = ltTotal;
         
-        setTimeout(() => {
-            biasMark.style.opacity = '0';
-            updateScale();
-            setTimeout(() => goToStep(4), 1500); // 延遲自動進入 Step 4
-        }, 800);
+        return { stTotal, ltTotal };
     }
 
-    function addFriction() {
-        const nameInput = document.getElementById('friction-name');
-        const scoreInput = document.getElementById('friction-score');
-        const name = nameInput.value.trim();
-        const score = parseInt(scoreInput.value);
-
-        if (!name || isNaN(score)) return alert('請輸入阻力名稱與分數！');
-        if (score > 0) return alert('阻力必須是負數！');
-
-        stList.push({ name: `🔥 阻力：${name}`, score });
-        renderLists();
-        updateScale();
+    // ==========================================
+    // 核心校正邏輯 (The CP Validation Force Rule)
+    // ==========================================
+    function validateAndShowTree() {
+        const alertBox = document.getElementById('alert-box');
+        const { stTotal, ltTotal } = updateScores();
         
-        nameInput.value = '';
-        scoreInput.value = '';
-
-        // 檢查是否成功破壞迴路
-        const stSum = stList.reduce((acc, curr) => acc + curr.score, 0);
-        if (stSum <= 0) {
-            setTimeout(() => {
-                document.getElementById('scale-section').classList.remove('active');
-                goToStep(5);
-            }, 1500);
+        // 檢查是否所有 token 都已經放入四個階段中
+        const unassigned = cpTokens.filter(t => !t.stage);
+        if(unassigned.length > 0) {
+            alertBox.innerHTML = `⚠️ 請將上方的 CP 物件拖曳到下方「提示、渴望、回應、獎賞」的對應階段中！這不會影響總分，但能幫你釐清在哪個階段下手。`;
+            alertBox.style.display = 'block';
+            return;
         }
+
+        // 規則 1：如果是壞習慣，強迫短期 CP 值必須 < 0
+        if(treeData.habitType === 'bad' && stTotal >= 0) {
+            alertBox.innerHTML = `🚨【系統校正攔截】這是一個「壞習慣」！<br>
+            你的短期 CP 值目前是 ${stTotal} (>=0)。<br>
+            只要短期 CP 是正的，大腦的多巴胺迴路就不會放棄！<br>
+            👉 <b>請繼續建立負面的短期 CP (摩擦力/懲罰)，並拖曳進去，直到短期 CP 變成負數！</b>`;
+            alertBox.style.display = 'block';
+            return;
+        }
+
+        // 規則 2：如果是好習慣，強迫短期 CP 值必須 > 0
+        if(treeData.habitType === 'good' && stTotal <= 0) {
+            alertBox.innerHTML = `🚨【系統校正攔截】這是一個「好習慣」！<br>
+            你的短期 CP 值目前是 ${stTotal} (<=0)。<br>
+            大腦是短視的，如果短期太痛苦且沒獎勵，大腦絕對無法堅持！<br>
+            👉 <b>請繼續建立正面的短期 CP (立即獎勵/降低難度)，並拖曳進去，直到短期 CP 變成正數！</b>`;
+            alertBox.style.display = 'block';
+            return;
+        }
+
+        alertBox.style.display = 'none';
+
+        // 通過檢核，將這個新習慣寫入大腦清單中 (模擬 Map)
+        // 最終的大腦決策分 = 短期 CP + (長期 CP * 0.1 偏誤折價)
+        let finalBrainScore = stTotal + (ltTotal * 0.1);
+        treeData.actionsMap[treeData.actionName] = { 
+            cp: finalBrainScore.toFixed(2), 
+            st: stTotal, 
+            lt: ltTotal 
+        };
+
+        renderTree();
+        switchStep(3);
     }
 
-    // ==========================================
-    // 遞迴：評估新習慣
-    // ==========================================
-    function evaluateNewHabit() {
-        const newHabit = document.getElementById('new-habit-input').value.trim();
-        const newSt = parseInt(document.getElementById('new-st-score').value);
-        const newLt = parseInt(document.getElementById('new-lt-score').value);
+    // 渲染 Python 樹狀結構
+    function renderTree() {
+        const treeDiv = document.getElementById('tree-display');
+        
+        // 將 Map 排序 (Sort by cp_value)
+        const sortedActions = Object.entries(treeData.actionsMap)
+            .sort((a, b) => b[1].cp - a[1].cp); // 降冪排序
 
-        if(!newHabit || isNaN(newSt) || isNaN(newLt)) return alert("請完整填寫新習慣的設定！");
+        let output = `└── human (root)\n`;
+        output += `    └── base_demand: ${treeData.demand}\n`;
+        output += `        └── data_name: "action for the base demand"\n`;
+        output += `        └── data (Sorted by Brain CP Value):\n`;
+        
+        sortedActions.forEach(([name, data], index) => {
+            const isTarget = name === treeData.actionName;
+            const prefix = isTarget ? '✨ ' : '   ';
+            output += `            ${prefix}${index + 1}. [${name}]\n`;
+            if (isTarget) {
+                output += `                  ├─ 短期 CP: ${data.st}\n`;
+                output += `                  ├─ 長期 CP: ${data.lt}\n`;
+                output += `                  └─ 大腦最終評估總 CP: ${data.cp}\n`;
+            } else {
+                output += `                  └─ 大腦最終評估總 CP: ${data.cp}\n`;
+            }
+        });
 
-        // 原子習慣法則：好習慣的短期分數不能是負的，不然迴路無法啟動
-        if(newSt < 0) {
-            return alert("注意！大腦是短視的，如果新習慣的短期分數是負的 (太痛苦)，迴路絕對無法啟動。請想辦法在短期加上獎勵！");
-        }
-        if(newLt <= 0) {
-            return alert("我們是要建立好習慣，長期分數必須是正的喔！");
-        }
+        treeDiv.innerText = output;
+    }
 
-        // 進入最終成功頁面
-        document.getElementById('final-new-habit').innerText = newHabit;
-        document.getElementById('final-new-habit-2').innerText = newHabit;
-        goToStep(6);
+    function switchStep(stepNum) {
+        document.querySelectorAll('.step').forEach(el => el.classList.remove('active'));
+        document.getElementById(`step-${stepNum}`).classList.add('active');
     }
 
 </script>
