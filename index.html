@@ -1,0 +1,1498 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>原子習慣：大腦行為樹系統</title>
+    <style>
+        /* ================= 基礎顏色與全域設定 ================= */
+        :root {
+            --bg-color: #F4F7F6;
+            --text-main: #2C3E50;
+            --cue: #95A5A6;
+            --craving: #F39C12;
+            --response: #8E44AD;
+            --reward: #E74C3C;
+            --good: #2ECC71;
+            --bad: #E74C3C;
+            --st-color: #3498DB;
+            --lt-color: #34495E;
+            --line-color: #BDC3C7;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 0;
+            /* 畫布模式下移除 padding */
+            overflow-x: hidden;
+        }
+
+        /* 限制一般表單畫面的最大寬度 */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        h1,
+        h2,
+        h3 {
+            text-align: center;
+        }
+
+        /* ================= HTML 提示系統 (Toast) ================= */
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            pointer-events: none;
+        }
+
+        .toast {
+            background: white;
+            padding: 15px 30px;
+            border-radius: 8px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15);
+            font-size: 1.1rem;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            animation: slideDown 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+            border: 2px solid;
+            pointer-events: auto;
+        }
+
+        .toast .toast-close {
+            margin-left: 15px;
+            cursor: pointer;
+            font-size: 1.2rem;
+            opacity: 0.6;
+            transition: opacity 0.2s;
+        }
+
+        .toast .toast-close:hover {
+            opacity: 1;
+        }
+
+        .toast.error {
+            border-color: var(--bad);
+            color: var(--bad);
+        }
+
+        .toast.success {
+            border-color: var(--good);
+            color: var(--good);
+        }
+
+        .toast.warning {
+            border-color: var(--craving);
+            color: var(--craving);
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px) scale(0.9);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        /* ================= 按鈕與輸入框 ================= */
+        button {
+            padding: 12px 24px;
+            font-size: 1rem;
+            color: white;
+            background: var(--text-main);
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            font-weight: bold;
+        }
+
+        button:hover {
+            opacity: 0.8;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        button.primary {
+            background: var(--st-color);
+        }
+
+        button.success {
+            background: var(--good);
+        }
+
+        input,
+        select {
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            box-sizing: border-box;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: 0.2s;
+        }
+
+        input:focus {
+            border-color: var(--st-color);
+            outline: none;
+        }
+
+        /* ================= 視圖切換 ================= */
+        .view {
+            display: none;
+            animation: fadeIn 0.4s ease;
+        }
+
+        .view.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        /* ================= View 0: 歡迎畫面 ================= */
+        .welcome-box {
+            background: white;
+            max-width: 600px;
+            margin: 80px auto;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+            text-align: center;
+            border-top: 6px solid var(--st-color);
+        }
+
+        /* ================= View 1: 無邊界畫布樹狀圖 (Infinite Canvas) ================= */
+        .tree-canvas-container {
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            /* 隱藏原生拉條 */
+            background: radial-gradient(circle, #EAECEE 2px, transparent 2px);
+            /* 網格背景 */
+            background-size: 30px 30px;
+            background-color: var(--bg-color);
+            position: fixed;
+            top: 0;
+            left: 0;
+            cursor: grab;
+            z-index: 1;
+        }
+
+        .tree-canvas-container:active {
+            cursor: grabbing;
+        }
+
+        .tree-zoom-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            transform-origin: 0 0;
+            /* 確保是以左上角為基準點計算縮放，並由 JS 控制平移 */
+            will-change: transform;
+            padding: 100px;
+            /* 給予內部一點初始緩衝空間 */
+        }
+
+        /* 浮動的標題 UI (蓋在畫布上方) */
+        .canvas-ui-layer {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        .canvas-ui-layer>* {
+            pointer-events: auto;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 15px 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+        }
+
+        /* 樹狀圖核心佈局 */
+        ul.tree {
+            list-style: none;
+            padding-left: 0;
+            display: flex;
+            margin: 0;
+            align-items: center;
+            justify-content: flex-start;
+        }
+
+        ul.tree ul {
+            list-style: none;
+            padding-left: 120px;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        ul.tree li {
+            display: flex;
+            align-items: center;
+            position: relative;
+            padding: 20px 0;
+        }
+
+        .node-box {
+            background: white;
+            border: 2px solid #ddd;
+            border-radius: 12px;
+            padding: 15px 20px;
+            min-width: 180px;
+            text-align: center;
+            position: relative;
+            z-index: 2;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .node-box.root-node {
+            border-color: var(--text-main);
+            background: var(--text-main);
+            color: white;
+            cursor: default;
+        }
+
+        .node-box.demand-node {
+            border-left: 8px solid var(--st-color);
+        }
+
+        .node-box.action-node {
+            border-color: #eee;
+            background: #F8F9FA;
+        }
+
+        .node-box.action-node:hover {
+            border-color: var(--st-color);
+            transform: scale(1.05);
+            background: #EDF2F8;
+            box-shadow: 0 6px 15px rgba(52, 152, 219, 0.2);
+        }
+
+        .node-box.action-node.lt-negative {
+            border: 2px dashed var(--bad);
+        }
+
+        .node-box.action-node.lt-positive {
+            border: 2px dashed var(--good);
+        }
+
+        .node-box.add-node {
+            border: 2px dashed var(--good);
+            color: var(--good);
+            background: #E8F8F5;
+            font-weight: bold;
+        }
+
+        .node-box.add-node:hover {
+            background: var(--good);
+            color: white;
+        }
+
+        .cp-crown {
+            font-size: 1.5rem;
+            position: absolute;
+            top: -15px;
+            left: -10px;
+            transform: rotate(-20deg);
+        }
+
+        .action-cp-text {
+            font-size: 0.85rem;
+            font-weight: bold;
+            margin-top: 8px;
+            color: #7f8c8d;
+        }
+
+        /* Hover "x" delete button on top-right of nodes */
+        .node-delete-x {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: var(--bad);
+            color: white;
+            font-size: 14px;
+            line-height: 22px;
+            text-align: center;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.2s;
+            z-index: 5;
+            font-weight: bold;
+        }
+
+        .node-box:hover>.node-delete-x {
+            opacity: 1;
+        }
+
+        .node-delete-x:hover {
+            transform: scale(1.2);
+        }
+
+        /* 連接線 */
+        .node-box.has-children::after {
+            content: '';
+            position: absolute;
+            right: -120px;
+            top: 50%;
+            width: 120px;
+            height: 2px;
+            background: var(--line-color);
+            z-index: 1;
+        }
+
+        .rel-text {
+            position: absolute;
+            right: -105px;
+            top: -20px;
+            font-size: 0.8rem;
+            color: var(--text-main);
+            font-weight: bold;
+            width: 90px;
+            text-align: center;
+            background: rgba(255, 255, 255, 0.9);
+            z-index: 3;
+            padding: 4px 0;
+            border-radius: 4px;
+        }
+
+        .rel-text.action-rel {
+            color: var(--craving);
+        }
+
+        .best-action-label {
+            position: absolute;
+            right: calc(100% + 5px);
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 0.8rem;
+            color: var(--craving);
+            font-weight: bold;
+            white-space: nowrap;
+            background: rgba(255, 255, 255, 0.9);
+            z-index: 3;
+            padding: 4px 6px;
+            border-radius: 4px;
+        }
+
+        ul.tree ul li::before {
+            content: '';
+            position: absolute;
+            left: -120px;
+            top: 50%;
+            width: 120px;
+            height: 2px;
+            background: var(--line-color);
+            z-index: 1;
+        }
+
+        ul.tree ul li::after {
+            content: '';
+            position: absolute;
+            left: -120px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: var(--line-color);
+            z-index: 1;
+        }
+
+        ul.tree ul li:first-child::after {
+            top: 50%;
+        }
+
+        ul.tree ul li:last-child::after {
+            bottom: 50%;
+        }
+
+        ul.tree ul li:first-child:last-child::after {
+            display: none;
+        }
+
+        /* ================= View 2: 四階段編輯器 ================= */
+        .editor-header {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+            margin-bottom: 25px;
+        }
+
+        .pipeline-container {
+            display: flex;
+            gap: 20px;
+            overflow-x: auto;
+            padding-bottom: 15px;
+        }
+
+        .stage-box {
+            flex: 1;
+            min-width: 240px;
+            border-radius: 12px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            min-height: 280px;
+            background: white;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            border-top: 6px solid;
+            transition: all 0.2s ease;
+        }
+
+        .stage-box.dragover {
+            background: #F4F6F6;
+            transform: scale(1.02);
+        }
+
+        #stage-cue {
+            border-color: var(--cue);
+        }
+
+        #stage-craving {
+            border-color: var(--craving);
+        }
+
+        #stage-response {
+            border-color: var(--response);
+        }
+
+        #stage-reward {
+            border-color: var(--reward);
+        }
+
+        /* Drop zone 內部置中設定 */
+        .drop-zone {
+            flex: 1;
+            border: 2px dashed #ccc;
+            border-radius: 8px;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            min-height: 120px;
+            margin-top: 15px;
+        }
+
+        #token-dock {
+            flex-direction: row;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            border-color: var(--st-color);
+        }
+
+        .dock-hint {
+            width: 100%;
+            text-align: center;
+            color: #999;
+            font-size: 0.95rem;
+            user-select: none;
+        }
+
+        .token-creator {
+            background: #EDF2F8;
+            padding: 25px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .cp-token {
+            padding: 10px 15px;
+            border-radius: 20px;
+            color: white;
+            cursor: grab;
+            font-size: 0.95rem;
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.2);
+            user-select: none;
+            z-index: 10;
+        }
+
+        .cp-token:active {
+            cursor: grabbing;
+            transform: scale(1.05);
+        }
+
+        .st-token {
+            background: var(--st-color);
+        }
+
+        .lt-token {
+            background: var(--lt-color);
+        }
+
+        .token-del {
+            margin-left: 15px;
+            cursor: pointer;
+            color: #fff;
+            opacity: 0.7;
+        }
+
+        .token-del:hover {
+            opacity: 1;
+        }
+
+        .score-board {
+            display: flex;
+            justify-content: space-around;
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin: 25px 0;
+            font-size: 1.3rem;
+            font-weight: bold;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        /* 系統強制防護的 HTML 文字框 */
+        .alert-box {
+            background: #FDEDEC;
+            border: 2px solid var(--bad);
+            border-left-width: 8px;
+            padding: 20px;
+            margin: 25px 0;
+            color: #C0392B;
+            display: none;
+            font-weight: bold;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            line-height: 1.6;
+        }
+
+        .alert-box.success-box {
+            background: #EAFAF1;
+            border-color: var(--good);
+            color: #1E8449;
+        }
+
+        /* ================= Google Auth UI ================= */
+        .auth-bar {
+            position: fixed;
+            top: 15px;
+            right: 20px;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .auth-bar .user-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: white;
+            padding: 8px 16px;
+            border-radius: 25px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            font-size: 0.9rem;
+            font-weight: bold;
+            color: var(--text-main);
+        }
+
+        .auth-bar .user-avatar {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .btn-google {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 22px;
+            background: white;
+            color: #444;
+            border: 2px solid #ddd;
+            border-radius: 25px;
+            font-size: 0.95rem;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            transition: all 0.2s ease;
+        }
+
+        .btn-google:hover {
+            background: #f8f8f8;
+            border-color: #4285F4;
+            box-shadow: 0 4px 15px rgba(66, 133, 244, 0.2);
+        }
+
+        .btn-drive {
+            padding: 8px 18px;
+            background: #0F9D58;
+            color: white;
+            border: none;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-drive:hover {
+            background: #0B8043;
+            transform: scale(1.03);
+        }
+
+        .btn-logout {
+            padding: 6px 14px;
+            background: transparent;
+            color: #999;
+            border: 1px solid #ddd;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-logout:hover {
+            color: var(--bad);
+            border-color: var(--bad);
+        }
+
+        .sync-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #ccc;
+            margin-left: 5px;
+            vertical-align: middle;
+        }
+
+        .sync-indicator.synced {
+            background: var(--good);
+        }
+
+        .sync-indicator.syncing {
+            background: var(--craving);
+            animation: pulse 1s infinite;
+        }
+
+        .sync-indicator.error {
+            background: var(--bad);
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.3;
+            }
+        }
+
+        .welcome-auth {
+            text-align: center;
+            margin-bottom: 25px;
+            padding: 20px;
+            background: #f0f4f8;
+            border-radius: 12px;
+        }
+
+        .welcome-auth p {
+            margin: 8px 0;
+            color: #7f8c8d;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- HTML Toast 提示容器 -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- ================= View 0: 初始畫面 ================= -->
+    <div id="view-welcome" class="view">
+        <div class="container">
+            <div class="welcome-box">
+                <h1 style="color: var(--st-color);">🧠 大腦重塑系統</h1>
+
+                <!-- Google 登入區 -->
+                <div class="welcome-auth" id="welcome-auth-section">
+                    <div id="welcome-logged-out">
+                        <p>☁️ 登入 Google 帳戶以同步資料到 Google Drive</p>
+                        <button class="btn-google" onclick="loginGoogle()">
+                            <svg width="18" height="18" viewBox="0 0 48 48">
+                                <path fill="#4285F4"
+                                    d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z" />
+                                <path fill="#34A853"
+                                    d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z" />
+                                <path fill="#FBBC05"
+                                    d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z" />
+                                <path fill="#EA4335"
+                                    d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z" />
+                            </svg>
+                            使用 Google 登入
+                        </button>
+                    </div>
+                    <div id="welcome-logged-in" style="display: none;">
+                        <p>✅ 已登入為 <strong id="welcome-user-name"></strong></p>
+                        <button class="btn-drive" id="btn-welcome-picker" onclick="openDrivePicker()"
+                            style="display: none;">📂 選擇同步檔案</button>
+                        <span id="welcome-file-status"></span>
+                    </div>
+                </div>
+
+                <p style="font-size: 1.1rem; line-height: 1.6;">
+                    系統已預載了一些真實的人類底層需求（如：紓解壓力、社交連結）。<br>
+                    在開啟無邊界畫布之前，請先輸入 <strong>你想分析的第一個習慣</strong>！
+                </p>
+                <div style="text-align: left; margin-top: 30px;">
+                    <label style="font-weight: bold;">1. 你真正的「底層需求 (Base Demand)」是什麼？</label>
+                    <input type="text" id="init-demand" placeholder="例如：無聊想找刺激、肚子餓、獲得認同...">
+
+                    <label style="margin-top: 20px; display: block; font-weight: bold;">2. 為了滿足這個需求，你通常的「習慣行動
+                        (Action)」是？</label>
+                    <input type="text" id="init-action" placeholder="例如：滑TikTok、喝手搖飲、咬指甲...">
+                </div>
+                <button class="primary" onclick="initFirstAction()"
+                    style="margin-top: 35px; width: 100%; font-size: 1.2rem; padding: 15px;">
+                    🚀 初始化資料並開始設定
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= View 1: 無邊界畫布樹狀圖 ================= -->
+    <div id="view-tree" class="view">
+        <!-- 右上角 Auth Bar -->
+        <div class="auth-bar" id="tree-auth-bar">
+            <div id="tree-logged-out">
+                <button class="btn-google" onclick="loginGoogle()" style="font-size: 0.85rem; padding: 8px 16px;">
+                    🔐 登入
+                </button>
+            </div>
+            <div id="tree-logged-in" style="display: none;">
+                <div class="user-info">
+                    <img class="user-avatar" id="tree-user-avatar" src="" alt="">
+                    <span id="tree-user-name"></span>
+                    <span class="sync-indicator" id="sync-dot" title="同步狀態"></span>
+                </div>
+                <button class="btn-drive" id="btn-tree-picker" onclick="openDrivePicker()" style="display: none;">📂
+                    選擇檔案</button>
+                <button class="btn-logout" onclick="logoutGoogle()">登出</button>
+            </div>
+        </div>
+
+        <div class="canvas-ui-layer">
+            <div>
+                <h2 style="margin: 0; color: var(--text-main);">🧠 大腦行為決策樹</h2>
+                <p style="margin: 5px 0 0 0; color: var(--craving); font-size: 0.95rem; font-weight: bold;">
+                    按住滑鼠拖曳平移畫布，使用滾輪縮放。<br>
+                    👑 標記代表大腦預設執行的最高性價比行動！
+                </p>
+            </div>
+        </div>
+
+        <!-- 無邊界畫布容器 -->
+        <div class="tree-canvas-container" id="tree-canvas">
+            <div class="tree-zoom-layer" id="tree-zoom-layer">
+                <div id="tree-render-area">
+                    <!-- Javascript 動態渲染 Real Tree -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= View 2: 四階段編輯器 ================= -->
+    <div id="view-editor" class="view">
+        <div class="container">
+            <div class="editor-header">
+                <button id="btn-back-tree" onclick="goToTree()" style="background: var(--cue); margin-bottom: 20px;">⬅️
+                    返回畫布</button>
+                <h2 id="editor-title">初始化 / 編輯習慣</h2>
+                <div style="display: flex; gap: 20px;">
+                    <div style="flex: 1;">
+                        <label style="font-weight: bold;">行動名稱 (Action):</label>
+                        <input type="text" id="action-name" placeholder="例如：抽菸、跑步、喝水...">
+                    </div>
+                </div>
+                <p style="color: #7f8c8d; font-size: 1rem; margin-top: 15px; line-height: 1.6;">
+                    💡 習慣養成取決於 4 個階段：<strong>提示 ➔ 渴望 ➔ 回應 ➔ 獎賞</strong>。<br>
+                    💡 請將 CP 值物件拖曳到對應階段 (這不影響總分，但能幫助釐清問題)。<br>
+                    💡 <strong style="color: var(--bad);">【系統防護機制】第二次檢視時，系統將強制要求：好習慣短期 CP > 0，壞習慣短期 CP < 0！</strong>
+                </p>
+            </div>
+
+            <div class="token-creator">
+                <input type="text" id="cp-name" placeholder="CP 變數名稱 (例：看到甜點、多巴胺分泌)" style="flex: 2; min-width: 250px;">
+                <input type="number" id="cp-score" placeholder="分數 (+/-)" style="flex: 1; min-width: 120px;">
+                <select id="cp-time" style="flex: 1; min-width: 180px;">
+                    <option value="st">短期 CP (Short-term)</option>
+                    <option value="lt">長期 CP (Long-term)</option>
+                </select>
+                <button class="primary" onclick="createCPToken()">➕ 建立 CP 物件</button>
+            </div>
+
+            <div id="token-dock" class="drop-zone" ondragover="allowDrop(event)" ondrop="drop(event, 'dock')"
+                ondragenter="dragEnter(event)" ondragleave="dragLeave(event)">
+                <span class="dock-hint" id="dock-hint-text">(剛建立、未分類的 CP 物件會放在這裡，請用滑鼠拖曳到下方四階段中)</span>
+            </div>
+
+            <div class="pipeline-container">
+                <div class="stage-box" id="stage-cue">
+                    <div style="color: var(--cue); font-weight: bold; text-align: center; font-size: 1.2rem;">1. 提示
+                        (Cue)</div>
+                    <div class="drop-zone" id="zone-cue" ondragover="allowDrop(event)" ondrop="drop(event, 'cue')"
+                        ondragenter="dragEnter(event)" ondragleave="dragLeave(event)"></div>
+                </div>
+                <div class="stage-box" id="stage-craving">
+                    <div style="color: var(--craving); font-weight: bold; text-align: center; font-size: 1.2rem;">2. 渴望
+                        (Craving)</div>
+                    <div class="drop-zone" id="zone-craving" ondragover="allowDrop(event)"
+                        ondrop="drop(event, 'craving')" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)">
+                    </div>
+                </div>
+                <div class="stage-box" id="stage-response">
+                    <div style="color: var(--response); font-weight: bold; text-align: center; font-size: 1.2rem;">3. 回應
+                        (Response)</div>
+                    <div class="drop-zone" id="zone-response" ondragover="allowDrop(event)"
+                        ondrop="drop(event, 'response')" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)">
+                    </div>
+                </div>
+                <div class="stage-box" id="stage-reward">
+                    <div style="color: var(--reward); font-weight: bold; text-align: center; font-size: 1.2rem;">4. 獎賞
+                        (Reward)</div>
+                    <div class="drop-zone" id="zone-reward" ondragover="allowDrop(event)" ondrop="drop(event, 'reward')"
+                        ondragenter="dragEnter(event)" ondragleave="dragLeave(event)"></div>
+                </div>
+            </div>
+
+            <div class="score-board">
+                <div style="color: var(--st-color);">短期總 CP：<span id="score-st">0</span></div>
+                <div style="color: var(--lt-color);">長期總 CP：<span id="score-lt">0</span></div>
+                <div>大腦最終評估：<span id="score-final">0</span></div>
+            </div>
+
+            <div id="alert-box" class="alert-box"></div>
+            <button class="success" onclick="saveAction()"
+                style="width: 100%; font-size: 1.3rem; padding: 20px; margin-top: 10px;">💾 儲存並寫入大腦決策網路</button>
+        </div>
+    </div>
+
+    <script>
+        // =========================================================================
+        // HTML 提示系統 (取代 alert)
+        // =========================================================================
+        function showToast(message, type = 'warning') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            let icon = type === 'error' ? '🚨 ' : type === 'success' ? '✅ ' : '💡 ';
+            toast.className = `toast ${type}`;
+            toast.innerHTML = icon + message + `<span class="toast-close" onclick="this.parentElement.remove()">✕</span>`;
+            container.appendChild(toast);
+        }
+
+        // =========================================================================
+        // 無邊界畫布：滑鼠縮放與平移邏輯
+        // =========================================================================
+        const canvas = document.getElementById('tree-canvas');
+        const zoomLayer = document.getElementById('tree-zoom-layer');
+        let scale = 1;
+        let panX = 0, panY = 0;
+        let isDragging = false;
+        let startX, startY;
+
+        // 滑鼠滾輪：對準游標縮放
+        canvas.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            const zoomSensitivity = 0.0015;
+            const delta = -e.deltaY * zoomSensitivity;
+            let newScale = scale * (1 + delta);
+            newScale = Math.max(0.3, Math.min(newScale, 2.5)); // 限制縮放比例
+
+            // 取得畫布邊界，計算滑鼠相對位置
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+
+            // 數學計算：確保縮放的中心點是滑鼠游標的位置
+            panX = mouseX - (mouseX - panX) * (newScale / scale);
+            panY = mouseY - (mouseY - panY) * (newScale / scale);
+            scale = newScale;
+
+            updateCanvasTransform();
+        });
+
+        // 滑鼠拖曳：平移
+        canvas.addEventListener('mousedown', (e) => {
+            // 如果點擊的是節點本身，則不觸發平移 (讓 click 事件生效)
+            if (e.target.closest('.node-box')) return;
+            isDragging = true;
+            startX = e.clientX - panX;
+            startY = e.clientY - panY;
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+            panX = e.clientX - startX;
+            panY = e.clientY - startY;
+            updateCanvasTransform();
+        });
+
+        window.addEventListener('mouseup', () => { isDragging = false; });
+
+        function updateCanvasTransform() {
+            zoomLayer.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`;
+        }
+
+        // 將視角重置置中
+        function resetCanvasView() {
+            scale = 1; panX = 50; panY = 100; // 預留一點上左邊距
+            updateCanvasTransform();
+        }
+
+        // =========================================================================
+        // 系統狀態與資料初始化
+        // =========================================================================
+        let humanTree = { name: "human", children: [] };
+        let currentDemandId = null, currentActionId = null, currentTokens = [], draggedTokenId = null;
+        let hasInitialized = false;
+
+        function generateId() { return Math.random().toString(36).substr(2, 9); }
+
+        // 建立真實且有意義的預設資料，取代原本的 1-10
+        function buildDefaultPythonTree() {
+            const defaultData = [
+                {
+                    demand: "紓解工作壓力",
+                    actions: [
+                        { name: "抽菸", st: 15, lt: -80 },
+                        { name: "吃高熱量宵夜", st: 10, lt: -40 },
+                        { name: "深呼吸與冥想", st: 2, lt: 30 }
+                    ]
+                },
+                {
+                    demand: "獲得社交連結與認同",
+                    actions: [
+                        { name: "狂刷短影音與IG", st: 8, lt: -15 },
+                        { name: "參加實體社群聚會", st: 5, lt: 40 }
+                    ]
+                }
+            ];
+
+            defaultData.forEach((d, i) => {
+                let demandNode = { id: 'demand_def_' + i, name: d.demand, actions: [] };
+                d.actions.forEach((a, j) => {
+                    let finalCp = a.st + (a.lt * 0.1);
+                    demandNode.actions.push({
+                        id: `action_def_${i}_${j}`, name: a.name, cp: finalCp, st: a.st, lt: a.lt, isNew: false, tokens: []
+                    });
+                });
+                humanTree.children.push(demandNode);
+            });
+        }
+
+        function switchView(viewId) {
+            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+            document.getElementById(viewId).classList.add('active');
+
+            // 切換 Body 的 Overflow 防止畫面錯位
+            if (viewId === 'view-tree') { document.body.style.overflow = 'hidden'; }
+            else { document.body.style.overflow = 'auto'; }
+        }
+
+        function initApp() {
+            if (!hasInitialized) switchView('view-welcome');
+            else { renderTree(); switchView('view-tree'); resetCanvasView(); }
+        }
+
+        function initFirstAction() {
+            let demandInput = document.getElementById('init-demand').value.trim();
+            let actionInput = document.getElementById('init-action').value.trim();
+
+            if (!demandInput || !actionInput) return showToast("請完整填寫需求與行動！", "error");
+
+            buildDefaultPythonTree();
+
+            let newDemandId = generateId(), newActionId = generateId();
+            humanTree.children.unshift({
+                id: newDemandId, name: demandInput, actions: [{ id: newActionId, name: actionInput, cp: 0, st: 0, lt: 0, isNew: true, tokens: [] }]
+            });
+
+            hasInitialized = true;
+            document.getElementById('btn-back-tree').style.display = 'none';
+            openEditor(newDemandId, newActionId);
+        }
+
+        function addBaseDemand() {
+            let name = prompt("請輸入新的底層需求 (例如：逃避現實、尋求刺激)：");
+            if (name && name.trim()) {
+                humanTree.children.push({ id: generateId(), name: name, actions: [] });
+                renderTree();
+                syncToDrive('addBaseDemand');
+            }
+        }
+
+        // =========================================================================
+        // View 1: 實體樹狀圖渲染邏輯 (無邊界畫布)
+        // =========================================================================
+        function deleteNode(demandId, actionId, event) {
+            event.stopPropagation();
+            let demand = humanTree.children.find(d => d.id === demandId);
+            if (actionId) {
+                // Deleting an action node (no children)
+                let action = demand.actions.find(a => a.id === actionId);
+                if (confirm(`確定要刪除行動「${action.name}」嗎？`)) {
+                    demand.actions = demand.actions.filter(a => a.id !== actionId);
+                    renderTree();
+                    showToast("行動已刪除", "success");
+                    syncToDrive('deleteNode');
+                }
+            } else {
+                // Deleting a demand node and all its children
+                let childCount = demand.actions.length;
+                let msg = `確定要刪除需求「${demand.name}」`;
+                if (childCount > 0) msg += `及其下 ${childCount} 個行動方案`;
+                msg += '嗎？';
+                if (confirm(msg)) {
+                    humanTree.children = humanTree.children.filter(d => d.id !== demandId);
+                    renderTree();
+                    showToast("底層需求已刪除", "success");
+                    syncToDrive('deleteNode');
+                }
+            }
+        }
+
+        function renderTree() {
+            let renderArea = document.getElementById('tree-render-area');
+            if (humanTree.children.length === 0) return renderArea.innerHTML = "<h2 style='color:#999;'>畫布上目前空無一物...</h2>";
+
+            let html = `<ul class="tree"><li>
+            <div class="node-box root-node has-children"><strong>Human (大腦)</strong><br><small>預設尋求高性價比</small></div><ul>`;
+
+            humanTree.children.forEach(demand => {
+                demand.actions.sort((a, b) => b.cp - a.cp); // 降冪排序
+                let hasActions = demand.actions.length > 0;
+                html += `<li><div class="node-box demand-node ${hasActions ? "has-children" : ""}">
+                        <span class="node-delete-x" onclick="deleteNode('${demand.id}', null, event)">✕</span>
+                        <strong>Demand: <br>${demand.name}</strong>
+                     </div><ul>`;
+
+                demand.actions.forEach((act, j) => {
+                    let cpColor = act.cp >= 0 ? 'var(--good)' : 'var(--bad)';
+                    let ltClass = act.lt < 0 ? 'lt-negative' : (act.lt > 0 ? 'lt-positive' : '');
+                    html += `<li><div class="node-box action-node ${ltClass}" onclick="openEditor('${demand.id}', '${act.id}')">
+                                <span class="node-delete-x" onclick="deleteNode('${demand.id}', '${act.id}', event)">✕</span>
+                                ${j === 0 ? '<div class="cp-crown">👑</div><div class="best-action-label">尋找最佳解 ➔</div>' : ''}
+                                <strong>${act.name}</strong><div class="action-cp-text" style="color: ${cpColor};">最終 CP: ${act.cp.toFixed(2)}</div>
+                            </div></li>`;
+                });
+                html += `<li><div class="node-box add-node" onclick="openEditor('${demand.id}', null)">➕ 新增行動方案</div></li></ul></li>`;
+            });
+            html += `<li><div class="node-box add-node" onclick="addBaseDemand()">➕ 新增底層需求</div></li></ul></li></ul>`;
+            renderArea.innerHTML = html;
+        }
+
+        // =========================================================================
+        // View 2: 四階段編輯器 (init_action_of_base_demand)
+        // =========================================================================
+        function openEditor(dId, aId) {
+            currentDemandId = dId; currentActionId = aId; currentTokens = [];
+            document.getElementById('alert-box').style.display = 'none';
+            if (hasInitialized) document.getElementById('btn-back-tree').style.display = 'inline-block';
+
+            ['zone-cue', 'zone-craving', 'zone-response', 'zone-reward', 'token-dock'].forEach(id => {
+                Array.from(document.getElementById(id).children).forEach(c => { if (c.classList.contains('cp-token')) c.remove(); });
+            });
+            checkDockHint();
+
+            if (aId !== null) {
+                let action = humanTree.children.find(d => d.id === dId).actions.find(a => a.id === aId);
+                document.getElementById('editor-title').innerText = `編輯習慣：${action.name}`;
+                document.getElementById('action-name').value = action.name;
+                currentTokens = JSON.parse(JSON.stringify(action.tokens));
+                currentTokens.forEach(t => renderToken(t));
+            } else {
+                document.getElementById('editor-title').innerText = `為此需求建立新習慣`;
+                document.getElementById('action-name').value = '';
+            }
+            updateScores();
+            switchView('view-editor');
+        }
+
+        function goToTree() { initApp(); }
+
+        function createCPToken() {
+            let nameInput = document.getElementById('cp-name').value.trim();
+            let scoreInput = parseFloat(document.getElementById('cp-score').value);
+            if (!nameInput || isNaN(scoreInput)) return showToast("請填寫完整的名稱與分數！", "error");
+
+            let newToken = { id: 'token_' + generateId(), name: nameInput, score: scoreInput, timeType: document.getElementById('cp-time').value, stage: 'dock' };
+            currentTokens.push(newToken);
+            renderToken(newToken);
+
+            document.getElementById('cp-name').value = ''; document.getElementById('cp-score').value = '';
+            updateScores();
+        }
+
+        function renderToken(token) {
+            let el = document.createElement('div');
+            el.className = `cp-token ${token.timeType === 'st' ? 'st-token' : 'lt-token'}`;
+            el.id = token.id; el.draggable = true;
+            el.innerHTML = `<span>${token.name} (${token.score > 0 ? '+' + token.score : token.score})</span><span class="token-del" onclick="deleteToken('${token.id}')">✖</span>`;
+
+            el.addEventListener('dragstart', () => { draggedTokenId = token.id; setTimeout(() => el.style.opacity = '0.5', 0); });
+            el.addEventListener('dragend', () => el.style.opacity = '1');
+
+            document.getElementById(token.stage === 'dock' ? 'token-dock' : `zone-${token.stage}`).appendChild(el);
+            checkDockHint();
+        }
+
+        function deleteToken(tokenId) {
+            currentTokens = currentTokens.filter(t => t.id !== tokenId);
+            document.getElementById(tokenId).remove();
+            updateScores();
+            checkDockHint();
+        }
+
+        function checkDockHint() {
+            let dock = document.getElementById('token-dock');
+            let hint = document.getElementById('dock-hint-text');
+            // 如果 dock 裡面除了 hint 還有其他 token，就隱藏 hint
+            if (dock.querySelectorAll('.cp-token').length > 0) hint.style.display = 'none';
+            else hint.style.display = 'block';
+        }
+
+        function allowDrop(ev) { ev.preventDefault(); }
+        function dragEnter(ev) { ev.currentTarget.classList.add('dragover'); }
+        function dragLeave(ev) { ev.currentTarget.classList.remove('dragover'); }
+
+        function drop(ev, targetStage) {
+            ev.preventDefault(); ev.currentTarget.classList.remove('dragover');
+            if (draggedTokenId !== null) {
+                ev.currentTarget.appendChild(document.getElementById(draggedTokenId));
+                let tokenData = currentTokens.find(t => t.id === draggedTokenId);
+                if (tokenData) tokenData.stage = targetStage;
+                draggedTokenId = null;
+                checkDockHint();
+            }
+        }
+
+        function updateScores() {
+            let stSum = currentTokens.filter(t => t.timeType === 'st').reduce((sum, t) => sum + t.score, 0);
+            let ltSum = currentTokens.filter(t => t.timeType === 'lt').reduce((sum, t) => sum + t.score, 0);
+            let finalCp = stSum + (ltSum * 0.1);
+
+            document.getElementById('score-st').innerText = stSum;
+            document.getElementById('score-lt').innerText = ltSum;
+            document.getElementById('score-final').innerText = finalCp.toFixed(2);
+            return { st: stSum, lt: ltSum, final: finalCp };
+        }
+
+        // =========================================================================
+        // 儲存與強制防護邏輯 (第二次編輯時強行校正)
+        // =========================================================================
+        function saveAction() {
+            let actionNameInput = document.getElementById('action-name').value.trim();
+            if (!actionNameInput) return showToast("請填寫行動名稱！", "error");
+
+            let scores = updateScores();
+            let demand = humanTree.children.find(d => d.id === currentDemandId);
+            let isGoodHabit = (scores.lt >= 0);
+
+            let existingAction = currentActionId !== null ? demand.actions.find(a => a.id === currentActionId) : null;
+            let isNewAction = existingAction !== null ? existingAction.isNew : true;
+            let alertBox = document.getElementById('alert-box');
+
+            // 第二次看見 -> 強制防護機制 (HTML 框框呈現)
+            if (!isNewAction) {
+                if (isGoodHabit && scores.st <= 0) {
+                    alertBox.className = 'alert-box';
+                    alertBox.innerHTML = `🚨【系統防護攔截】這是一個「好習慣 (長期 >= 0)」！<br>
+                你的短期 CP 目前是 ${scores.st}。<br>
+                大腦是短視的，如果短期痛苦沒有獎勵，大腦就會放棄！<br>
+                👉 <b>請強制加入「短期的正面 CP (獎賞)」，讓短期 CP > 0！</b>`;
+                    alertBox.style.display = 'block';
+                    return;
+                } else if (!isGoodHabit && scores.st >= 0) {
+                    alertBox.className = 'alert-box';
+                    alertBox.innerHTML = `🚨【系統防護攔截】這是一個「壞習慣 (長期 < 0)」！<br>
+                你的短期 CP 目前是 ${scores.st}。<br>
+                只要短期 CP 還是正的，你的大腦就會覺得性價比很高而繼續做！<br>
+                👉 <b>請強制加入「短期的負面 CP (摩擦力/懲罰)」，讓短期 CP < 0！</b>`;
+                    alertBox.style.display = 'block';
+                    return;
+                }
+            } else {
+                // 第一次 -> Toast 提醒但不阻擋
+                if (isGoodHabit && scores.st <= 0) {
+                    showToast("【系統提示】你正在建立好習慣，但短期 CP 尚未大於 0。大腦很容易放棄喔！(下次編輯將強制修正)", "warning");
+                } else if (!isGoodHabit && scores.st >= 0) {
+                    showToast("【系統提示】你正在紀錄壞習慣，但短期 CP 還是正的。大腦還是會繼續這個迴路！(下次編輯將強制修正)", "warning");
+                }
+            }
+
+            alertBox.style.display = 'none';
+
+            if (existingAction !== null) {
+                existingAction.name = actionNameInput; existingAction.st = scores.st; existingAction.lt = scores.lt;
+                existingAction.cp = scores.final; existingAction.tokens = currentTokens; existingAction.isNew = false;
+            } else {
+                demand.actions.push({ id: generateId(), name: actionNameInput, st: scores.st, lt: scores.lt, cp: scores.final, tokens: currentTokens, isNew: false });
+            }
+
+            showToast("已成功寫入大腦決策網路！", "success");
+            syncToDrive('saveAction');
+            initApp();
+        }
+
+        // =========================================================================
+        // Google Auth + Drive Sync
+        // =========================================================================
+        let currentUser = null;
+
+        function loginGoogle() {
+            window.location.href = '/api/auth/google';
+        }
+
+        async function logoutGoogle() {
+            await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+            currentUser = null;
+            updateAuthUI();
+            showToast('已登出', 'success');
+        }
+
+        async function checkAuth() {
+            try {
+                const res = await fetch('/api/auth/me', { credentials: 'include' });
+                const data = await res.json();
+                if (data.loggedIn) {
+                    currentUser = data.user;
+                } else {
+                    currentUser = null;
+                }
+            } catch (err) {
+                currentUser = null;
+            }
+            updateAuthUI();
+        }
+
+        function updateAuthUI() {
+            // Welcome 頁面
+            const wLoggedOut = document.getElementById('welcome-logged-out');
+            const wLoggedIn = document.getElementById('welcome-logged-in');
+            const wUserName = document.getElementById('welcome-user-name');
+            const wFileStatus = document.getElementById('welcome-file-status');
+            const wPicker = document.getElementById('btn-welcome-picker');
+
+            // Tree 頁面
+            const tLoggedOut = document.getElementById('tree-logged-out');
+            const tLoggedIn = document.getElementById('tree-logged-in');
+            const tUserName = document.getElementById('tree-user-name');
+            const tAvatar = document.getElementById('tree-user-avatar');
+            const tPicker = document.getElementById('btn-tree-picker');
+
+            if (currentUser) {
+                // Welcome
+                wLoggedOut.style.display = 'none';
+                wLoggedIn.style.display = 'block';
+                wUserName.textContent = currentUser.name;
+                if (currentUser.hasDriveFile) {
+                    wFileStatus.textContent = '📁 已設定同步檔案';
+                    wPicker.style.display = 'inline-block';
+                    wPicker.textContent = '📂 更換同步檔案';
+                } else {
+                    wFileStatus.textContent = '';
+                    wPicker.style.display = 'inline-block';
+                    wPicker.textContent = '📂 選擇同步檔案';
+                }
+
+                // Tree
+                tLoggedOut.style.display = 'none';
+                tLoggedIn.style.display = 'flex';
+                tUserName.textContent = currentUser.name;
+                tAvatar.src = currentUser.picture || '';
+                tAvatar.style.display = currentUser.picture ? 'block' : 'none';
+                if (currentUser.hasDriveFile) {
+                    tPicker.style.display = 'none';
+                } else {
+                    tPicker.style.display = 'inline-block';
+                }
+            } else {
+                wLoggedOut.style.display = 'block';
+                wLoggedIn.style.display = 'none';
+                tLoggedOut.style.display = 'block';
+                tLoggedIn.style.display = 'none';
+            }
+        }
+
+        // Google Drive Picker
+        async function openDrivePicker() {
+            try {
+                // 取得 access token（受 CORS 限制，需後端轉達）
+                // 簡化方案：建立新 JSON 檔案然後設定 fileId
+                const fileName = `brainTree_${new Date().toISOString().slice(0, 10)}.json`;
+                const createConfirm = confirm(
+                    `要在 Google Drive 建立新檔案「${fileName}」作為同步目標嗎？\n\n（如果已有檔案，請輸入 fileId）`
+                );
+
+                if (createConfirm) {
+                    // 讓後端建立檔案
+                    const res = await fetch('/api/create-drive-file', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'include',
+                        body: JSON.stringify({ fileName }),
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                        currentUser.hasDriveFile = true;
+                        updateAuthUI();
+                        showToast(`☁️ 已建立 Drive 檔案：${fileName}`, 'success');
+                    } else {
+                        showToast('⚠️ 建立檔案失敗：' + (data.error || '未知錯誤'), 'error');
+                    }
+                } else {
+                    // 手動輸入 fileId
+                    const fileId = prompt('請輸入 Google Drive 的 File ID：');
+                    if (fileId && fileId.trim()) {
+                        const res = await fetch('/api/set-drive-file', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            credentials: 'include',
+                            body: JSON.stringify({ fileId: fileId.trim() }),
+                        });
+                        const data = await res.json();
+                        if (data.success) {
+                            currentUser.hasDriveFile = true;
+                            updateAuthUI();
+                            showToast('☁️ 已設定同步檔案', 'success');
+                        } else {
+                            showToast('⚠️ 設定失敗：' + (data.error || '未知錯誤'), 'error');
+                        }
+                    }
+                }
+            } catch (err) {
+                showToast('⚠️ 操作失敗：' + err.message, 'error');
+            }
+        }
+
+        // 序列化 humanTree，將 tokens 轉成 tokenSlots 格式
+        function serializeTreeForSync() {
+            const stageMap = { dock: 0, cue: 1, craving: 2, response: 3, reward: 4 };
+
+            return {
+                name: humanTree.name,
+                children: humanTree.children.map(demand => ({
+                    id: demand.id,
+                    name: demand.name,
+                    actions: demand.actions.map(action => {
+                        const tokenSlots = [[], [], [], [], []];
+                        (action.tokens || []).forEach(t => {
+                            const idx = stageMap[t.stage] !== undefined ? stageMap[t.stage] : 0;
+                            tokenSlots[idx].push({
+                                id: t.id,
+                                name: t.name,
+                                score: t.score,
+                                timeType: t.timeType,
+                            });
+                        });
+                        return {
+                            id: action.id,
+                            name: action.name,
+                            cp: action.cp,
+                            st: action.st,
+                            lt: action.lt,
+                            isNew: action.isNew,
+                            tokenSlots,
+                        };
+                    }),
+                })),
+            };
+        }
+
+        // 同步到 Google Drive
+        async function syncToDrive(triggerAction) {
+            if (!currentUser || !currentUser.hasDriveFile) return;
+
+            const syncDot = document.getElementById('sync-dot');
+            if (syncDot) {
+                syncDot.className = 'sync-indicator syncing';
+                syncDot.title = '同步中...';
+            }
+
+            try {
+                const payload = {
+                    triggerAction,
+                    treeData: serializeTreeForSync(),
+                    syncTimestamp: new Date().toISOString(),
+                };
+
+                const res = await fetch('/api/sync-drive', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify(payload),
+                });
+
+                if (res.ok) {
+                    if (syncDot) {
+                        syncDot.className = 'sync-indicator synced';
+                        syncDot.title = '已同步';
+                    }
+                    showToast('☁️ 已同步至 Google Drive', 'success');
+                } else {
+                    const data = await res.json();
+                    throw new Error(data.error || '同步失敗');
+                }
+            } catch (err) {
+                if (syncDot) {
+                    syncDot.className = 'sync-indicator error';
+                    syncDot.title = '同步失敗';
+                }
+                showToast('⚠️ Drive 同步失敗：' + err.message, 'error');
+            }
+        }
+
+        // 頁面載入時檢查登入狀態
+        checkAuth();
+
+        initApp();
+    </script>
+</body>
+
+</html>

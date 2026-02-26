@@ -1,0 +1,10 @@
+{
+  "name": "brain-tree-drive-sync",
+  "version": "1.0.0",
+  "private": true,
+  "description": "大腦行為樹系統 + Google Drive 同步",
+  "dependencies": {
+    "googleapis": "^128.0.0",
+    "mongoose": "^8.0.0"
+  }
+}

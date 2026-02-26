@@ -1,0 +1,21 @@
+Json 裡面要包含 action 的 object  包含object的分數 大概長這樣:
+action=[[],[],[],[],[]]  5個的意思是 object 會有5個可以放的地方:default, 提示 ,渴望,回應,獎賞
+你現在扮演我的本地開發助手。我正在做一個 Node.js + Express 專案，整合 Google OAuth 2.0、Google Drive API、MongoDB Atlas 以及 Vercel 環境變數。我已經在 Vercel 設置了以下環境變數（API value）：
+
+1. SESSION_SECRET：這個值是一個非常長的隨機字串，用來簽署 Express-session cookie，確保 session 安全。value 裡面似乎長這樣：••••••••••••••••••••••••（實際很長）。
+2. ENCRYPTION_KEY：這個值是 32 bytes 的隨機 hex，用來加密 Google OAuth token。value 裡面似乎長這樣：••••••••••••••••（實際 64 hex 字）。
+3. MONGODB_URI：這個值包含 MongoDB Atlas 的 cluster 連線資訊，格式像 mongodb+srv://<username>:<password>@cluster0.mongodb.net/brainTree?retryWrites=true&w=majority。
+4. Client_secret：Google OAuth 的 client secret，用於後端交換 access_token 和 refresh_token。value 裡面似乎長這樣：••••••••••••••••。
+5. GOOGLE_CLIENT_ID：Google OAuth 的 client id，用於前端登入與後端驗證。value 裡面似乎長這樣：••••••••••••••••。
+6. GOOGLE_REDIRECT_URI：OAuth callback URI，指向 Vercel 部署的 /auth/google/callback，例如 https://addiction-murex.vercel.app/auth/google/callback。
+
+請你生成或更新程式碼時，**保證本地 Node.js / Express / MongoDB / Google API 的 GitHub 專案** 可以成功讀取這些環境變數，並連接對應的服務。  
+
+重點要求：
+- 代碼中不要硬寫任何實際的 secret 或 key，全部用 `process.env.<ENV_NAME>`。
+- AES-256-GCM 加密 token 時使用 ENCRYPTION_KEY。
+- Express-session 使用 SESSION_SECRET。
+- MONGODB_URI 直接連線 MongoDB Atlas。
+- Google OAuth 流程使用 GOOGLE_CLIENT_ID、Client_secret、GOOGLE_REDIRECT_URI。
+- 前端 humanTree JSON 同步到 Google Drive。
+- 確保 API value 本地測試可用，部署到 Vercel 也能成功運作。
