@@ -1,6 +1,6 @@
-const { connectDB, User, AuditLog } = require('../lib/db');
-const { getSession } = require('../lib/session');
-const { handleCors } = require('../lib/cors');
+const { connectDB, User, AuditLog } = require('./lib/db');
+const { getSession } = require('./lib/session');
+const { handleCors } = require('./lib/cors');
 
 const FILE_ID_REGEX = /^[a-zA-Z0-9_-]{10,80}$/;
 

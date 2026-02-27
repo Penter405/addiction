@@ -1,8 +1,8 @@
 const { google } = require('googleapis');
-const { connectDB, User, AuditLog } = require('../lib/db');
-const { encrypt, decrypt } = require('../lib/crypto');
-const { getSession } = require('../lib/session');
-const { handleCors } = require('../lib/cors');
+const { connectDB, User, AuditLog } = require('./lib/db');
+const { encrypt, decrypt } = require('./lib/crypto');
+const { getSession } = require('./lib/session');
+const { handleCors } = require('./lib/cors');
 
 module.exports = async function handler(req, res) {
     if (handleCors(req, res)) return;
