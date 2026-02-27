@@ -1338,6 +1338,11 @@
                 currentUser = null;
             }
             updateAuthUI();
+
+            // 如果已登入且有同步檔案，自動從 Drive 載入資料
+            if (currentUser && currentUser.hasDriveFile) {
+                await loadTreeFromDrive();
+            }
         }
 
         function updateAuthUI() {
@@ -1386,6 +1391,61 @@
                 wLoggedIn.style.display = 'none';
                 tLoggedOut.style.display = 'block';
                 tLoggedIn.style.display = 'none';
+            }
+        }
+        // 從 Google Drive 載入已存的 tree 資料
+        async function loadTreeFromDrive() {
+            try {
+                const res = await fetch(API_BASE + '/api/load-from-drive', {
+                    headers: authHeaders(),
+                });
+                if (!res.ok) return;
+                const data = await res.json();
+                if (data.success && data.data && data.data.treeData) {
+                    const saved = data.data.treeData;
+                    // 還原 humanTree 結構
+                    if (saved.children && saved.children.length > 0) {
+                        humanTree = {
+                            name: saved.name || 'human',
+                            children: saved.children.map(demand => ({
+                                id: demand.id,
+                                name: demand.name,
+                                actions: (demand.actions || []).map(action => {
+                                    // 從 tokenSlots 還原 tokens
+                                    const stageNames = ['dock', 'cue', 'craving', 'response', 'reward'];
+                                    const tokens = [];
+                                    if (action.tokenSlots) {
+                                        action.tokenSlots.forEach((slot, idx) => {
+                                            (slot || []).forEach(t => {
+                                                tokens.push({
+                                                    id: t.id,
+                                                    name: t.name,
+                                                    score: t.score,
+                                                    timeType: t.timeType,
+                                                    stage: stageNames[idx] || 'dock',
+                                                });
+                                            });
+                                        });
+                                    }
+                                    return {
+                                        id: action.id,
+                                        name: action.name,
+                                        cp: action.cp,
+                                        st: action.st,
+                                        lt: action.lt,
+                                        isNew: action.isNew,
+                                        tokens,
+                                    };
+                                }),
+                            })),
+                        };
+                        hasInitialized = true;
+                        initApp();
+                        showToast('☁️ 已從 Google Drive 載入資料', 'success');
+                    }
+                }
+            } catch (err) {
+                console.error('Load from Drive error:', err);
             }
         }
 
