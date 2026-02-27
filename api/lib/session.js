@@ -23,7 +23,7 @@ function sign(payload) {
 }
 
 /**
- * 驗證並解析簽章 cookie
+ * 驗證並解析簽章 token
  */
 function verify(token) {
     const secret = getSecret();
@@ -48,14 +48,21 @@ function verify(token) {
 }
 
 /**
- * 建立 session cookie
+ * 產生 session token 字串（不設 cookie，用於跨域 Bearer token 認證）
  */
-function createSession(res, userId) {
+function createSessionToken(userId) {
     const payload = {
         userId,
         exp: Date.now() + MAX_AGE * 1000,
     };
-    const token = sign(payload);
+    return sign(payload);
+}
+
+/**
+ * 建立 session cookie（僅用於同域場景）
+ */
+function createSession(res, userId) {
+    const token = createSessionToken(userId);
 
     // 設定 httpOnly cookie (SameSite=None 允許跨域 GitHub Pages → Vercel)
     const isProduction = process.env.VERCEL === '1' || process.env.NODE_ENV === 'production';
@@ -64,12 +71,23 @@ function createSession(res, userId) {
     const finalCookie = isProduction ? `${cookieValue}; Secure` : cookieValue;
 
     res.setHeader('Set-Cookie', finalCookie);
+    return token;
 }
 
 /**
  * 從 request 解析 session，回傳 userId 或 null
+ * 優先檢查 Authorization header（跨域），再檢查 cookie（同域）
  */
 function getSession(req) {
+    // 1. 先檢查 Authorization: Bearer <token>
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+        const token = authHeader.slice(7);
+        const payload = verify(token);
+        if (payload) return payload.userId;
+    }
+
+    // 2. 再檢查 cookie
     const cookieHeader = req.headers.cookie;
     if (!cookieHeader) return null;
 
@@ -98,4 +116,4 @@ function clearSession(res) {
     res.setHeader('Set-Cookie', finalCookie);
 }
 
-module.exports = { createSession, getSession, clearSession };
+module.exports = { createSession, createSessionToken, getSession, clearSession };

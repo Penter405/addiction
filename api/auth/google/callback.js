@@ -79,8 +79,8 @@ module.exports = async function handler(req, res) {
             status: 'success',
         });
 
-        // 建立 session
-        createSession(res, googleId);
+        // 建立 session（token 同時會設在 cookie，也回傳供 URL 傳遞）
+        const token = createSession(res, googleId);
 
         // 清除 oauth_state cookie
         const isProduction = process.env.VERCEL === '1' || process.env.NODE_ENV === 'production';
@@ -96,9 +96,9 @@ module.exports = async function handler(req, res) {
             res.setHeader('Set-Cookie', clearState);
         }
 
-        // 轉導回前端首頁 (GitHub Pages)
+        // 轉導回前端首頁 (GitHub Pages)，並附帶 token 讓前端存入 localStorage
         const frontendUrl = process.env.FRONTEND_URL || `http://localhost:3000`;
-        res.redirect(302, frontendUrl);
+        res.redirect(302, `${frontendUrl}?token=${encodeURIComponent(token)}`);
 
     } catch (err) {
         console.error('OAuth callback error:', err);

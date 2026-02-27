@@ -1281,17 +1281,43 @@
         }
 
         // =========================================================================
-        // Google Auth + Drive Sync
+        // Google Auth + Drive Sync (Token-based for cross-domain)
         // =========================================================================
         const API_BASE = 'https://addiction-murex.vercel.app';
         let currentUser = null;
+
+        // 從 URL 擷取 token 並存入 localStorage（OAuth 回調後觸發）
+        (function captureTokenFromURL() {
+            const params = new URLSearchParams(window.location.search);
+            const token = params.get('token');
+            if (token) {
+                localStorage.setItem('brain_session_token', token);
+                // 清除 URL 中的 token 參數，避免外洩
+                const cleanUrl = window.location.origin + window.location.pathname;
+                window.history.replaceState({}, document.title, cleanUrl);
+            }
+        })();
+
+        // 取得 auth headers，所有 API 請求都需要帶上
+        function authHeaders() {
+            const token = localStorage.getItem('brain_session_token');
+            const headers = {};
+            if (token) {
+                headers['Authorization'] = 'Bearer ' + token;
+            }
+            return headers;
+        }
 
         function loginGoogle() {
             window.location.href = API_BASE + '/api/auth/google';
         }
 
         async function logoutGoogle() {
-            await fetch(API_BASE + '/api/auth/logout', { method: 'POST', credentials: 'include' });
+            await fetch(API_BASE + '/api/auth/logout', {
+                method: 'POST',
+                headers: authHeaders(),
+            });
+            localStorage.removeItem('brain_session_token');
             currentUser = null;
             updateAuthUI();
             showToast('已登出', 'success');
@@ -1299,7 +1325,9 @@
 
         async function checkAuth() {
             try {
-                const res = await fetch(API_BASE + '/api/auth/me', { credentials: 'include' });
+                const res = await fetch(API_BASE + '/api/auth/me', {
+                    headers: authHeaders(),
+                });
                 const data = await res.json();
                 if (data.loggedIn) {
                     currentUser = data.user;
@@ -1375,8 +1403,7 @@
                     // 讓後端建立檔案
                     const res = await fetch(API_BASE + '/api/create-drive-file', {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        credentials: 'include',
+                        headers: { 'Content-Type': 'application/json', ...authHeaders() },
                         body: JSON.stringify({ fileName }),
                     });
                     const data = await res.json();
@@ -1393,8 +1420,7 @@
                     if (fileId && fileId.trim()) {
                         const res = await fetch(API_BASE + '/api/set-drive-file', {
                             method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            credentials: 'include',
+                            headers: { 'Content-Type': 'application/json', ...authHeaders() },
                             body: JSON.stringify({ fileId: fileId.trim() }),
                         });
                         const data = await res.json();
@@ -1465,8 +1491,7 @@
 
                 const res = await fetch(API_BASE + '/api/sync-drive', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    credentials: 'include',
+                    headers: { 'Content-Type': 'application/json', ...authHeaders() },
                     body: JSON.stringify(payload),
                 });
 
