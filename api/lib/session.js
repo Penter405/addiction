@@ -57,10 +57,10 @@ function createSession(res, userId) {
     };
     const token = sign(payload);
 
-    // 設定 httpOnly cookie
-    const cookieValue = `${COOKIE_NAME}=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${MAX_AGE}`;
-    // Vercel 上使用 Secure
+    // 設定 httpOnly cookie (SameSite=None 允許跨域 GitHub Pages → Vercel)
     const isProduction = process.env.VERCEL === '1' || process.env.NODE_ENV === 'production';
+    const sameSite = isProduction ? 'None' : 'Lax';
+    const cookieValue = `${COOKIE_NAME}=${token}; Path=/; HttpOnly; SameSite=${sameSite}; Max-Age=${MAX_AGE}`;
     const finalCookie = isProduction ? `${cookieValue}; Secure` : cookieValue;
 
     res.setHeader('Set-Cookie', finalCookie);
@@ -91,8 +91,11 @@ function getSession(req) {
  * 清除 session cookie
  */
 function clearSession(res) {
-    const cookieValue = `${COOKIE_NAME}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0`;
-    res.setHeader('Set-Cookie', cookieValue);
+    const isProduction = process.env.VERCEL === '1' || process.env.NODE_ENV === 'production';
+    const sameSite = isProduction ? 'None' : 'Lax';
+    const cookieValue = `${COOKIE_NAME}=; Path=/; HttpOnly; SameSite=${sameSite}; Max-Age=0`;
+    const finalCookie = isProduction ? `${cookieValue}; Secure` : cookieValue;
+    res.setHeader('Set-Cookie', finalCookie);
 }
 
 module.exports = { createSession, getSession, clearSession };

@@ -1,5 +1,5 @@
-const { connectDB, User } = require('../../lib/db');
-const { getSession } = require('../../lib/session');
+const { connectDB, User } = require('../lib/db');
+const { getSession } = require('../lib/session');
 
 module.exports = async function handler(req, res) {
     if (req.method !== 'GET') {

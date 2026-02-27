@@ -601,6 +601,141 @@
             border-color: var(--good);
             color: #1E8449;
         }
+
+        /* ================= Google Auth UI ================= */
+        .auth-bar {
+            position: fixed;
+            top: 15px;
+            right: 20px;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .auth-bar .user-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: white;
+            padding: 8px 16px;
+            border-radius: 25px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            font-size: 0.9rem;
+            font-weight: bold;
+            color: var(--text-main);
+        }
+
+        .auth-bar .user-avatar {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .btn-google {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 22px;
+            background: white;
+            color: #444;
+            border: 2px solid #ddd;
+            border-radius: 25px;
+            font-size: 0.95rem;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            transition: all 0.2s ease;
+        }
+
+        .btn-google:hover {
+            background: #f8f8f8;
+            border-color: #4285F4;
+            box-shadow: 0 4px 15px rgba(66, 133, 244, 0.2);
+        }
+
+        .btn-drive {
+            padding: 8px 18px;
+            background: #0F9D58;
+            color: white;
+            border: none;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-drive:hover {
+            background: #0B8043;
+            transform: scale(1.03);
+        }
+
+        .btn-logout {
+            padding: 6px 14px;
+            background: transparent;
+            color: #999;
+            border: 1px solid #ddd;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-logout:hover {
+            color: var(--bad);
+            border-color: var(--bad);
+        }
+
+        .sync-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #ccc;
+            margin-left: 5px;
+            vertical-align: middle;
+        }
+
+        .sync-indicator.synced {
+            background: var(--good);
+        }
+
+        .sync-indicator.syncing {
+            background: var(--craving);
+            animation: pulse 1s infinite;
+        }
+
+        .sync-indicator.error {
+            background: var(--bad);
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.3;
+            }
+        }
+
+        .welcome-auth {
+            text-align: center;
+            margin-bottom: 25px;
+            padding: 20px;
+            background: #f0f4f8;
+            border-radius: 12px;
+        }
+
+        .welcome-auth p {
+            margin: 8px 0;
+            color: #7f8c8d;
+            font-size: 0.9rem;
+        }
     </style>
 </head>
 
@@ -614,6 +749,33 @@
         <div class="container">
             <div class="welcome-box">
                 <h1 style="color: var(--st-color);">🧠 大腦重塑系統</h1>
+
+                <!-- Google 登入區 -->
+                <div class="welcome-auth" id="welcome-auth-section">
+                    <div id="welcome-logged-out">
+                        <p>☁️ 登入 Google 帳戶以同步資料到 Google Drive</p>
+                        <button class="btn-google" onclick="loginGoogle()">
+                            <svg width="18" height="18" viewBox="0 0 48 48">
+                                <path fill="#4285F4"
+                                    d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z" />
+                                <path fill="#34A853"
+                                    d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z" />
+                                <path fill="#FBBC05"
+                                    d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z" />
+                                <path fill="#EA4335"
+                                    d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z" />
+                            </svg>
+                            使用 Google 登入
+                        </button>
+                    </div>
+                    <div id="welcome-logged-in" style="display: none;">
+                        <p>✅ 已登入為 <strong id="welcome-user-name"></strong></p>
+                        <button class="btn-drive" id="btn-welcome-picker" onclick="openDrivePicker()"
+                            style="display: none;">📂 選擇同步檔案</button>
+                        <span id="welcome-file-status"></span>
+                    </div>
+                </div>
+
                 <p style="font-size: 1.1rem; line-height: 1.6;">
                     系統已預載了一些真實的人類底層需求（如：紓解壓力、社交連結）。<br>
                     在開啟無邊界畫布之前，請先輸入 <strong>你想分析的第一個習慣</strong>！
@@ -636,6 +798,25 @@
 
     <!-- ================= View 1: 無邊界畫布樹狀圖 ================= -->
     <div id="view-tree" class="view">
+        <!-- 右上角 Auth Bar -->
+        <div class="auth-bar" id="tree-auth-bar">
+            <div id="tree-logged-out">
+                <button class="btn-google" onclick="loginGoogle()" style="font-size: 0.85rem; padding: 8px 16px;">
+                    🔐 登入
+                </button>
+            </div>
+            <div id="tree-logged-in" style="display: none;">
+                <div class="user-info">
+                    <img class="user-avatar" id="tree-user-avatar" src="" alt="">
+                    <span id="tree-user-name"></span>
+                    <span class="sync-indicator" id="sync-dot" title="同步狀態"></span>
+                </div>
+                <button class="btn-drive" id="btn-tree-picker" onclick="openDrivePicker()" style="display: none;">📂
+                    選擇檔案</button>
+                <button class="btn-logout" onclick="logoutGoogle()">登出</button>
+            </div>
+        </div>
+
         <div class="canvas-ui-layer">
             <div>
                 <h2 style="margin: 0; color: var(--text-main);">🧠 大腦行為決策樹</h2>
@@ -882,6 +1063,7 @@
             if (name && name.trim()) {
                 humanTree.children.push({ id: generateId(), name: name, actions: [] });
                 renderTree();
+                syncToDrive('addBaseDemand');
             }
         }
 
@@ -898,6 +1080,7 @@
                     demand.actions = demand.actions.filter(a => a.id !== actionId);
                     renderTree();
                     showToast("行動已刪除", "success");
+                    syncToDrive('deleteNode');
                 }
             } else {
                 // Deleting a demand node and all its children
@@ -909,6 +1092,7 @@
                     humanTree.children = humanTree.children.filter(d => d.id !== demandId);
                     renderTree();
                     showToast("底層需求已刪除", "success");
+                    syncToDrive('deleteNode');
                 }
             }
         }
@@ -1092,8 +1276,221 @@
             }
 
             showToast("已成功寫入大腦決策網路！", "success");
+            syncToDrive('saveAction');
             initApp();
         }
+
+        // =========================================================================
+        // Google Auth + Drive Sync
+        // =========================================================================
+        const API_BASE = 'https://addiction-murex.vercel.app';
+        let currentUser = null;
+
+        function loginGoogle() {
+            window.location.href = API_BASE + '/api/auth/google';
+        }
+
+        async function logoutGoogle() {
+            await fetch(API_BASE + '/api/auth/logout', { method: 'POST', credentials: 'include' });
+            currentUser = null;
+            updateAuthUI();
+            showToast('已登出', 'success');
+        }
+
+        async function checkAuth() {
+            try {
+                const res = await fetch(API_BASE + '/api/auth/me', { credentials: 'include' });
+                const data = await res.json();
+                if (data.loggedIn) {
+                    currentUser = data.user;
+                } else {
+                    currentUser = null;
+                }
+            } catch (err) {
+                currentUser = null;
+            }
+            updateAuthUI();
+        }
+
+        function updateAuthUI() {
+            // Welcome 頁面
+            const wLoggedOut = document.getElementById('welcome-logged-out');
+            const wLoggedIn = document.getElementById('welcome-logged-in');
+            const wUserName = document.getElementById('welcome-user-name');
+            const wFileStatus = document.getElementById('welcome-file-status');
+            const wPicker = document.getElementById('btn-welcome-picker');
+
+            // Tree 頁面
+            const tLoggedOut = document.getElementById('tree-logged-out');
+            const tLoggedIn = document.getElementById('tree-logged-in');
+            const tUserName = document.getElementById('tree-user-name');
+            const tAvatar = document.getElementById('tree-user-avatar');
+            const tPicker = document.getElementById('btn-tree-picker');
+
+            if (currentUser) {
+                // Welcome
+                wLoggedOut.style.display = 'none';
+                wLoggedIn.style.display = 'block';
+                wUserName.textContent = currentUser.name;
+                if (currentUser.hasDriveFile) {
+                    wFileStatus.textContent = '📁 已設定同步檔案';
+                    wPicker.style.display = 'inline-block';
+                    wPicker.textContent = '📂 更換同步檔案';
+                } else {
+                    wFileStatus.textContent = '';
+                    wPicker.style.display = 'inline-block';
+                    wPicker.textContent = '📂 選擇同步檔案';
+                }
+
+                // Tree
+                tLoggedOut.style.display = 'none';
+                tLoggedIn.style.display = 'flex';
+                tUserName.textContent = currentUser.name;
+                tAvatar.src = currentUser.picture || '';
+                tAvatar.style.display = currentUser.picture ? 'block' : 'none';
+                if (currentUser.hasDriveFile) {
+                    tPicker.style.display = 'none';
+                } else {
+                    tPicker.style.display = 'inline-block';
+                }
+            } else {
+                wLoggedOut.style.display = 'block';
+                wLoggedIn.style.display = 'none';
+                tLoggedOut.style.display = 'block';
+                tLoggedIn.style.display = 'none';
+            }
+        }
+
+        // Google Drive Picker
+        async function openDrivePicker() {
+            try {
+                // 取得 access token（受 CORS 限制，需後端轉達）
+                // 簡化方案：建立新 JSON 檔案然後設定 fileId
+                const fileName = `brainTree_${new Date().toISOString().slice(0, 10)}.json`;
+                const createConfirm = confirm(
+                    `要在 Google Drive 建立新檔案「${fileName}」作為同步目標嗎？\n\n（如果已有檔案，請輸入 fileId）`
+                );
+
+                if (createConfirm) {
+                    // 讓後端建立檔案
+                    const res = await fetch(API_BASE + '/api/create-drive-file', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'include',
+                        body: JSON.stringify({ fileName }),
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                        currentUser.hasDriveFile = true;
+                        updateAuthUI();
+                        showToast(`☁️ 已建立 Drive 檔案：${fileName}`, 'success');
+                    } else {
+                        showToast('⚠️ 建立檔案失敗：' + (data.error || '未知錯誤'), 'error');
+                    }
+                } else {
+                    // 手動輸入 fileId
+                    const fileId = prompt('請輸入 Google Drive 的 File ID：');
+                    if (fileId && fileId.trim()) {
+                        const res = await fetch(API_BASE + '/api/set-drive-file', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            credentials: 'include',
+                            body: JSON.stringify({ fileId: fileId.trim() }),
+                        });
+                        const data = await res.json();
+                        if (data.success) {
+                            currentUser.hasDriveFile = true;
+                            updateAuthUI();
+                            showToast('☁️ 已設定同步檔案', 'success');
+                        } else {
+                            showToast('⚠️ 設定失敗：' + (data.error || '未知錯誤'), 'error');
+                        }
+                    }
+                }
+            } catch (err) {
+                showToast('⚠️ 操作失敗：' + err.message, 'error');
+            }
+        }
+
+        // 序列化 humanTree，將 tokens 轉成 tokenSlots 格式
+        function serializeTreeForSync() {
+            const stageMap = { dock: 0, cue: 1, craving: 2, response: 3, reward: 4 };
+
+            return {
+                name: humanTree.name,
+                children: humanTree.children.map(demand => ({
+                    id: demand.id,
+                    name: demand.name,
+                    actions: demand.actions.map(action => {
+                        const tokenSlots = [[], [], [], [], []];
+                        (action.tokens || []).forEach(t => {
+                            const idx = stageMap[t.stage] !== undefined ? stageMap[t.stage] : 0;
+                            tokenSlots[idx].push({
+                                id: t.id,
+                                name: t.name,
+                                score: t.score,
+                                timeType: t.timeType,
+                            });
+                        });
+                        return {
+                            id: action.id,
+                            name: action.name,
+                            cp: action.cp,
+                            st: action.st,
+                            lt: action.lt,
+                            isNew: action.isNew,
+                            tokenSlots,
+                        };
+                    }),
+                })),
+            };
+        }
+
+        // 同步到 Google Drive
+        async function syncToDrive(triggerAction) {
+            if (!currentUser || !currentUser.hasDriveFile) return;
+
+            const syncDot = document.getElementById('sync-dot');
+            if (syncDot) {
+                syncDot.className = 'sync-indicator syncing';
+                syncDot.title = '同步中...';
+            }
+
+            try {
+                const payload = {
+                    triggerAction,
+                    treeData: serializeTreeForSync(),
+                    syncTimestamp: new Date().toISOString(),
+                };
+
+                const res = await fetch(API_BASE + '/api/sync-drive', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify(payload),
+                });
+
+                if (res.ok) {
+                    if (syncDot) {
+                        syncDot.className = 'sync-indicator synced';
+                        syncDot.title = '已同步';
+                    }
+                    showToast('☁️ 已同步至 Google Drive', 'success');
+                } else {
+                    const data = await res.json();
+                    throw new Error(data.error || '同步失敗');
+                }
+            } catch (err) {
+                if (syncDot) {
+                    syncDot.className = 'sync-indicator error';
+                    syncDot.title = '同步失敗';
+                }
+                showToast('⚠️ Drive 同步失敗：' + err.message, 'error');
+            }
+        }
+
+        // 頁面載入時檢查登入狀態
+        checkAuth();
 
         initApp();
     </script>

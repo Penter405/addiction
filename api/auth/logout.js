@@ -1,5 +1,5 @@
-const { getSession, clearSession } = require('../../lib/session');
-const { connectDB, AuditLog } = require('../../lib/db');
+const { getSession, clearSession } = require('../lib/session');
+const { connectDB, AuditLog } = require('../lib/db');
 
 module.exports = async function handler(req, res) {
     if (req.method !== 'POST') {

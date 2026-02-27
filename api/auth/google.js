@@ -27,8 +27,9 @@ module.exports = async function handler(req, res) {
     });
 
     // 將 state 存在 cookie 裡，callback 時比對
-    const stateCookie = `oauth_state=${state}; Path=/; HttpOnly; SameSite=Lax; Max-Age=600`;
     const isProduction = process.env.VERCEL === '1' || process.env.NODE_ENV === 'production';
+    const sameSite = isProduction ? 'None' : 'Lax';
+    const stateCookie = `oauth_state=${state}; Path=/; HttpOnly; SameSite=${sameSite}; Max-Age=600`;
     res.setHeader('Set-Cookie', isProduction ? `${stateCookie}; Secure` : stateCookie);
 
     res.redirect(302, authUrl);

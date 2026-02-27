@@ -83,7 +83,10 @@ module.exports = async function handler(req, res) {
         createSession(res, googleId);
 
         // 清除 oauth_state cookie
-        const clearState = 'oauth_state=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0';
+        const isProduction = process.env.VERCEL === '1' || process.env.NODE_ENV === 'production';
+        const clearSameSite = isProduction ? 'None' : 'Lax';
+        let clearState = `oauth_state=; Path=/; HttpOnly; SameSite=${clearSameSite}; Max-Age=0`;
+        if (isProduction) clearState += '; Secure';
         const existingCookies = res.getHeader('Set-Cookie');
         if (Array.isArray(existingCookies)) {
             res.setHeader('Set-Cookie', [...existingCookies, clearState]);
@@ -93,11 +96,9 @@ module.exports = async function handler(req, res) {
             res.setHeader('Set-Cookie', clearState);
         }
 
-        // 轉導回前端首頁
-        const baseUrl = process.env.VERCEL === '1'
-            ? `https://${req.headers.host}`
-            : `http://localhost:3000`;
-        res.redirect(302, baseUrl);
+        // 轉導回前端首頁 (GitHub Pages)
+        const frontendUrl = process.env.FRONTEND_URL || `http://localhost:3000`;
+        res.redirect(302, frontendUrl);
 
     } catch (err) {
         console.error('OAuth callback error:', err);
