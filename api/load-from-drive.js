@@ -2,8 +2,11 @@ const { google } = require('googleapis');
 const { connectDB, User, AuditLog } = require('../lib/db');
 const { encrypt, decrypt } = require('../lib/crypto');
 const { getSession } = require('../lib/session');
+const { handleCors } = require('../lib/cors');
 
 module.exports = async function handler(req, res) {
+    if (handleCors(req, res)) return;
+
     if (req.method !== 'GET') {
         return res.status(405).json({ error: 'Method not allowed' });
     }

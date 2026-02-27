@@ -1,9 +1,12 @@
 const { connectDB, User, AuditLog } = require('../lib/db');
 const { getSession } = require('../lib/session');
+const { handleCors } = require('../lib/cors');
 
 const FILE_ID_REGEX = /^[a-zA-Z0-9_-]{10,80}$/;
 
 module.exports = async function handler(req, res) {
+    if (handleCors(req, res)) return;
+
     if (req.method !== 'POST') {
         return res.status(405).json({ error: 'Method not allowed' });
     }
