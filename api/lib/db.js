@@ -27,6 +27,7 @@ const userSchema = new mongoose.Schema({
   encryptedAccessToken: { type: Object },  // { iv, authTag, encrypted }
   encryptedRefreshToken: { type: Object }, // { iv, authTag, encrypted }
   driveFileId: { type: String, default: null },
+  driveFileName: { type: String, default: null },
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },
 });
