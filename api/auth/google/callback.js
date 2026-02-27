@@ -97,7 +97,7 @@ module.exports = async function handler(req, res) {
         }
 
         // 轉導回前端首頁 (GitHub Pages)，並附帶 token 讓前端存入 localStorage
-        const frontendUrl = process.env.FRONTEND_URL || `http://localhost:3000`;
+        const frontendUrl = process.env.FRONTEND_URL || 'https://penter405.github.io/addiction/';
         res.redirect(302, `${frontendUrl}?token=${encodeURIComponent(token)}`);
 
     } catch (err) {

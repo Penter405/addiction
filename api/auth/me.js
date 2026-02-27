@@ -9,6 +9,8 @@ module.exports = async function handler(req, res) {
     }
 
     const userId = getSession(req);
+    console.log('[auth/me] Authorization header:', req.headers.authorization ? 'present' : 'missing');
+    console.log('[auth/me] userId from session:', userId ? userId.substring(0, 8) + '...' : null);
     if (!userId) {
         return res.status(200).json({ loggedIn: false });
     }
