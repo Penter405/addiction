@@ -360,17 +360,7 @@
             transform: scale(1.2);
         }
 
-        /* 連接線 */
-        .node-box.has-children::after {
-            content: '';
-            position: absolute;
-            right: -120px;
-            top: 50%;
-            width: 120px;
-            height: 2px;
-            background: var(--line-color);
-            z-index: 1;
-        }
+        /* 連接線 (has-children 橫線已移除，僅保留 li 上的結構線) */
 
         .rel-text {
             position: absolute;
@@ -404,6 +394,83 @@
             z-index: 3;
             padding: 4px 6px;
             border-radius: 4px;
+        }
+
+        /* 大腦短期預設線：從 demand 到短期CP最高的 action */
+        ul.tree ul li.st-default-line-red::before {
+            background: var(--bad) !important;
+            height: 2px;
+        }
+
+        ul.tree ul li.st-default-line-green::before {
+            background: var(--good) !important;
+            height: 2px;
+        }
+
+        /* 垂直色線：用 overlay div 覆蓋在原本的灰色線上面 */
+        .st-vert-overlay {
+            position: absolute;
+            left: -120px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            z-index: 2;
+            pointer-events: none;
+        }
+
+        .st-vert-overlay.red {
+            background: var(--bad);
+        }
+
+        .st-vert-overlay.green {
+            background: var(--good);
+        }
+
+        /* 起點：停在水平線的垂直中心 (通常往下延展) */
+        li:first-child>.st-vert-overlay,
+        .st-vert-overlay.start {
+            top: 50%;
+        }
+
+        /* 終點：停在水平線的垂直中心 (通常往上延展) */
+        .st-vert-overlay.end {
+            bottom: calc(50% - 2px);
+            /* overlap exactly with the 2px horizontal line */
+        }
+
+        /* 如果同一個點既是起點又是終點（水平對連）就乾脆隱藏，因為不需要垂直線 */
+        .st-vert-overlay.start.end {
+            display: none;
+        }
+
+        .st-default-label {
+            position: absolute;
+            right: calc(100% + 5px);
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 0.8rem;
+            font-weight: bold;
+            white-space: nowrap;
+            z-index: 3;
+            padding: 4px 6px;
+            border-radius: 4px;
+            background: rgba(255, 255, 255, 0.9);
+        }
+
+        .best-action-label.up {
+            top: calc(50% - 15px);
+        }
+
+        .st-default-label.down {
+            top: calc(50% + 15px);
+        }
+
+        .st-default-label.bad {
+            color: var(--bad);
+        }
+
+        .st-default-label.good {
+            color: var(--good);
         }
 
         ul.tree ul li::before {
@@ -570,15 +637,17 @@
         }
 
         .score-board {
-            display: flex;
-            justify-content: space-around;
+            display: block;
+            text-align: center;
             background: white;
-            padding: 20px;
+            padding: 20px 20px 35px 20px;
+            /* enough space for absolute item */
             border-radius: 12px;
             margin: 25px 0;
             font-size: 1.3rem;
             font-weight: bold;
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+            position: relative;
         }
 
         /* 系統強制防護的 HTML 文字框 */
@@ -1087,6 +1156,11 @@
     <div id="view-tree" class="view">
         <!-- 右上角 Auth Bar -->
         <div class="auth-bar" id="tree-auth-bar">
+            <!-- More Options 放最左邊(第一個) -->
+            <div class="more-options-wrapper">
+                <button class="btn-more" onclick="toggleMoreMenu('tree-more-dropdown')" title="更多選項">☰</button>
+                <div class="more-dropdown" id="tree-more-dropdown"></div>
+            </div>
             <div id="tree-logged-out">
                 <button class="btn-google" onclick="loginGoogle()" style="font-size: 0.85rem; padding: 8px 16px;">
                     🔐 登入
@@ -1102,20 +1176,23 @@
                     選擇檔案</button>
                 <button class="btn-logout" onclick="logoutGoogle()">登出</button>
             </div>
-            <!-- Tree 頁面 More Options (第三個按鈕) -->
-            <div class="more-options-wrapper">
-                <button class="btn-more" onclick="toggleMoreMenu('tree-more-dropdown')" title="更多選項">☰</button>
-                <div class="more-dropdown" id="tree-more-dropdown"></div>
-            </div>
         </div>
 
         <div class="canvas-ui-layer">
-            <div>
-                <h2 style="margin: 0; color: var(--text-main);">🧠 大腦行為決策樹</h2>
-                <p style="margin: 5px 0 0 0; color: var(--craving); font-size: 0.95rem; font-weight: bold;">
-                    按住滑鼠拖曳平移畫布，使用滾輪縮放。<br>
-                    👑 標記代表大腦預設執行的最高性價比行動！
-                </p>
+            <div style="position: relative;">
+                <span id="info-toggle" onclick="toggleInfoPanel()"
+                    style="cursor:pointer; position:absolute; left:-5px; top:2px; font-size:1rem; color:#999; user-select:none;">▼</span>
+                <h2 style="margin: 0; color: var(--text-main); padding-left: 20px;">🧠 大腦行為決策樹</h2>
+                <div id="info-panel" style="padding-left: 20px;">
+                    <p
+                        style="margin: 5px 0 0 0; color: var(--craving); font-size: 0.95rem; font-weight: bold; line-height: 1.8;">
+                        按住滑鼠拖曳平移畫布，使用滾輪縮放。<br>
+                        👑 = 長期CP最高的行動（理想選擇）。<br>
+                        <span style="color:var(--bad);">■</span><span style="color:var(--good);">■</span> 色線 =
+                        大腦預設執行的短期CP最高行動<br>
+                        <span style="font-size:0.85rem;">（紅=長期有害，綠=長期有益）</span>
+                    </p>
+                </div>
             </div>
         </div>
 
@@ -1194,9 +1271,48 @@
             </div>
 
             <div class="score-board">
-                <div style="color: var(--st-color);">短期總 CP：<span id="score-st">0</span></div>
-                <div style="color: var(--lt-color);">長期總 CP：<span id="score-lt">0</span></div>
-                <div>大腦最終評估：<span id="score-final">0</span></div>
+                <div style="display:flex; align-items:center; justify-content:center; gap:40px; flex-wrap:wrap;">
+                    <!-- 短期 -->
+                    <div style="display:flex; flex-direction:column; align-items:center;">
+                        <div style="font-size:2.5rem;">⚡</div>
+                        <div style="color: var(--st-color); font-weight:bold; font-size:1.1rem;">短期總 CP</div>
+                        <div style="font-size:1.8rem; font-weight:bold; color: var(--st-color);"><span
+                                id="score-st">0</span></div>
+                    </div>
+                    <!-- 天平 -->
+                    <div style="font-size:3rem;">⚖️</div>
+                    <!-- 長期 -->
+                    <div style="display:flex; flex-direction:column; align-items:center; position:relative;">
+                        <div style="font-size:2.5rem;">🌱</div>
+                        <div style="color: var(--lt-color); font-weight:bold; font-size:1.1rem;">長期總 CP</div>
+                        <div style="font-size:1.8rem; font-weight:bold; color: var(--lt-color);"><span
+                                id="score-lt">0</span></div>
+                        <div id="lt-multiplier-wrapper"
+                            style="position:absolute; top:calc(100% + 5px); left:50%; transform:translateX(-50%);">
+                            <span id="lt-multiplier"
+                                style="background:#f0f0f0; padding:4px 10px; border-radius:8px; font-size:0.9rem; font-weight:bold; color:#666; cursor:pointer; border:1px solid #ddd; white-space:nowrap;"
+                                onmouseenter="showSleepTooltip()" onmouseleave="hideSleepTooltipDelay()">× 0.1</span>
+                            <div id="sleep-tooltip"
+                                style="display:none; position:absolute; top:calc(100% + 35px); left:50%; transform:translateX(-50%); background:white; border-radius:12px; box-shadow:0 6px 24px rgba(0,0,0,0.15); padding:14px 18px; min-width:220px; z-index:100; text-align:center;"
+                                onmouseenter="clearSleepTimeout()" onmouseleave="hideSleepTooltipDelay()">
+                                <p style="margin:0 0 10px 0; font-size:0.9rem; color:#333; font-weight:bold;">🌙
+                                    你最近有熬夜嗎？</p>
+                                <div style="display:flex; gap:8px; justify-content:center;">
+                                    <button onclick="setSleepMultiplier(true)"
+                                        style="padding:6px 16px; border-radius:8px; border:none; background:var(--bad); color:white; font-weight:bold; cursor:pointer; font-size:0.85rem;">😴
+                                        有熬夜</button>
+                                    <button onclick="setSleepMultiplier(false)"
+                                        style="padding:6px 16px; border-radius:8px; border:none; background:var(--good); color:white; font-weight:bold; cursor:pointer; font-size:0.85rem;">😊
+                                        沒有</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 最終評估 -->
+                    <div style="font-size:1.2rem; font-weight:bold;">
+                        大腦最終評估：<span id="score-final" style="font-size:1.5rem;">0</span>
+                    </div>
+                </div>
             </div>
 
             <div id="alert-box" class="alert-box"></div>
@@ -1397,23 +1513,86 @@
             <div class="node-box root-node has-children"><strong>Human (大腦)</strong><br><small>預設尋求高性價比</small></div><ul>`;
 
             humanTree.children.forEach(demand => {
-                demand.actions.sort((a, b) => b.cp - a.cp); // 降冪排序
+                demand.actions.sort((a, b) => b.cp - a.cp); // 降冪排序（顯示用）
                 let hasActions = demand.actions.length > 0;
+
+                // 找出長期CP最高的 action (理想選擇 👑)
+                let bestLtIdx = -1;
+                if (hasActions) {
+                    let maxLt = -Infinity;
+                    demand.actions.forEach((a, i) => { if (a.lt > maxLt) { maxLt = a.lt; bestLtIdx = i; } });
+                }
+
+                // 找出短期CP最高的 action (大腦預設執行)
+                let bestStIdx = -1;
+                if (hasActions) {
+                    let maxSt = -Infinity;
+                    demand.actions.forEach((a, i) => { if (a.st > maxSt) { maxSt = a.st; bestStIdx = i; } });
+                }
+
                 html += `<li><div class="node-box demand-node ${hasActions ? "has-children" : ""}">
                         <span class="node-delete-x" onclick="deleteNode('${demand.id}', null, event)">✕</span>
                         <strong>Demand: <br>${demand.name}</strong>
                      </div><ul>`;
 
+                const totalItems = demand.actions.length + 1; // actions + add button
+                const midIdx = (totalItems - 1) / 2; // Exact vertical center of the <ul> where parent line connects
+
                 demand.actions.forEach((act, j) => {
                     let cpColor = act.cp >= 0 ? 'var(--good)' : 'var(--bad)';
                     let ltClass = act.lt < 0 ? 'lt-negative' : (act.lt > 0 ? 'lt-positive' : '');
-                    html += `<li><div class="node-box action-node ${ltClass}" onclick="openEditor('${demand.id}', '${act.id}')">
+                    const isCrown = (j === bestLtIdx);
+                    const isStDefault = (j === bestStIdx);
+                    const stColor = bestStIdx >= 0 ? (demand.actions[bestStIdx].lt <= 0 ? 'red' : 'green') : '';
+                    const stLineClass = isStDefault ? `st-default-line-${stColor}` : '';
+
+                    const y1 = Math.min(midIdx, bestStIdx);
+                    const y2 = Math.max(midIdx, bestStIdx);
+
+                    const overlapStart = Math.max(j - 0.5, y1);
+                    const overlapEnd = Math.min(j + 0.5, y2);
+                    const inStPath = (overlapStart < overlapEnd && bestStIdx >= 0);
+
+                    let overlayClass = '';
+                    if (inStPath) {
+                        overlayClass = stColor;
+                        if (overlapStart > j - 0.5) overlayClass += ' start'; // Crop top half (start from middle down)
+                        if (overlapEnd < j + 0.5) overlayClass += ' end';     // Crop bottom half (start from middle up)
+                    }
+
+                    const isBoth = isCrown && isStDefault;
+                    const bestClass = isBoth ? 'best-action-label up' : 'best-action-label';
+                    const stLabelBad = isStDefault && demand.actions[bestStIdx].lt <= 0;
+                    const stClass = isBoth ? `st-default-label down ${stLabelBad ? 'bad' : 'good'}` : `st-default-label ${stLabelBad ? 'bad' : 'good'}`;
+
+                    html += `<li class="${stLineClass}">`;
+                    if (inStPath) html += `<div class="st-vert-overlay ${overlayClass}"></div>`;
+                    html += `<div class="node-box action-node ${ltClass}" onclick="openEditor('${demand.id}', '${act.id}')">
                                 <span class="node-delete-x" onclick="deleteNode('${demand.id}', '${act.id}', event)">✕</span>
-                                ${j === 0 ? '<div class="cp-crown">👑</div><div class="best-action-label">尋找最佳解 ➔</div>' : ''}
+                                ${isCrown ? `<div class="cp-crown">👑</div><div class="${bestClass}">長期最佳解 ➡</div>` : ''}
+                                ${isStDefault ? `<div class="${stClass}">大腦預設 ➡</div>` : ''}
                                 <strong>${act.name}</strong><div class="action-cp-text" style="color: ${cpColor};">最終 CP: ${act.cp.toFixed(2)}</div>
                             </div></li>`;
                 });
-                html += `<li><div class="node-box add-node" onclick="openEditor('${demand.id}', null)">➕ 新增行動方案</div></li></ul></li>`;
+
+                // Also check if the 'Add Action' button itself is part of the colored path
+                const addBtnIdx = demand.actions.length;
+                const y1 = Math.min(midIdx, bestStIdx);
+                const y2 = Math.max(midIdx, bestStIdx);
+                const overlapStartAdd = Math.max(addBtnIdx - 0.5, y1);
+                const overlapEndAdd = Math.min(addBtnIdx + 0.5, y2);
+                const inStPathAddBtn = (overlapStartAdd < overlapEndAdd && bestStIdx >= 0);
+
+                let addBtnOverlay = '';
+                if (inStPathAddBtn) {
+                    const stColor = demand.actions[bestStIdx].lt <= 0 ? 'red' : 'green';
+                    let overlayClass = stColor;
+                    if (overlapStartAdd > addBtnIdx - 0.5) overlayClass += ' start';
+                    if (overlapEndAdd < addBtnIdx + 0.5) overlayClass += ' end';
+                    addBtnOverlay = `<div class="st-vert-overlay ${overlayClass}"></div>`;
+                }
+
+                html += `<li>${addBtnOverlay}<div class="node-box add-node" onclick="openEditor('${demand.id}', null)">➕ 新增行動方案</div></li></ul></li>`;
             });
             html += `<li><div class="node-box add-node" onclick="addBaseDemand()">➕ 新增底層需求</div></li></ul></li></ul>`;
             renderArea.innerHTML = html;
@@ -1504,10 +1683,45 @@
             }
         }
 
+        let ltMultiplier = 0.1; // Default: x 0.1
+        let sleepTooltipTimer = null;
+
+        function toggleInfoPanel() {
+            const panel = document.getElementById('info-panel');
+            const toggle = document.getElementById('info-toggle');
+            if (panel.style.display === 'none') {
+                panel.style.display = 'block';
+                toggle.textContent = '▼';
+            } else {
+                panel.style.display = 'none';
+                toggle.textContent = '▶';
+            }
+        }
+
+        function showSleepTooltip() {
+            clearTimeout(sleepTooltipTimer);
+            document.getElementById('sleep-tooltip').style.display = 'block';
+        }
+        function hideSleepTooltipDelay() {
+            sleepTooltipTimer = setTimeout(() => {
+                document.getElementById('sleep-tooltip').style.display = 'none';
+            }, 300);
+        }
+        function clearSleepTimeout() {
+            clearTimeout(sleepTooltipTimer);
+        }
+        function setSleepMultiplier(isStayedUp) {
+            ltMultiplier = isStayedUp ? 0.01 : 0.2;
+            document.getElementById('lt-multiplier').textContent = `× ${ltMultiplier}`;
+            document.getElementById('sleep-tooltip').style.display = 'none';
+            updateScores();
+            showToast(isStayedUp ? '😴 熬夜模式：長期影響力降低為 × 0.01' : '😊 良好狀態：長期影響力提升為 × 0.2', 'success');
+        }
+
         function updateScores() {
             let stSum = currentTokens.filter(t => t.timeType === 'st').reduce((sum, t) => sum + t.score, 0);
             let ltSum = currentTokens.filter(t => t.timeType === 'lt').reduce((sum, t) => sum + t.score, 0);
-            let finalCp = stSum + (ltSum * 0.1);
+            let finalCp = stSum + (ltSum * ltMultiplier);
 
             document.getElementById('score-st').innerText = stSum;
             document.getElementById('score-lt').innerText = ltSum;
