@@ -21,6 +21,17 @@ module.exports = async function handler(req, res) {
         return res.status(400).json({ error: '缺少 treeData' });
     }
 
+    // ===== 結構驗證：treeData 必須符合預期格式 =====
+    if (typeof treeData.name !== 'string' || !Array.isArray(treeData.children)) {
+        return res.status(400).json({ error: 'treeData 格式無效：需要 name (string) 和 children (array)' });
+    }
+
+    // ===== 大小限制：防止濫用（最大 5MB）=====
+    const payloadSize = JSON.stringify(req.body).length;
+    if (payloadSize > 5 * 1024 * 1024) {
+        return res.status(413).json({ error: '資料過大，上限為 5MB' });
+    }
+
     try {
         await connectDB();
         const user = await User.findOne({ googleId: userId });

@@ -21,6 +21,14 @@ module.exports = async function handler(req, res) {
         return res.status(400).json({ error: '缺少 fileName' });
     }
 
+    // ===== 檔名驗證：只允許 .json，長度 ≤ 100 =====
+    if (typeof fileName !== 'string' || fileName.length > 100) {
+        return res.status(400).json({ error: '檔案名稱過長（上限 100 字元）' });
+    }
+    if (!fileName.toLowerCase().endsWith('.json')) {
+        return res.status(400).json({ error: '只允許建立 .json 檔案' });
+    }
+
     try {
         await connectDB();
         const user = await User.findOne({ googleId: userId });
