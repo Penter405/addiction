@@ -1101,6 +1101,107 @@
             font-size: 0.85rem;
             color: #999;
         }
+
+        /* ================= Generic Modal (replaces confirm/prompt) ================= */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.45);
+            z-index: 9500;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(2px);
+        }
+
+        .modal-overlay.show {
+            display: flex;
+        }
+
+        .modal-box {
+            background: white;
+            border-radius: 16px;
+            width: 90%;
+            max-width: 440px;
+            padding: 28px;
+            box-shadow: 0 16px 50px rgba(0, 0, 0, 0.25);
+            animation: dropIn 0.25s ease;
+            text-align: center;
+        }
+
+        .modal-box h3 {
+            margin: 0 0 12px 0;
+            font-size: 1.15rem;
+            color: var(--text-main);
+        }
+
+        .modal-box p {
+            margin: 0 0 18px 0;
+            font-size: 0.95rem;
+            color: #555;
+            line-height: 1.6;
+        }
+
+        .modal-box input {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 16px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 1rem;
+            box-sizing: border-box;
+        }
+
+        .modal-box input:focus {
+            border-color: var(--st-color);
+            outline: none;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .modal-actions button {
+            padding: 10px 24px;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            font-weight: bold;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+        }
+
+        .modal-btn-primary {
+            background: var(--st-color);
+            color: white;
+        }
+
+        .modal-btn-primary:hover {
+            background: #2980b9;
+        }
+
+        .modal-btn-danger {
+            background: var(--bad);
+            color: white;
+        }
+
+        .modal-btn-danger:hover {
+            background: #c0392b;
+        }
+
+        .modal-btn-cancel {
+            background: #eee;
+            color: #555;
+        }
+
+        .modal-btn-cancel:hover {
+            background: #ddd;
+        }
     </style>
 </head>
 
@@ -1115,6 +1216,16 @@
 
     <!-- HTML Toast 提示容器 -->
     <div id="toast-container" class="toast-container"></div>
+
+    <!-- ================= Generic Modal ================= -->
+    <div class="modal-overlay" id="modal-overlay">
+        <div class="modal-box">
+            <h3 id="modal-title"></h3>
+            <p id="modal-message"></p>
+            <input type="text" id="modal-input" style="display:none;" placeholder="">
+            <div class="modal-actions" id="modal-actions"></div>
+        </div>
+    </div>
 
     <!-- 隱藏的本機檔案 input -->
     <input type="file" id="local-file-input" accept=".json" style="display: none;"
@@ -1391,6 +1502,77 @@
             container.appendChild(toast);
         }
 
+        // Reusable modal: replaces confirm() and prompt()
+        // Usage:
+        //   const ok = await showModal({ title, message, confirmText, cancelText })           → returns true/false
+        //   const val = await showModal({ title, message, inputPlaceholder, confirmText })    → returns string/null
+        //   await showModal({ title, message, buttons: [{text, className, value}] })          → returns value
+        function showModal(opts) {
+            return new Promise(resolve => {
+                const overlay = document.getElementById('modal-overlay');
+                const titleEl = document.getElementById('modal-title');
+                const msgEl = document.getElementById('modal-message');
+                const inputEl = document.getElementById('modal-input');
+                const actionsEl = document.getElementById('modal-actions');
+
+                titleEl.textContent = opts.title || '';
+                msgEl.innerHTML = opts.message || '';
+
+                // Input mode
+                if (opts.inputPlaceholder !== undefined) {
+                    inputEl.style.display = 'block';
+                    inputEl.value = opts.inputDefault || '';
+                    inputEl.placeholder = opts.inputPlaceholder;
+                    setTimeout(() => inputEl.focus(), 100);
+                } else {
+                    inputEl.style.display = 'none';
+                }
+
+                function close(val) {
+                    overlay.classList.remove('show');
+                    resolve(val);
+                }
+
+                // Build buttons
+                let btnsHTML = '';
+                if (opts.buttons) {
+                    opts.buttons.forEach((b, i) => {
+                        btnsHTML += `<button class="${b.className || 'modal-btn-primary'}" id="modal-btn-${i}">${b.text}</button>`;
+                    });
+                } else {
+                    const confirmText = opts.confirmText || '確定';
+                    const cancelText = opts.cancelText || '取消';
+                    const confirmClass = opts.danger ? 'modal-btn-danger' : 'modal-btn-primary';
+                    btnsHTML = `<button class="modal-btn-cancel" id="modal-btn-cancel">${cancelText}</button>`;
+                    btnsHTML += `<button class="${confirmClass}" id="modal-btn-confirm">${confirmText}</button>`;
+                }
+                actionsEl.innerHTML = btnsHTML;
+
+                // Bind events
+                if (opts.buttons) {
+                    opts.buttons.forEach((b, i) => {
+                        document.getElementById(`modal-btn-${i}`).onclick = () => close(b.value);
+                    });
+                } else {
+                    document.getElementById('modal-btn-cancel').onclick = () => {
+                        close(opts.inputPlaceholder !== undefined ? null : false);
+                    };
+                    document.getElementById('modal-btn-confirm').onclick = () => {
+                        close(opts.inputPlaceholder !== undefined ? inputEl.value : true);
+                    };
+                }
+
+                // Enter key for input mode
+                if (opts.inputPlaceholder !== undefined) {
+                    inputEl.onkeydown = (e) => {
+                        if (e.key === 'Enter') close(inputEl.value);
+                    };
+                }
+
+                overlay.classList.add('show');
+            });
+        }
+
         // =========================================================================
         // 無邊界畫布：滑鼠縮放與平移邏輯
         // =========================================================================
@@ -1523,10 +1705,15 @@
             openEditor(newDemandId, newActionId);
         }
 
-        function addBaseDemand() {
-            let name = prompt("請輸入新的底層需求 (例如：逃避現實、尋求刺激)：");
+        async function addBaseDemand() {
+            const name = await showModal({
+                title: '➕ 新增底層需求',
+                message: '請輸入新的底層需求名稱',
+                inputPlaceholder: '例如：逃避現實、尋求刺激',
+                confirmText: '新增',
+            });
             if (name && name.trim()) {
-                humanTree.children.push({ id: generateId(), name: name, actions: [] });
+                humanTree.children.push({ id: generateId(), name: name.trim(), actions: [] });
                 renderTree();
                 syncToDrive('addBaseDemand');
             }
@@ -1535,28 +1722,38 @@
         // =========================================================================
         // View 1: 實體樹狀圖渲染邏輯 (無邊界畫布)
         // =========================================================================
-        function deleteNode(demandId, actionId, event) {
+        async function deleteNode(demandId, actionId, event) {
             event.stopPropagation();
             let demand = humanTree.children.find(d => d.id === demandId);
             if (actionId) {
-                // Deleting an action node (no children)
                 let action = demand.actions.find(a => a.id === actionId);
-                if (confirm(`確定要刪除行動「${action.name}」嗎？`)) {
+                const ok = await showModal({
+                    title: '🗑️ 刪除行動',
+                    message: `確定要刪除行動「<strong>${action.name}</strong>」嗎？`,
+                    confirmText: '刪除',
+                    danger: true,
+                });
+                if (ok) {
                     demand.actions = demand.actions.filter(a => a.id !== actionId);
                     renderTree();
-                    showToast("行動已刪除", "success");
+                    showToast('行動已刪除', 'success');
                     syncToDrive('deleteNode');
                 }
             } else {
-                // Deleting a demand node and all its children
                 let childCount = demand.actions.length;
-                let msg = `確定要刪除需求「${demand.name}」`;
-                if (childCount > 0) msg += `及其下 ${childCount} 個行動方案`;
+                let msg = `確定要刪除需求「<strong>${demand.name}</strong>」`;
+                if (childCount > 0) msg += `及其下 <strong>${childCount}</strong> 個行動方案`;
                 msg += '嗎？';
-                if (confirm(msg)) {
+                const ok = await showModal({
+                    title: '🗑️ 刪除需求',
+                    message: msg,
+                    confirmText: '全部刪除',
+                    danger: true,
+                });
+                if (ok) {
                     humanTree.children = humanTree.children.filter(d => d.id !== demandId);
                     renderTree();
-                    showToast("底層需求已刪除", "success");
+                    showToast('底層需求已刪除', 'success');
                     syncToDrive('deleteNode');
                 }
             }
@@ -2254,11 +2451,17 @@
         async function openDrivePicker() {
             try {
                 const fileName = generateFileName();
-                const createConfirm = confirm(
-                    `要在 Google Drive 建立新檔案「${fileName}」作為同步目標嗎？\n\n（如果已有檔案，請輸入 fileId）`
-                );
+                const choice = await showModal({
+                    title: '📁 設定 Google Drive 同步檔案',
+                    message: `要建立新檔案「<strong>${fileName}</strong>」作為同步目標嗎？<br>或者，如果您已有現有檔案，可以輸入 File ID。`,
+                    buttons: [
+                        { text: '取消', className: 'modal-btn-cancel', value: 'cancel' },
+                        { text: '📝 輸入 File ID', className: 'modal-btn-primary', value: 'fileId' },
+                        { text: '➕ 建立新檔案', className: 'modal-btn-primary', value: 'create' },
+                    ],
+                });
 
-                if (createConfirm) {
+                if (choice === 'create') {
                     const res = await fetch(API_BASE + '/api/create-drive-file', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json', ...authHeaders() },
@@ -2271,13 +2474,18 @@
                         showToast(`☁️ 已建立 Drive 檔案：${fileName}`, 'success');
                     } else {
                         if (res.status === 402 || res.status === 403) {
-                            showToast('⚠️ Google Drive 空間不足，無法建立檔案，請清理雲端空間', 'error');
+                            showToast('⚠️ Google Drive 空間不足，無法建立檔案', 'error');
                         } else {
                             showToast('⚠️ 建立檔案失敗：' + (data.error || '未知錯誤'), 'error');
                         }
                     }
-                } else {
-                    const fileId = prompt('請輸入 Google Drive 的 File ID：');
+                } else if (choice === 'fileId') {
+                    const fileId = await showModal({
+                        title: '📝 輸入 Google Drive File ID',
+                        message: '請貼上現有 Google Drive 檔案的 File ID',
+                        inputPlaceholder: '例如：1BxiMVs0XRA5nFMdKvBdBZjg...',
+                        confirmText: '設定',
+                    });
                     if (fileId && fileId.trim()) {
                         const res = await fetch(API_BASE + '/api/set-drive-file', {
                             method: 'POST',
