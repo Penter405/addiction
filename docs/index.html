@@ -1522,21 +1522,7 @@
                             style="position:absolute; top:calc(100% + 5px); left:50%; transform:translateX(-50%);">
                             <span id="lt-multiplier"
                                 style="background:#f0f0f0; padding:4px 10px; border-radius:8px; font-size:0.9rem; font-weight:bold; color:#666; cursor:pointer; border:1px solid #ddd; white-space:nowrap;"
-                                onmouseenter="showSleepTooltip()" onmouseleave="hideSleepTooltipDelay()">× 0.1</span>
-                            <div id="sleep-tooltip"
-                                style="display:none; position:absolute; top:calc(100% + 35px); left:50%; transform:translateX(-50%); background:white; border-radius:12px; box-shadow:0 6px 24px rgba(0,0,0,0.15); padding:14px 18px; min-width:220px; z-index:100; text-align:center;"
-                                onmouseenter="clearSleepTimeout()" onmouseleave="hideSleepTooltipDelay()">
-                                <p style="margin:0 0 10px 0; font-size:0.9rem; color:#333; font-weight:bold;">🌙
-                                    你最近有熬夜嗎？</p>
-                                <div style="display:flex; gap:8px; justify-content:center;">
-                                    <button onclick="setSleepMultiplier(true)"
-                                        style="padding:6px 16px; border-radius:8px; border:none; background:var(--bad); color:white; font-weight:bold; cursor:pointer; font-size:0.85rem;">😴
-                                        有熬夜</button>
-                                    <button onclick="setSleepMultiplier(false)"
-                                        style="padding:6px 16px; border-radius:8px; border:none; background:var(--good); color:white; font-weight:bold; cursor:pointer; font-size:0.85rem;">😊
-                                        沒有</button>
-                                </div>
-                            </div>
+                                onclick="openSleepSliderModal()">× 0.1</span>
                         </div>
                     </div>
                     <!-- 最終評估 -->
@@ -1747,7 +1733,12 @@
 
         function initApp() {
             if (!hasInitialized) switchView('view-welcome');
-            else { renderTree(); switchView('view-tree'); resetCanvasView(); }
+            else {
+                renderTree();
+                switchView('view-tree');
+                resetCanvasView();
+                checkDailySleepPrompt(); // 問今天有沒有熬夜
+            }
         }
 
         function initFirstAction() {
@@ -1829,8 +1820,16 @@
             let html = `<ul class="tree"><li>
             <div class="node-box root-node has-children"><strong>Human (大腦)</strong><br><small>預設尋求高性價比</small></div><ul>`;
 
+            // Use the global multiplier for on-the-fly calculation
+            const currentLtMultiplier = ltMultiplier;
+
             humanTree.children.forEach(demand => {
-                demand.actions.sort((a, b) => b.cp - a.cp); // 降冪排序（顯示用）
+                // Calculate dynamic CP and sort
+                demand.actions.forEach(a => {
+                    a._dynamicCp = a.st + (a.lt * currentLtMultiplier);
+                });
+                demand.actions.sort((a, b) => b._dynamicCp - a._dynamicCp); // 降冪排序（顯示用）
+
                 let hasActions = demand.actions.length > 0;
 
                 // 找出長期CP最高的 action (理想選擇 👑)
@@ -1840,7 +1839,8 @@
                     demand.actions.forEach((a, i) => { if (a.lt > maxLt) { maxLt = a.lt; bestLtIdx = i; } });
                 }
 
-                // 找出短期CP最高的 action (大腦預設執行)
+                // 找出短期CP最高(預期大腦執行的) action，但因為已經以 dynamicCp 排序，
+                // 短期CP最高的也可能隨 multiplier 改變。這裡維持找 st 最高者為大腦預設。
                 let bestStIdx = -1;
                 if (hasActions) {
                     let maxSt = -Infinity;
@@ -1856,7 +1856,7 @@
                 const midIdx = (totalItems - 1) / 2; // Exact vertical center of the <ul> where parent line connects
 
                 demand.actions.forEach((act, j) => {
-                    let cpColor = act.cp >= 0 ? 'var(--good)' : 'var(--bad)';
+                    let cpColor = act._dynamicCp >= 0 ? 'var(--good)' : 'var(--bad)';
                     let ltClass = act.lt < 0 ? 'lt-negative' : (act.lt > 0 ? 'lt-positive' : '');
                     const isCrown = (j === bestLtIdx);
                     const isStDefault = (j === bestStIdx);
@@ -1888,7 +1888,7 @@
                                 <span class="node-delete-x" onclick="deleteNode('${demand.id}', '${act.id}', event)">✕</span>
                                 ${isCrown ? `<div class="cp-crown">👑</div><div class="${bestClass}">長期最佳解 ➡</div>` : ''}
                                 ${isStDefault ? `<div class="${stClass}">大腦預設 ➡</div>` : ''}
-                                <strong>${act.name}</strong><div class="action-cp-text" style="color: ${cpColor};">最終 CP: ${act.cp.toFixed(2)}</div>
+                                <strong>${act.name}</strong><div class="action-cp-text" style="color: ${cpColor};">當下體感 CP: ${act._dynamicCp.toFixed(2)}</div>
                             </div></li>`;
                 });
 
@@ -2000,8 +2000,13 @@
             }
         }
 
-        let ltMultiplier = 0.1; // Default: x 0.1
-        let sleepTooltipTimer = null;
+        let ltMultiplier = parseFloat(localStorage.getItem('brain_lt_multiplier')) || 0.1;
+
+        // Initialize display value on load
+        document.addEventListener('DOMContentLoaded', () => {
+            const m = parseFloat(localStorage.getItem('brain_lt_multiplier')) || 0.1;
+            document.getElementById('lt-multiplier').textContent = `× ${m}`;
+        });
 
         function toggleInfoPanel() {
             const panel = document.getElementById('info-panel');
@@ -2015,24 +2020,94 @@
             }
         }
 
-        function showSleepTooltip() {
-            clearTimeout(sleepTooltipTimer);
-            document.getElementById('sleep-tooltip').style.display = 'block';
+        async function openSleepSliderModal() {
+            // Reusable modal with exact HTML for slider
+            const html = `
+                <div style="text-align:center; padding-top: 10px;">
+                    <p style="font-size: 1.1rem; margin-bottom: 20px;">最近 7 天，你睡最少的那天睡了幾個小時？</p>
+                    <input type="range" id="modal-sleep-range" min="0" max="14" step="0.5" value="7" oninput="document.getElementById('modal-sleep-val').innerText = this.value + ' 小時'" style="width: 80%; cursor: pointer;">
+                    <p id="modal-sleep-val" style="font-size: 1.5rem; font-weight: bold; color: var(--primary); margin: 15px 0;">7 小時</p>
+                </div>
+            `;
+            const hoursStr = await showModal({
+                title: '🌙 每日睡眠狀態確認',
+                message: html,
+                confirmText: '確定',
+                cancelText: '取消'
+            });
+
+            if (hoursStr) {
+                // Determine hours from the DOM (since modal resolves when clicking enter/confirm)
+                // Unfortunately showModal only resolves `true` or `inputEl.value`. We can read the DOM before it closes, 
+                // but the cleanest way is just to grab it by ID if it's still there. Actually `showModal` hides the overlay when done but elements remain until overwritten.
+            }
+            // To make this robust, we should create a custom implementation or extract value.
         }
-        function hideSleepTooltipDelay() {
-            sleepTooltipTimer = setTimeout(() => {
-                document.getElementById('sleep-tooltip').style.display = 'none';
-            }, 300);
+
+        async function checkDailySleepPrompt() {
+            const today = new Date().toISOString().slice(0, 10);
+            const lastSleepDate = localStorage.getItem('brain_sleep_date');
+
+            if (lastSleepDate !== today) {
+                await doSleepSliderFlow();
+                localStorage.setItem('brain_sleep_date', today);
+            }
         }
-        function clearSleepTimeout() {
-            clearTimeout(sleepTooltipTimer);
+
+        async function doSleepSliderFlow() {
+            const html = `
+                <div style="text-align:center; padding-top: 10px;">
+                    <p style="font-size: 1.1rem; margin-bottom: 20px;">最近 7 天，你睡最少的那天睡了幾個小時？</p>
+                    <input type="range" id="modal-sleep-range" min="0" max="14" step="0.5" value="7" oninput="document.getElementById('modal-sleep-val').innerText = this.value + ' 小時'" style="width: 80%; cursor: pointer;">
+                    <p id="modal-sleep-val" style="font-size: 1.5rem; font-weight: bold; color: var(--primary); margin: 15px 0;">7 小時</p>
+                </div>
+            `;
+            const ok = await showModal({
+                title: '🌙 每日睡眠狀態確認',
+                message: html,
+                buttons: [
+                    { text: '😴 確實有熬夜 (Yes)', className: 'modal-btn-danger', value: 'yes' },
+                    { text: '😊 沒有熬夜 (No)', className: 'modal-btn-primary', value: 'no' }
+                ]
+            });
+
+            if (ok) {
+                const hours = parseFloat(document.getElementById('modal-sleep-range').value);
+                setSleepFromHours(hours, ok);
+            }
         }
-        function setSleepMultiplier(isStayedUp) {
+
+        // We override openSleepSliderModal to reuse doSleepSliderFlow
+        function openSleepSliderModal() {
+            doSleepSliderFlow();
+        }
+
+        function setSleepFromHours(hours, choice) {
+            const isStayedUp = (choice === 'yes') || (hours < 6);
             ltMultiplier = isStayedUp ? 0.01 : 0.2;
-            document.getElementById('lt-multiplier').textContent = `× ${ltMultiplier}`;
-            document.getElementById('sleep-tooltip').style.display = 'none';
+            localStorage.setItem('brain_lt_multiplier', ltMultiplier.toString());
+
+            const multEl = document.getElementById('lt-multiplier');
+            if (multEl) multEl.textContent = `× ${ltMultiplier}`;
+
             updateScores();
-            showToast(isStayedUp ? '😴 熬夜模式：長期影響力降低為 × 0.01' : '😊 良好狀態：長期影響力提升為 × 0.2', 'success');
+            if (document.getElementById('view-tree').classList.contains('active')) {
+                renderTree(); // refresh canvas if we are viewing it
+            }
+
+            let msg = '';
+            let toastType = 'success';
+            if (isStayedUp) {
+                toastType = 'error';
+                if (choice === 'yes') {
+                    msg = '😴 熬夜模式：你表示有熬夜。大腦判斷力下降，長期CP影響力降至最低 (× 0.01)';
+                } else {
+                    msg = `😴 熬夜模式：睡眠時數不足 (${hours} 小時 < 6 小時)。大腦判斷力下降，長期CP影響力降至最低 (× 0.01)`;
+                }
+            } else {
+                msg = '😊 精神飽滿：大腦紀律維持，長期CP影響力提升 (× 0.2)';
+            }
+            showToast(msg, toastType);
         }
 
         function updateScores() {
