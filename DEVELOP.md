@@ -204,7 +204,9 @@ stateDiagram-v2
 ## Security Notes
 
 1. **Never expose tokens**: OAuth access/refresh tokens are encrypted at rest and only decrypted server-side in memory
-2. **Minimal scope**: `drive.file` restricts access to app-created/user-selected files only
+2. **Minimal scope (`drive.file`)**: 
+   - Restricts access to app-created or user-selected files only. 
+   - **Folder Visibility**: Because of this scope, the app's custom Google Drive Folder/File Picker can **ONLY** see folders and files that were created by the app itself. It cannot see or read the user's personal Google Drive folders created outside the app.
 3. **CSRF**: OAuth state parameter verified in callback
 4. **Session**: HMAC-SHA256 signed, 7-day expiry, no server-side session store needed
 5. **CORS**: Whitelisted to `FRONTEND_URL` origin + localhost

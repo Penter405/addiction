@@ -103,6 +103,12 @@ vercel --prod
 
 ---
 
+## more detail
+
+ [DEVELOP.md](https://github.com/Penter405/addiction/blob/main/DEVELOP.md)
+
+---
+
 ## 📄 License
 
 This project is for educational purposes.
