@@ -3056,6 +3056,13 @@
                 <span class="item-icon">📜</span> 服務條款 (Terms of Service)
             </button>`;
 
+            // Danger zone
+            html += '<div class="more-dropdown-divider"></div>';
+            html += '<div class="more-dropdown-header" style="color:var(--bad);">危險操作</div>';
+            html += `<button class="more-dropdown-item" onclick="deleteAllDataFlow(); closeAllDropdowns();" style="color:var(--bad);">
+                <span class="item-icon">🗑️</span> 刪除所有資料 (Remove all my data)
+            </button>`;
+
             dropdown.innerHTML = html;
         }
 
@@ -3089,6 +3096,56 @@
             // If switching to local or both, save to local
             if (newMode === 'local' || newMode === 'both') {
                 saveToLocal();
+            }
+        }
+
+        async function deleteAllDataFlow() {
+            const html = `
+                <div style="text-align:left; padding-top: 10px;">
+                    <p style="font-size: 1rem; margin-bottom: 10px; color: var(--bad);">警告：這將會清除您在此網站上的所有帳號資料與設定，且無法還原。</p>
+                    <p style="font-size: 0.95rem; margin-bottom: 10px;">若確定要刪除，請在下方輸入：<br><strong style="user-select:all; color:#333; background:#f5f5f5; padding:2px 4px; border-radius:4px;">I want to remove all my data on this website</strong></p>
+                    <input type="text" id="modal-delete-confirm-input" placeholder="請輸入確認文字..." style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;" autocomplete="off">
+                </div>
+            `;
+            const ok = await showModal({
+                title: '🗑️ 刪除所有資料',
+                message: html,
+                confirmText: '確定刪除',
+                cancelText: '取消',
+                danger: true
+            });
+
+            if (ok) {
+                const inputEl = document.getElementById('modal-delete-confirm-input');
+                if (!inputEl) return;
+                const inputVal = inputEl.value.trim();
+
+                if (inputVal !== 'I want to remove all my data on this website') {
+                    showToast('⚠️ 輸入的確認文字不正確，刪除已取消', 'error');
+                    return;
+                }
+
+                // Call backend if logged in
+                if (currentUser) {
+                    try {
+                        await fetch(API_BASE + '/api/auth/me', {
+                            method: 'DELETE',
+                            headers: authHeaders()
+                        });
+                    } catch (err) {
+                        console.error('Delete account error', err);
+                    }
+                }
+
+                // Clear everything locally
+                localStorage.clear();
+
+                showToast('✅ 成功刪除所有資料 (Successfully removed all your data)', 'success');
+
+                // Reset state
+                setTimeout(() => {
+                    location.reload();
+                }, 1500);
             }
         }
 

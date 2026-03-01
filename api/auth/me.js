@@ -4,7 +4,7 @@ const { handleCors } = require('../_lib/cors');
 module.exports = async function handler(req, res) {
     if (handleCors(req, res)) return;
 
-    if (req.method !== 'GET') {
+    if (!['GET', 'DELETE'].includes(req.method)) {
         return res.status(405).json({ error: 'Method not allowed' });
     }
 
@@ -17,6 +17,16 @@ module.exports = async function handler(req, res) {
 
     try {
         await connectDB();
+
+        if (req.method === 'DELETE') {
+            if (userId) {
+                await User.deleteOne({ googleId: userId });
+            }
+            // Clear session cookie
+            res.setHeader('Set-Cookie', 'session=; Path=/; HttpOnly; Secure; SameSite=None; Max-Age=0');
+            return res.status(200).json({ success: true, message: 'Account and data deleted' });
+        }
+
         const user = await User.findOne({ googleId: userId });
 
         if (!user) {
