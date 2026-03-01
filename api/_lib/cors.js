@@ -21,7 +21,7 @@ function handleCors(req, res) {
         res.setHeader('Access-Control-Allow-Origin', allowed);
     }
 
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
     res.setHeader('Access-Control-Allow-Credentials', 'true');
     // 防止 Vercel edge cache 快取 CORS 回應（不同 Origin 需要不同回應）
