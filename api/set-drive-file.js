@@ -13,13 +13,13 @@ module.exports = async function handler(req, res) {
 
     const userId = getSession(req);
     if (!userId) {
-        return res.status(401).json({ error: '?�登?? });
+        return res.status(401).json({ error: '未登入' });
     }
 
     const { fileId } = req.body || {};
 
     if (!fileId || !FILE_ID_REGEX.test(fileId)) {
-        return res.status(400).json({ error: 'fileId ?��??��?' });
+        return res.status(400).json({ error: 'fileId 格式無效' });
     }
 
     try {
@@ -41,6 +41,6 @@ module.exports = async function handler(req, res) {
         res.status(200).json({ success: true, fileId });
     } catch (err) {
         console.error('Set drive file error:', err);
-        res.status(500).json({ error: '設�?失�?' });
+        res.status(500).json({ error: '設定失敗' });
     }
 };

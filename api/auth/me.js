@@ -1,4 +1,4 @@
-const { connectDB, User } = require('../_lib/db');
+﻿const { connectDB, User } = require('../_lib/db');
 const { getSession } = require('../_lib/session');
 const { handleCors } = require('../_lib/cors');
 module.exports = async function handler(req, res) {
@@ -34,6 +34,6 @@ module.exports = async function handler(req, res) {
         });
     } catch (err) {
         console.error('Auth me error:', err);
-        res.status(500).json({ error: '伺�??�錯�? });
+        res.status(500).json({ error: '伺服器錯誤' });
     }
 };
