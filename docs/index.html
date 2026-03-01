@@ -2526,7 +2526,7 @@
             overlay.classList.add('show');
 
             try {
-                const res = await fetch(API_BASE + '/api/list-drive-folders', { headers: authHeaders() });
+                const res = await fetch(API_BASE + '/api/browse-drive?action=folders', { headers: authHeaders() });
                 const data = await res.json();
                 if (!data.success) throw new Error(data.error || '載入失敗');
 
@@ -2811,7 +2811,7 @@
             overlay.classList.add('show');
 
             try {
-                const res = await fetch(API_BASE + '/api/list-drive-files', { headers: authHeaders() });
+                const res = await fetch(API_BASE + '/api/browse-drive?action=files', { headers: authHeaders() });
                 const data = await res.json();
                 if (!data.success) throw new Error(data.error || '載入失敗');
 
@@ -2854,10 +2854,10 @@
                     overlay.classList.remove('show');
                     showToast('⏳ 正在載入檔案...', 'warning');
                     try {
-                        const loadRes = await fetch(API_BASE + '/api/load-drive-file-by-id', {
+                        const loadRes = await fetch(API_BASE + '/api/browse-drive', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json', ...authHeaders() },
-                            body: JSON.stringify({ fileId: selectedFileId }),
+                            body: JSON.stringify({ action: 'load', fileId: selectedFileId }),
                         });
                         const loadData = await loadRes.json();
                         if (!loadData.success || !loadData.data) {
