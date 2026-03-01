@@ -1379,6 +1379,12 @@
                     style="margin-top: 35px; width: 100%; font-size: 1.2rem; padding: 15px;">
                     🚀 初始化資料並開始設定
                 </button>
+                <div style="margin-top: 30px; text-align: center; font-size: 0.85rem;">
+                    <a href="privacy.html" target="_blank"
+                        style="color: #666; text-decoration: none; margin: 0 10px;">隱私權政策 (Privacy Policy)</a> |
+                    <a href="tos.html" target="_blank" style="color: #666; text-decoration: none; margin: 0 10px;">服務條款
+                        (Terms of Service)</a>
+                </div>
             </div>
         </div>
     </div>
@@ -3039,6 +3045,16 @@
                     <span class="item-icon">📁</span> 更換 Google Drive 路徑
                 </button>`;
             }
+
+            // Legal links
+            html += '<div class="more-dropdown-divider"></div>';
+            html += '<div class="more-dropdown-header">法規與條款</div>';
+            html += `<button class="more-dropdown-item" onclick="window.open('privacy.html', '_blank'); closeAllDropdowns();">
+                <span class="item-icon">📄</span> 隱私權政策 (Privacy Policy)
+            </button>`;
+            html += `<button class="more-dropdown-item" onclick="window.open('tos.html', '_blank'); closeAllDropdowns();">
+                <span class="item-icon">📜</span> 服務條款 (Terms of Service)
+            </button>`;
 
             dropdown.innerHTML = html;
         }
