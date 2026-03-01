@@ -1202,6 +1202,69 @@
         .modal-btn-cancel:hover {
             background: #ddd;
         }
+
+        /* ================= Picker List ================= */
+        .picker-list {
+            max-height: 250px;
+            overflow-y: auto;
+            margin: 12px 0;
+            border: 1px solid #eee;
+            border-radius: 10px;
+            text-align: left;
+        }
+
+        .picker-item {
+            padding: 10px 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-bottom: 1px solid #f5f5f5;
+            transition: background 0.15s;
+            font-size: 0.9rem;
+        }
+
+        .picker-item:hover {
+            background: #f0f7ff;
+        }
+
+        .picker-item.active {
+            background: #e3f2fd;
+            font-weight: bold;
+        }
+
+        .picker-item:last-child {
+            border-bottom: none;
+        }
+
+        .picker-item .picker-meta {
+            color: #999;
+            font-size: 0.75rem;
+            margin-left: auto;
+        }
+
+        .picker-empty {
+            padding: 20px;
+            text-align: center;
+            color: #999;
+        }
+
+        .picker-loading {
+            padding: 30px;
+            text-align: center;
+            color: #999;
+        }
+
+        .picker-create-row {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .picker-create-row input {
+            flex: 1;
+            margin-bottom: 0;
+        }
     </style>
 </head>
 
@@ -2447,63 +2510,113 @@
             }
         }
 
-        // Google Drive Picker (create or set file)
+        // Google Drive Folder Picker — select or create a folder, then create file inside it
         async function openDrivePicker() {
+            if (!currentUser) {
+                showToast('⚠️ 請先登入 Google', 'error');
+                return;
+            }
+
+            // Show loading modal
+            const overlay = document.getElementById('modal-overlay');
+            document.getElementById('modal-title').textContent = '📁 更換 Google Drive 路徑';
+            document.getElementById('modal-message').innerHTML = '<div class="picker-loading">⏳ 正在載入資料夾列表...</div>';
+            document.getElementById('modal-input').style.display = 'none';
+            document.getElementById('modal-actions').innerHTML = `<button class="modal-btn-cancel" onclick="document.getElementById('modal-overlay').classList.remove('show')">取消</button>`;
+            overlay.classList.add('show');
+
             try {
-                const fileName = generateFileName();
-                const choice = await showModal({
-                    title: '📁 設定 Google Drive 同步檔案',
-                    message: `要建立新檔案「<strong>${fileName}</strong>」作為同步目標嗎？<br>或者，如果您已有現有檔案，可以輸入 File ID。`,
-                    buttons: [
-                        { text: '取消', className: 'modal-btn-cancel', value: 'cancel' },
-                        { text: '📝 輸入 File ID', className: 'modal-btn-primary', value: 'fileId' },
-                        { text: '➕ 建立新檔案', className: 'modal-btn-primary', value: 'create' },
-                    ],
+                const res = await fetch(API_BASE + '/api/list-drive-folders', { headers: authHeaders() });
+                const data = await res.json();
+                if (!data.success) throw new Error(data.error || '載入失敗');
+
+                const folders = data.folders || [];
+                let selectedFolderId = null;
+                let selectedFolderName = data.currentFolder || '';
+
+                // Build folder list HTML
+                let listHTML = '<div class="picker-list">';
+                // Root (no folder) option
+                listHTML += `<div class="picker-item${!selectedFolderName ? ' active' : ''}" data-id="" data-name="">
+                    <span>📁</span> <span>根目錄 (My Drive)</span>
+                </div>`;
+                folders.forEach(f => {
+                    const isActive = f.name === selectedFolderName;
+                    const date = new Date(f.modifiedTime).toLocaleDateString();
+                    listHTML += `<div class="picker-item${isActive ? ' active' : ''}" data-id="${f.id}" data-name="${f.name}">
+                        <span>📂</span> <span>${f.name}</span> <span class="picker-meta">${date}</span>
+                    </div>`;
+                });
+                if (folders.length === 0) {
+                    listHTML += '<div class="picker-empty">目前沒有任何資料夾</div>';
+                }
+                listHTML += '</div>';
+
+                // Create new folder input
+                listHTML += `<div class="picker-create-row">
+                    <input type="text" id="new-folder-name" placeholder="輸入新資料夾名稱..." class="modal-box input">
+                    <button class="modal-btn-primary" id="btn-create-folder" style="padding:10px 16px;">➕ 建立</button>
+                </div>`;
+
+                document.getElementById('modal-message').innerHTML = '選擇現有資料夾，或建立新的：' + listHTML;
+                document.getElementById('modal-actions').innerHTML =
+                    `<button class="modal-btn-cancel" id="picker-cancel">取消</button>` +
+                    `<button class="modal-btn-primary" id="picker-confirm">✅ 使用此資料夾</button>`;
+
+                // Event: click folder item
+                document.querySelectorAll('.picker-item').forEach(item => {
+                    item.addEventListener('click', () => {
+                        document.querySelectorAll('.picker-item').forEach(i => i.classList.remove('active'));
+                        item.classList.add('active');
+                        selectedFolderId = item.getAttribute('data-id');
+                        selectedFolderName = item.getAttribute('data-name');
+                    });
                 });
 
-                if (choice === 'create') {
-                    const res = await fetch(API_BASE + '/api/create-drive-file', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json', ...authHeaders() },
-                        body: JSON.stringify({ fileName }),
-                    });
-                    const data = await res.json();
-                    if (data.success) {
-                        currentUser.hasDriveFile = true;
-                        updateAuthUI();
-                        showToast(`☁️ 已建立 Drive 檔案：${fileName}`, 'success');
-                    } else {
-                        if (res.status === 402 || res.status === 403) {
-                            showToast('⚠️ Google Drive 空間不足，無法建立檔案', 'error');
-                        } else {
-                            showToast('⚠️ 建立檔案失敗：' + (data.error || '未知錯誤'), 'error');
-                        }
-                    }
-                } else if (choice === 'fileId') {
-                    const fileId = await showModal({
-                        title: '📝 輸入 Google Drive File ID',
-                        message: '請貼上現有 Google Drive 檔案的 File ID',
-                        inputPlaceholder: '例如：1BxiMVs0XRA5nFMdKvBdBZjg...',
-                        confirmText: '設定',
-                    });
-                    if (fileId && fileId.trim()) {
-                        const res = await fetch(API_BASE + '/api/set-drive-file', {
+                // Event: create new folder
+                document.getElementById('btn-create-folder').onclick = async () => {
+                    const newName = document.getElementById('new-folder-name').value.trim();
+                    if (!newName) { showToast('⚠️ 請輸入資料夾名稱', 'error'); return; }
+                    selectedFolderName = newName;
+                    selectedFolderId = null; // backend will create it
+                    // Visual feedback
+                    document.querySelectorAll('.picker-item').forEach(i => i.classList.remove('active'));
+                    showToast(`📂 將建立新資料夾「${newName}」`, 'success');
+                    // Auto-confirm
+                    await doPickerConfirm(selectedFolderName);
+                };
+
+                // Event: cancel
+                document.getElementById('picker-cancel').onclick = () => overlay.classList.remove('show');
+
+                // Event: confirm
+                document.getElementById('picker-confirm').onclick = () => doPickerConfirm(selectedFolderName);
+
+                async function doPickerConfirm(folderName) {
+                    overlay.classList.remove('show');
+                    const fileName = generateFileName();
+                    showToast('⏳ 正在建立檔案...', 'warning');
+                    try {
+                        const createRes = await fetch(API_BASE + '/api/create-drive-file', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json', ...authHeaders() },
-                            body: JSON.stringify({ fileId: fileId.trim() }),
+                            body: JSON.stringify({ fileName, folderName: folderName || undefined }),
                         });
-                        const data = await res.json();
-                        if (data.success) {
+                        const createData = await createRes.json();
+                        if (createData.success) {
                             currentUser.hasDriveFile = true;
                             updateAuthUI();
-                            showToast('☁️ 已設定同步檔案', 'success');
+                            showToast(`☁️ 已在${folderName ? `「${folderName}」` : '根目錄'}建立同步檔案`, 'success');
                         } else {
-                            showToast('⚠️ 設定失敗：' + (data.error || '未知錯誤'), 'error');
+                            showToast('⚠️ 建立失敗：' + (createData.error || '未知錯誤'), 'error');
                         }
+                    } catch (err) {
+                        showToast('⚠️ 操作失敗：' + err.message, 'error');
                     }
                 }
             } catch (err) {
-                showToast('⚠️ 操作失敗：' + err.message, 'error');
+                overlay.classList.remove('show');
+                showToast('⚠️ 載入資料夾失敗：' + err.message, 'error');
             }
         }
 
@@ -2682,39 +2795,94 @@
             event.target.value = ''; // Reset for re-import
         }
 
-        // Manual import from Google Drive (does NOT change auto-save mode)
+        // Manual import from Google Drive with file picker (does NOT change auto-save mode)
         async function importFromDrive() {
-            if (!currentUser || !currentUser.hasDriveFile) {
-                showToast('⚠️ 請先登入並設定 Google Drive 同步檔案', 'error');
+            if (!currentUser) {
+                showToast('⚠️ 請先登入 Google', 'error');
                 return;
             }
-            showToast('☁️ 正在從 Google Drive 載入...', 'warning');
+
+            // Show loading modal
+            const overlay = document.getElementById('modal-overlay');
+            document.getElementById('modal-title').textContent = '☁️ 從 Google Drive 匯入';
+            document.getElementById('modal-message').innerHTML = '<div class="picker-loading">⏳ 正在載入檔案列表...</div>';
+            document.getElementById('modal-input').style.display = 'none';
+            document.getElementById('modal-actions').innerHTML = `<button class="modal-btn-cancel" onclick="document.getElementById('modal-overlay').classList.remove('show')">取消</button>`;
+            overlay.classList.add('show');
+
             try {
-                const res = await fetch(API_BASE + '/api/load-from-drive', { headers: authHeaders() });
-                if (!res.ok) {
-                    showToast('⚠️ 無法從 Google Drive 載入', 'error');
-                    return;
-                }
+                const res = await fetch(API_BASE + '/api/list-drive-files', { headers: authHeaders() });
                 const data = await res.json();
-                if (!data.success || !data.data || !data.data.treeData) {
-                    showToast('⚠️ Google Drive 檔案無資料', 'error');
-                    return;
-                }
-                const driveTree = data.data.treeData;
-                // Compare with current web data
-                const currentTree = serializeTreeForSync();
-                const currentStr = JSON.stringify(currentTree);
-                const driveStr = JSON.stringify(driveTree);
-                if (hasInitialized && currentStr !== driveStr) {
-                    showConflictDialog(currentTree, driveTree, '🖥️ 目前網頁資料', '☁️ Google Drive 版本', 'importDrive');
+                if (!data.success) throw new Error(data.error || '載入失敗');
+
+                const files = data.files || [];
+                let selectedFileId = null;
+
+                let listHTML = '<div class="picker-list">';
+                if (files.length === 0) {
+                    listHTML += '<div class="picker-empty">找不到任何 .json 檔案</div>';
                 } else {
-                    restoreTreeFromSerialized(driveTree);
-                    saveToLocal();
-                    initApp();
-                    showToast('☁️ 已從 Google Drive 匯入資料（資料一致）', 'success');
+                    files.forEach(f => {
+                        const date = new Date(f.modifiedTime).toLocaleString();
+                        const sizeKB = f.size ? (parseInt(f.size) / 1024).toFixed(1) + ' KB' : '';
+                        listHTML += `<div class="picker-item" data-id="${f.id}">
+                            <span>📄</span> <span>${f.name}</span> <span class="picker-meta">${sizeKB} ・ ${date}</span>
+                        </div>`;
+                    });
                 }
+                listHTML += '</div>';
+
+                document.getElementById('modal-message').innerHTML = '選擇要匯入的檔案：' + listHTML;
+                document.getElementById('modal-actions').innerHTML =
+                    `<button class="modal-btn-cancel" id="file-picker-cancel">取消</button>` +
+                    `<button class="modal-btn-primary" id="file-picker-confirm" disabled>✅ 匯入此檔案</button>`;
+
+                // Event: click file item
+                document.querySelectorAll('.picker-item').forEach(item => {
+                    item.addEventListener('click', () => {
+                        document.querySelectorAll('.picker-item').forEach(i => i.classList.remove('active'));
+                        item.classList.add('active');
+                        selectedFileId = item.getAttribute('data-id');
+                        document.getElementById('file-picker-confirm').disabled = false;
+                    });
+                });
+
+                document.getElementById('file-picker-cancel').onclick = () => overlay.classList.remove('show');
+
+                document.getElementById('file-picker-confirm').onclick = async () => {
+                    if (!selectedFileId) return;
+                    overlay.classList.remove('show');
+                    showToast('⏳ 正在載入檔案...', 'warning');
+                    try {
+                        const loadRes = await fetch(API_BASE + '/api/load-drive-file-by-id', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', ...authHeaders() },
+                            body: JSON.stringify({ fileId: selectedFileId }),
+                        });
+                        const loadData = await loadRes.json();
+                        if (!loadData.success || !loadData.data) {
+                            showToast('⚠️ 檔案讀取失敗', 'error');
+                            return;
+                        }
+                        const driveTree = loadData.data.treeData || loadData.data;
+                        const currentTree = serializeTreeForSync();
+                        const currentStr = JSON.stringify(currentTree);
+                        const driveStr = JSON.stringify(driveTree);
+                        if (hasInitialized && currentStr !== driveStr) {
+                            showConflictDialog(currentTree, driveTree, '🖥️ 目前網頁資料', '☁️ Google Drive 檔案', 'importDrive');
+                        } else {
+                            restoreTreeFromSerialized(driveTree);
+                            saveToLocal();
+                            initApp();
+                            showToast('☁️ 已從 Google Drive 匯入資料', 'success');
+                        }
+                    } catch (err) {
+                        showToast('⚠️ 載入失敗：' + err.message, 'error');
+                    }
+                };
             } catch (err) {
-                showToast('⚠️ 載入失敗：' + err.message, 'error');
+                overlay.classList.remove('show');
+                showToast('⚠️ 載入檔案列表失敗：' + err.message, 'error');
             }
         }
 
@@ -2775,7 +2943,7 @@
             </button>`;
 
             // Import from Google Drive (manual, doesn't change mode)
-            if (isLoggedIn && currentUser.hasDriveFile) {
+            if (isLoggedIn) {
                 html += `<button class="more-dropdown-item" onclick="importFromDrive(); closeAllDropdowns();">
                     <span class="item-icon">☁️</span> 從 Google Drive 匯入
                 </button>`;
@@ -2793,7 +2961,7 @@
 
             if (isLoggedIn) {
                 html += `<button class="more-dropdown-item" onclick="openDrivePicker(); closeAllDropdowns();">
-                    <span class="item-icon">📁</span> ${currentUser.hasDriveFile ? '更換 Google Drive 同步檔案' : '設定 Google Drive 同步檔案'}
+                    <span class="item-icon">📁</span> 更換 Google Drive 路徑
                 </button>`;
             }
 

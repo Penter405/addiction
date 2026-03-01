@@ -16,7 +16,7 @@ module.exports = async function handler(req, res) {
         return res.status(401).json({ error: '未登入' });
     }
 
-    const { fileName } = req.body || {};
+    const { fileName, folderName } = req.body || {};
     if (!fileName) {
         return res.status(400).json({ error: '缺少 fileName' });
     }
@@ -75,10 +75,38 @@ module.exports = async function handler(req, res) {
         // 在 Google Drive 建立新的空 JSON 檔案
         const drive = google.drive({ version: 'v3', auth: oauth2Client });
 
+        // If folderName provided, find or create the folder
+        let parentFolderId = null;
+        if (folderName && typeof folderName === 'string' && folderName.trim()) {
+            const trimmedFolder = folderName.trim();
+            // Search for existing folder
+            const folderSearch = await drive.files.list({
+                q: `name='${trimmedFolder.replace(/'/g, "\\'")}' and mimeType='application/vnd.google-apps.folder' and trashed=false`,
+                fields: 'files(id, name)',
+                spaces: 'drive',
+            });
+            if (folderSearch.data.files && folderSearch.data.files.length > 0) {
+                parentFolderId = folderSearch.data.files[0].id;
+            } else {
+                // Create the folder
+                const folderMeta = await drive.files.create({
+                    resource: {
+                        name: trimmedFolder,
+                        mimeType: 'application/vnd.google-apps.folder',
+                    },
+                    fields: 'id',
+                });
+                parentFolderId = folderMeta.data.id;
+            }
+        }
+
         const fileMetadata = {
             name: fileName,
             mimeType: 'application/json',
         };
+        if (parentFolderId) {
+            fileMetadata.parents = [parentFolderId];
+        }
 
         const media = {
             mimeType: 'application/json',
@@ -97,10 +125,14 @@ module.exports = async function handler(req, res) {
 
         const fileId = file.data.id;
 
-        // 儲存 fileId 和 fileName 到 User
+        // 儲存 fileId, fileName, folderName 到 User
+        const updateFields = { driveFileId: fileId, driveFileName: fileName, updatedAt: new Date() };
+        if (folderName && folderName.trim()) {
+            updateFields.driveFolderName = folderName.trim();
+        }
         await User.findOneAndUpdate(
             { googleId: userId },
-            { $set: { driveFileId: fileId, driveFileName: fileName, updatedAt: new Date() } }
+            { $set: updateFields }
         );
 
         // 記錄 audit log
