@@ -22,6 +22,25 @@
             /* 攔截點擊 */
         }
 
+        .tos-block-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            max-width: 500px;
+            width: 90%;
+            display: none;
+        }
+
+        .tos-block-overlay.show .tos-block-content {
+            display: block;
+        }
+
         .tos-block-overlay.show {
             display: block;
         }
@@ -1345,7 +1364,25 @@
     </div>
 
     <!-- ================= TOS Blocking Overlay ================= -->
-    <div id="tos-block-overlay" class="tos-block-overlay"></div>
+    <div id="tos-block-overlay" class="tos-block-overlay">
+        <div class="tos-block-content">
+            <h2 style="color: var(--bad);">⚠️ 請先同意服務條款</h2>
+            <p>您必須同意服務條款與隱私權政策才能繼續使用本系統。</p>
+            <div style="margin-top: 25px; display: flex; flex-direction: column; gap: 15px; align-items: center;">
+                <a href="privacy.html" target="_blank"
+                    style="color: var(--st-color); text-decoration: none; font-weight: bold; font-size: 1.1rem;">📄
+                    隱私權政策 (Privacy Policy)</a>
+                <a href="tos.html" target="_blank"
+                    style="color: var(--st-color); text-decoration: none; font-weight: bold; font-size: 1.1rem;">📜
+                    服務條款 (Terms of Service)</a>
+            </div>
+            <p style="font-size: 0.95rem; color: #777; margin-top: 30px; line-height: 1.6;">
+                💡 <b>下一步：</b><br>
+                請點擊右上角的「☰」選單，<br>
+                勾選並同意條款，即可解除鎖定。
+            </p>
+        </div>
+    </div>
 
     <!-- ================= View 0: 初始畫面 ================= -->
     <div id="view-welcome" class="view">
@@ -1597,6 +1634,7 @@
                         body: JSON.stringify({ tosAccepted: accepted })
                     });
                     if (!res.ok) throw new Error('同步 TOS 狀態失敗');
+                    showToast('✅ 已將同意狀態同步至雲端', 'success');
                 } catch (err) {
                     console.error('TOS sync error:', err);
                     showToast('⚠️ 無法同步同意狀態到雲端', 'error');
@@ -1612,10 +1650,22 @@
             const accepted = getTosAccepted();
             const overlay = document.getElementById('tos-block-overlay');
             const checkbox = document.getElementById('tos-checkbox');
+            const welcomeView = document.getElementById('view-welcome');
+            const isWelcomeVisible = welcomeView && welcomeView.style.display !== 'none';
 
             if (checkbox) checkbox.checked = accepted;
 
-            if (!accepted) {
+            // 如果已同意，隱藏遮罩
+            if (accepted) {
+                overlay.classList.remove('show');
+                return;
+            }
+
+            // 如果未同意：
+            // 1. 如果在畫布頁面 (Tree View)，必須顯示遮罩
+            // 2. 如果在 Welcome 頁面且已登入，必須顯示遮罩 (強迫確認)
+            // 3. 如果在 Welcome 頁面且未登入，不顯示遮罩 (因為 Welcome 頁面自有 Checkbox，且為了不擋住登入按鈕)
+            if (!isWelcomeVisible || currentUser) {
                 overlay.classList.add('show');
             } else {
                 overlay.classList.remove('show');
@@ -3105,6 +3155,13 @@
                     <input type="checkbox" onchange="setTosAccepted(this.checked)" ${tosAccepted ? 'checked' : ''} style="width: 16px; height: 16px;">
                     <span style="flex:1;">✅ 我已閱讀並同意服務條款與隱私權</span>
                 </label>`;
+
+                html += `<button class="more-dropdown-item" onclick="window.open('privacy.html', '_blank'); closeAllDropdowns();">
+                    <span class="item-icon">📄</span> 隱私權政策 (Privacy Policy)
+                </button>`;
+                html += `<button class="more-dropdown-item" onclick="window.open('tos.html', '_blank'); closeAllDropdowns();">
+                    <span class="item-icon">📜</span> 服務條款 (Terms of Service)
+                </button>`;
 
                 html += '<div class="more-dropdown-divider"></div>';
                 html += '<div class="more-dropdown-header" style="color:var(--bad);">危險操作</div>';
