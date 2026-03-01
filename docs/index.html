@@ -1052,10 +1052,66 @@
             right: 20px;
             z-index: 100;
         }
+
+        /* ================= Loading Overlay ================= */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.95);
+            z-index: 10000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            transition: opacity 0.4s ease;
+        }
+
+        .loading-overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .loading-spinner {
+            width: 48px;
+            height: 48px;
+            border: 5px solid #e0e0e0;
+            border-top: 5px solid var(--st-color);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .loading-status {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: var(--text-main);
+            text-align: center;
+        }
+
+        .loading-sub {
+            font-size: 0.85rem;
+            color: #999;
+        }
     </style>
 </head>
 
 <body>
+
+    <!-- ================= Loading Overlay ================= -->
+    <div class="loading-overlay" id="loading-overlay">
+        <div class="loading-spinner"></div>
+        <div class="loading-status" id="loading-status">⏳ 正在啟動系統...</div>
+        <div class="loading-sub">請稍候，我們正在為您準備資料</div>
+    </div>
 
     <!-- HTML Toast 提示容器 -->
     <div id="toast-container" class="toast-container"></div>
@@ -1064,31 +1120,32 @@
     <input type="file" id="local-file-input" accept=".json" style="display: none;"
         onchange="handleLocalFileImport(event)">
 
-    <!-- ================= Conflict Modal ================= -->
+    <!-- ================= Conflict Modal (Generic / Dynamic Labels) ================= -->
     <div class="conflict-overlay" id="conflict-overlay">
         <div class="conflict-modal">
             <h2>⚠️ 資料版本不一致</h2>
-            <p class="conflict-subtitle">
-                本機與 Google Drive 的資料不同，請選擇要使用哪一個版本。<br>
-                系統會以您選擇的版本，在本機與雲端各建立新檔案。
+            <p class="conflict-subtitle" id="conflict-subtitle">
+                偵測到資料版本不同，請選擇要使用哪一個版本。<br>
+                系統會以您選擇的版本建立新檔案。
             </p>
             <div class="conflict-compare">
                 <div class="conflict-side local-side">
-                    <h3>📂 本機版本 (Local)</h3>
+                    <h3 id="conflict-left-title">📂 版本 A</h3>
                     <div class="tree-preview" id="conflict-local-preview"></div>
                 </div>
                 <div class="conflict-side drive-side">
-                    <h3>☁️ Google Drive 版本</h3>
+                    <h3 id="conflict-right-title">☁️ 版本 B</h3>
                     <div class="tree-preview" id="conflict-drive-preview"></div>
                 </div>
             </div>
             <div class="conflict-actions">
-                <button class="btn-use-local" onclick="resolveConflict('local')">📂 使用本機版本</button>
-                <button class="btn-use-drive" onclick="resolveConflict('drive')">☁️ 使用雲端版本</button>
+                <button class="btn-use-local" id="conflict-btn-left" onclick="resolveConflict('left')">📂 使用版本
+                    A</button>
+                <button class="btn-use-drive" id="conflict-btn-right" onclick="resolveConflict('right')">☁️ 使用版本
+                    B</button>
             </div>
             <p class="conflict-note">
-                💡 我們無法刪除您的舊檔案，已為您建立新版本。<br>
-                如需清理舊檔案，請自行至本機與 Google Drive 處理。
+                💡 我們不會刪除您的任何檔案，所有舊檔案都保留在原處，您可自行管理。
             </p>
         </div>
     </div>
@@ -1792,6 +1849,22 @@
         const STORAGE_KEY_TREE = 'brain_tree_data';
         const STORAGE_KEY_MODE = 'brain_storage_mode';
         const STORAGE_KEY_INIT = 'brain_has_initialized';
+        const STORAGE_KEY_SAVE_DATE = 'brain_last_save_date';
+
+        // Loading overlay helpers
+        function updateLoadingStatus(text) {
+            const el = document.getElementById('loading-status');
+            if (el) el.textContent = text;
+        }
+        function hideLoadingOverlay() {
+            const el = document.getElementById('loading-overlay');
+            if (el) { el.classList.add('hidden'); setTimeout(() => el.remove(), 500); }
+        }
+        function isFirstTimeUser() {
+            return !localStorage.getItem(STORAGE_KEY_MODE)
+                && !localStorage.getItem(STORAGE_KEY_TREE)
+                && !localStorage.getItem('brain_session_token');
+        }
 
         // Storage mode: 'local' | 'drive' | 'both'
         // Default: 'local' (no login) or 'both' (logged in)
@@ -1868,7 +1941,6 @@
         // =========================================================================
         const API_BASE = 'https://addiction-murex.vercel.app';
         let currentUser = null;
-        let pendingDriveTree = null; // Stored during conflict resolution
 
         // Capture token from URL after OAuth callback
         (function captureTokenFromURL() {
@@ -1904,12 +1976,22 @@
         }
 
         async function checkAuth() {
+            updateLoadingStatus('⏳ 正在檢查登入狀態...');
             const token = localStorage.getItem('brain_session_token');
+
+            // ===== First-time user: hide overlay and let welcome page handle =====
+            if (isFirstTimeUser()) {
+                hideLoadingOverlay();
+                updateAuthUI();
+                updateMoreDropdowns();
+                return;
+            }
 
             // ===== No token: use local only =====
             if (!token) {
                 currentUser = null;
-                setStorageMode('local');
+                if (!localStorage.getItem(STORAGE_KEY_MODE)) setStorageMode('local');
+                updateLoadingStatus('📂 正在載入本機資料...');
                 const localTree = loadFromLocal();
                 if (localTree && restoreTreeFromSerialized(localTree)) {
                     initApp();
@@ -1917,16 +1999,17 @@
                 }
                 updateAuthUI();
                 updateMoreDropdowns();
+                hideLoadingOverlay();
                 return;
             }
 
             // ===== Has token: try to authenticate =====
+            updateLoadingStatus('🔐 正在驗證登入身分...');
             try {
                 const res = await fetch(API_BASE + '/api/auth/me', { headers: authHeaders() });
                 const data = await res.json();
                 if (data.loggedIn) {
                     currentUser = data.user;
-                    // Default mode for logged-in user is 'both' (unless user changed it before on this PC)
                     const savedMode = localStorage.getItem(STORAGE_KEY_MODE);
                     if (!savedMode || savedMode === 'local') {
                         setStorageMode('both');
@@ -1941,67 +2024,76 @@
             updateAuthUI();
             updateMoreDropdowns();
 
-            // ===== Logged in with Drive file: compare local vs Drive =====
-            if (currentUser && currentUser.hasDriveFile) {
-                const mode = getStorageMode();
-                if (mode === 'local') {
-                    // User explicitly chose local-only on this PC
-                    const localTree = loadFromLocal();
-                    if (localTree && restoreTreeFromSerialized(localTree)) {
-                        initApp();
-                        showToast('📂 已從本機載入資料（本機模式）', 'success');
-                    }
-                } else if (mode === 'drive') {
-                    await loadTreeFromDrive();
-                } else {
-                    // mode === 'both' → compare local and Drive
-                    const localTree = loadFromLocal();
-                    let driveTree = null;
-                    try {
-                        const res = await fetch(API_BASE + '/api/load-from-drive', { headers: authHeaders() });
-                        if (res.ok) {
-                            const data = await res.json();
-                            if (data.success && data.data && data.data.treeData) {
-                                driveTree = data.data.treeData;
-                            }
-                        }
-                    } catch (err) { /* ignore */ }
+            // ===== Load data based on mode =====
+            const mode = getStorageMode();
+            updateLoadingStatus('📂 正在載入本機資料...');
+            const localTree = loadFromLocal();
+            let driveTree = null;
 
-                    if (localTree && driveTree) {
-                        // Compare: if different, show conflict dialog
-                        const localStr = JSON.stringify(localTree);
-                        const driveStr = JSON.stringify(driveTree);
-                        if (localStr !== driveStr) {
-                            showConflictDialog(localTree, driveTree);
-                            return;
+            // Try to load Drive data if logged in and has file
+            if (currentUser && currentUser.hasDriveFile && mode !== 'local') {
+                updateLoadingStatus('☁️ 正在載入雲端資料...');
+                try {
+                    const res = await fetch(API_BASE + '/api/load-from-drive', { headers: authHeaders() });
+                    if (res.ok) {
+                        const data = await res.json();
+                        if (data.success && data.data && data.data.treeData) {
+                            driveTree = data.data.treeData;
                         }
                     }
-                    // Same or only one exists
-                    if (driveTree) {
-                        restoreTreeFromSerialized(driveTree);
-                        saveToLocal();
-                        initApp();
-                        showToast('☁️ 已從 Google Drive 載入資料', 'success');
-                    } else if (localTree) {
-                        restoreTreeFromSerialized(localTree);
-                        initApp();
-                        showToast('📂 已從本機載入資料', 'success');
-                    }
-                }
-            } else if (currentUser && !currentUser.hasDriveFile) {
-                // Logged in but no Drive file yet
-                const localTree = loadFromLocal();
+                } catch (err) { /* ignore */ }
+            }
+
+            updateLoadingStatus('🔄 正在比對資料...');
+
+            if (mode === 'local') {
                 if (localTree && restoreTreeFromSerialized(localTree)) {
                     initApp();
                     showToast('📂 已從本機載入資料', 'success');
                 }
-            } else {
-                // Not logged in despite having token (expired?)
-                const localTree = loadFromLocal();
-                if (localTree && restoreTreeFromSerialized(localTree)) {
+            } else if (mode === 'drive') {
+                if (driveTree) {
+                    restoreTreeFromSerialized(driveTree);
+                    saveToLocal();
                     initApp();
+                    showToast('☁️ 已從 Google Drive 載入資料', 'success');
+                } else if (localTree && restoreTreeFromSerialized(localTree)) {
+                    initApp();
+                    showToast('📂 雲端資料不可用，已從本機載入', 'success');
+                }
+            } else {
+                // mode === 'both' → compare local and Drive
+                if (localTree && driveTree) {
+                    const localStr = JSON.stringify(localTree);
+                    const driveStr = JSON.stringify(driveTree);
+                    if (localStr !== driveStr) {
+                        hideLoadingOverlay();
+                        showConflictDialog(localTree, driveTree, '📂 本機版本', '☁️ Google Drive 版本', 'auto');
+                        return;
+                    }
+                }
+                // Same or only one exists
+                if (driveTree) {
+                    restoreTreeFromSerialized(driveTree);
+                    saveToLocal();
+                    initApp();
+                    showToast('☁️ 已從 Google Drive 載入資料', 'success');
+                } else if (localTree) {
+                    restoreTreeFromSerialized(localTree);
+                    initApp();
+                    showToast('📂 已從本機載入資料', 'success');
                 }
             }
+
+            // If logged in but no Drive file
+            if (!hasInitialized && currentUser && !currentUser.hasDriveFile) {
+                if (localTree && restoreTreeFromSerialized(localTree)) {
+                    initApp();
+                    showToast('📂 已從本機載入資料', 'success');
+                }
+            }
+
+            hideLoadingOverlay();
         }
 
         function updateAuthUI() {
@@ -2064,18 +2156,34 @@
             return html;
         }
 
-        function showConflictDialog(localTree, driveTree) {
-            pendingDriveTree = driveTree;
-            document.getElementById('conflict-local-preview').innerHTML = treePreviewHTML(localTree);
-            document.getElementById('conflict-drive-preview').innerHTML = treePreviewHTML(driveTree);
+        // conflictSource: 'auto' (page load), 'importLocal', 'importDrive'
+        let pendingConflictLeft = null;
+        let pendingConflictRight = null;
+        let pendingConflictSource = null;
+
+        function generateFileName() {
+            const now = new Date();
+            const ts = now.toISOString().replace(/[:.]/g, '-').slice(0, 19);
+            return `addiction-log-export-${ts}.json`;
+        }
+
+        function showConflictDialog(leftTree, rightTree, leftTitle, rightTitle, source) {
+            pendingConflictLeft = leftTree;
+            pendingConflictRight = rightTree;
+            pendingConflictSource = source;
+            document.getElementById('conflict-left-title').textContent = leftTitle;
+            document.getElementById('conflict-right-title').textContent = rightTitle;
+            document.getElementById('conflict-btn-left').textContent = `📂 使用${leftTitle.replace(/[^\u4e00-\u9fff\w\s]/g, '').trim()}`;
+            document.getElementById('conflict-btn-right').textContent = `☁️ 使用${rightTitle.replace(/[^\u4e00-\u9fff\w\s]/g, '').trim()}`;
+            document.getElementById('conflict-local-preview').innerHTML = treePreviewHTML(leftTree);
+            document.getElementById('conflict-drive-preview').innerHTML = treePreviewHTML(rightTree);
             document.getElementById('conflict-overlay').classList.add('show');
         }
 
         async function resolveConflict(choice) {
             document.getElementById('conflict-overlay').classList.remove('show');
 
-            const localTree = loadFromLocal();
-            const chosenTree = choice === 'local' ? localTree : pendingDriveTree;
+            const chosenTree = choice === 'left' ? pendingConflictLeft : pendingConflictRight;
 
             if (!chosenTree) {
                 showToast('⚠️ 所選版本資料為空', 'error');
@@ -2087,10 +2195,11 @@
             saveToLocal();
             initApp();
 
-            // Create new Drive file with the chosen version
-            if (currentUser) {
+            // Create new Drive file (because import diff → new file)
+            const mode = getStorageMode();
+            if ((mode === 'drive' || mode === 'both') && currentUser) {
                 try {
-                    const fileName = `brainTree_${new Date().toISOString().slice(0, 10)}_resolved.json`;
+                    const fileName = generateFileName();
                     const createRes = await fetch(API_BASE + '/api/create-drive-file', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json', ...authHeaders() },
@@ -2100,12 +2209,12 @@
                     if (createData.success) {
                         currentUser.hasDriveFile = true;
                         updateAuthUI();
-                        // Immediately sync the chosen data to the new file
                         await syncToDriveInternal('conflict_resolve');
-                        showToast(`✅ 已使用${choice === 'local' ? '本機' : '雲端'}版本。舊檔案已保留，新版本已建立於本機與 Google Drive。`, 'success');
+                        localStorage.setItem(STORAGE_KEY_SAVE_DATE, new Date().toISOString().slice(0, 10));
+                        showToast('✅ 已建立新版本並同步至 Google Drive', 'success');
                     } else {
                         if (createRes.status === 402 || createRes.status === 403) {
-                            showToast('⚠️ Google Drive 空間不足，無法建立檔案，請清理雲端空間', 'error');
+                            showToast('⚠️ Google Drive 空間不足，無法建立檔案', 'error');
                         } else {
                             showToast('⚠️ 建立雲端檔案失敗：' + (createData.error || '未知錯誤'), 'error');
                         }
@@ -2115,8 +2224,10 @@
                 }
             }
 
-            showToast('💡 我們無法刪除您的舊檔案，如需清理請自行至本機與 Google Drive 處理', 'warning');
-            pendingDriveTree = null;
+            showToast('💡 我們不會刪除您的任何檔案，所有舊檔案都保留在原處，您可自行管理。', 'warning');
+            pendingConflictLeft = null;
+            pendingConflictRight = null;
+            pendingConflictSource = null;
         }
 
         // =========================================================================
@@ -2142,7 +2253,7 @@
         // Google Drive Picker (create or set file)
         async function openDrivePicker() {
             try {
-                const fileName = `brainTree_${new Date().toISOString().slice(0, 10)}.json`;
+                const fileName = generateFileName();
                 const createConfirm = confirm(
                     `要在 Google Drive 建立新檔案「${fileName}」作為同步目標嗎？\n\n（如果已有檔案，請輸入 fileId）`
                 );
@@ -2239,9 +2350,12 @@
             }
         }
 
-        // Public sync function: respects storage mode
-        async function syncToDrive(triggerAction) {
+        // Public sync function: respects storage mode + next-day detection
+        async function syncToDrive(triggerAction, isFromImportDiff = false) {
             const mode = getStorageMode();
+            const today = new Date().toISOString().slice(0, 10);
+            const lastSaveDate = localStorage.getItem(STORAGE_KEY_SAVE_DATE);
+            const needNewFile = (lastSaveDate && today !== lastSaveDate) || isFromImportDiff;
 
             // Always save to local if mode is 'local' or 'both'
             if (mode === 'local' || mode === 'both') {
@@ -2256,12 +2370,29 @@
                     syncDot.title = '同步中...';
                 }
                 try {
+                    if (needNewFile) {
+                        // Next day or import diff → create new file first
+                        const fileName = generateFileName();
+                        const createRes = await fetch(API_BASE + '/api/create-drive-file', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', ...authHeaders() },
+                            body: JSON.stringify({ fileName }),
+                        });
+                        const createData = await createRes.json();
+                        if (createData.success) {
+                            currentUser.hasDriveFile = true;
+                            updateAuthUI();
+                        } else {
+                            throw new Error(createData.error || '建立新檔案失敗');
+                        }
+                    }
+                    // Now write data to the (new or existing) controlled file
                     await syncToDriveInternal(triggerAction);
                     if (syncDot) {
                         syncDot.className = 'sync-indicator synced';
                         syncDot.title = '已同步';
                     }
-                    showToast('☁️ 已同步至 Google Drive', 'success');
+                    showToast(needNewFile ? '☁️ 已建立新檔案並同步至 Google Drive' : '☁️ 已同步至 Google Drive', 'success');
                 } catch (err) {
                     if (syncDot) {
                         syncDot.className = 'sync-indicator error';
@@ -2275,6 +2406,9 @@
             if (mode === 'local') {
                 saveToLocal();
             }
+
+            // Track today's date
+            localStorage.setItem(STORAGE_KEY_SAVE_DATE, today);
         }
 
         // =========================================================================
@@ -2289,7 +2423,7 @@
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `brainTree_${new Date().toISOString().slice(0, 10)}.json`;
+            a.download = generateFileName();
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
@@ -2312,18 +2446,25 @@
             reader.onload = function (e) {
                 try {
                     const parsed = JSON.parse(e.target.result);
-                    const tree = parsed.treeData || parsed.humanTree || parsed;
-                    if (restoreTreeFromSerialized(tree)) {
+                    const importedTree = parsed.treeData || parsed.humanTree || parsed;
+                    if (!importedTree || !importedTree.children || importedTree.children.length === 0) {
+                        showToast('⚠️ 檔案格式不正確，無法匯入', 'error');
+                        return;
+                    }
+                    // Compare with current web data
+                    const currentTree = serializeTreeForSync();
+                    const currentStr = JSON.stringify(currentTree);
+                    const importedStr = JSON.stringify(importedTree);
+                    if (hasInitialized && currentStr !== importedStr) {
+                        // Different → show conflict dialog
+                        showConflictDialog(currentTree, importedTree, '🖥️ 目前網頁資料', '📂 匯入的檔案', 'importLocal');
+                    } else {
+                        // Same or no existing data → apply directly
+                        restoreTreeFromSerialized(importedTree);
                         saveToLocal();
                         initApp();
                         showToast('📂 已從本機檔案匯入資料', 'success');
-                        // If mode is both or drive, also sync to Drive
-                        const mode = getStorageMode();
-                        if (mode !== 'local' && currentUser && currentUser.hasDriveFile) {
-                            syncToDrive('importLocalFile');
-                        }
-                    } else {
-                        showToast('⚠️ 檔案格式不正確，無法匯入', 'error');
+                        syncToDrive('importLocalFile', true);
                     }
                 } catch (err) {
                     showToast('⚠️ 檔案解析失敗：' + err.message, 'error');
@@ -2331,6 +2472,42 @@
             };
             reader.readAsText(file);
             event.target.value = ''; // Reset for re-import
+        }
+
+        // Manual import from Google Drive (does NOT change auto-save mode)
+        async function importFromDrive() {
+            if (!currentUser || !currentUser.hasDriveFile) {
+                showToast('⚠️ 請先登入並設定 Google Drive 同步檔案', 'error');
+                return;
+            }
+            showToast('☁️ 正在從 Google Drive 載入...', 'warning');
+            try {
+                const res = await fetch(API_BASE + '/api/load-from-drive', { headers: authHeaders() });
+                if (!res.ok) {
+                    showToast('⚠️ 無法從 Google Drive 載入', 'error');
+                    return;
+                }
+                const data = await res.json();
+                if (!data.success || !data.data || !data.data.treeData) {
+                    showToast('⚠️ Google Drive 檔案無資料', 'error');
+                    return;
+                }
+                const driveTree = data.data.treeData;
+                // Compare with current web data
+                const currentTree = serializeTreeForSync();
+                const currentStr = JSON.stringify(currentTree);
+                const driveStr = JSON.stringify(driveTree);
+                if (hasInitialized && currentStr !== driveStr) {
+                    showConflictDialog(currentTree, driveTree, '🖥️ 目前網頁資料', '☁️ Google Drive 版本', 'importDrive');
+                } else {
+                    restoreTreeFromSerialized(driveTree);
+                    saveToLocal();
+                    initApp();
+                    showToast('☁️ 已從 Google Drive 匯入資料（資料一致）', 'success');
+                }
+            } catch (err) {
+                showToast('⚠️ 載入失敗：' + err.message, 'error');
+            }
         }
 
         // =========================================================================
@@ -2388,6 +2565,29 @@
             html += `<button class="more-dropdown-item" onclick="importFromLocalFile(); closeAllDropdowns();">
                 <span class="item-icon">📂</span> 從本機檔案匯入
             </button>`;
+
+            // Import from Google Drive (manual, doesn't change mode)
+            if (isLoggedIn && currentUser.hasDriveFile) {
+                html += `<button class="more-dropdown-item" onclick="importFromDrive(); closeAllDropdowns();">
+                    <span class="item-icon">☁️</span> 從 Google Drive 匯入
+                </button>`;
+            }
+
+            // Divider + change save path
+            html += '<div class="more-dropdown-divider"></div>';
+            html += '<div class="more-dropdown-header">儲存路徑</div>';
+
+            // Local path — show status based on mode
+            const localActive = (mode === 'local' || mode === 'both');
+            html += `<div class="more-dropdown-item" style="cursor:default; font-size:0.88rem;">
+                <span class="item-icon">💻</span> 本機儲存 <span style="color:#999; font-size:0.78rem;">(無法更改路徑)</span>
+            </div>`;
+
+            if (isLoggedIn) {
+                html += `<button class="more-dropdown-item" onclick="openDrivePicker(); closeAllDropdowns();">
+                    <span class="item-icon">📁</span> ${currentUser.hasDriveFile ? '更換 Google Drive 同步檔案' : '設定 Google Drive 同步檔案'}
+                </button>`;
+            }
 
             dropdown.innerHTML = html;
         }
