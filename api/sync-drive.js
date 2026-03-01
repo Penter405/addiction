@@ -40,6 +40,10 @@ module.exports = async function handler(req, res) {
             return res.status(400).json({ error: '尚未設定同步檔案，請先選擇 Google Drive 檔案' });
         }
 
+        if (!user.tosAccepted) {
+            return res.status(403).json({ error: 'tos_not_accepted', message: '請先同意服務條款' });
+        }
+
         if (!user.encryptedAccessToken || !user.encryptedRefreshToken) {
             return res.status(400).json({ error: '缺少 OAuth token，請重新登入' });
         }

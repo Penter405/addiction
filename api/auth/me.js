@@ -4,7 +4,7 @@ const { handleCors } = require('../_lib/cors');
 module.exports = async function handler(req, res) {
     if (handleCors(req, res)) return;
 
-    if (!['GET', 'DELETE'].includes(req.method)) {
+    if (!['GET', 'DELETE', 'PATCH'].includes(req.method)) {
         return res.status(405).json({ error: 'Method not allowed' });
     }
 
@@ -27,6 +27,18 @@ module.exports = async function handler(req, res) {
             return res.status(200).json({ success: true, message: 'Account and data deleted' });
         }
 
+        if (req.method === 'PATCH') {
+            const { tosAccepted } = req.body || {};
+            if (typeof tosAccepted !== 'boolean') {
+                return res.status(400).json({ error: 'invalid_tos_status' });
+            }
+            await User.findOneAndUpdate(
+                { googleId: userId },
+                { $set: { tosAccepted, tosAcceptedAt: new Date(), updatedAt: new Date() } }
+            );
+            return res.status(200).json({ success: true });
+        }
+
         const user = await User.findOne({ googleId: userId });
 
         if (!user) {
@@ -40,6 +52,7 @@ module.exports = async function handler(req, res) {
                 email: user.email,
                 picture: user.picture,
                 hasDriveFile: !!user.driveFileId,
+                tosAccepted: !!user.tosAccepted,
             },
         });
     } catch (err) {

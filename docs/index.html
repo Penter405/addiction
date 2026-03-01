@@ -6,6 +6,26 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>原子習慣：大腦行為樹系統</title>
     <style>
+        /* ================= TOS Block Overlay ================= */
+        .tos-block-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(5px);
+            z-index: 90;
+            /* 必須低於 Auth-bar (100) 與 Modal (9000+)，阻擋其餘內容 */
+            pointer-events: auto;
+            /* 攔截點擊 */
+        }
+
+        .tos-block-overlay.show {
+            display: block;
+        }
+
         /* ================= 基礎顏色與全域設定 ================= */
         :root {
             --bg-color: #F4F7F6;
@@ -1324,6 +1344,9 @@
         </div>
     </div>
 
+    <!-- ================= TOS Blocking Overlay ================= -->
+    <div id="tos-block-overlay" class="tos-block-overlay"></div>
+
     <!-- ================= View 0: 初始畫面 ================= -->
     <div id="view-welcome" class="view">
         <!-- Welcome 頁面右上角 More Options -->
@@ -1338,8 +1361,17 @@
                 <h1 style="color: var(--st-color);">🧠 大腦重塑系統</h1>
 
                 <!-- Google 登入區 -->
-                <div class="welcome-auth" id="welcome-auth-section">
+                <div class="welcome-auth" id="welcome-auth-section" style="position: relative; z-index: 95;">
                     <div id="welcome-logged-out">
+                        <div style="margin-bottom: 15px; text-align: center; font-size: 0.95rem;">
+                            <label style="cursor: pointer; display: inline-flex; align-items: center; gap: 8px;">
+                                <input type="checkbox" id="tos-checkbox" style="width: 18px; height: 18px;"
+                                    onchange="handleTosCheckboxChange(this.checked)">
+                                <span>我已閱讀並同意 <a href="privacy.html" target="_blank"
+                                        style="color: var(--st-color);">隱私權政策</a> 與 <a href="tos.html" target="_blank"
+                                        style="color: var(--st-color);">服務條款</a></span>
+                            </label>
+                        </div>
                         <p>☁️ 登入 Google 帳戶以同步資料到 Google Drive</p>
                         <button class="btn-google" onclick="loginGoogle()">
                             <svg width="18" height="18" viewBox="0 0 48 48">
@@ -1546,6 +1578,56 @@
 
     <script>
         // =========================================================================
+        // TOS & Privacy Policy Logic
+        // =========================================================================
+        function getTosAccepted() {
+            return localStorage.getItem('brain_tos_accepted') === 'true';
+        }
+
+        async function setTosAccepted(accepted) {
+            localStorage.setItem('brain_tos_accepted', accepted ? 'true' : 'false');
+            handleTosUI();
+
+            // 如果已登入，同步到後端
+            if (currentUser) {
+                try {
+                    const res = await fetch(API_BASE + '/api/auth/me', {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json', ...authHeaders() },
+                        body: JSON.stringify({ tosAccepted: accepted })
+                    });
+                    if (!res.ok) throw new Error('同步 TOS 狀態失敗');
+                } catch (err) {
+                    console.error('TOS sync error:', err);
+                    showToast('⚠️ 無法同步同意狀態到雲端', 'error');
+                }
+            }
+        }
+
+        function handleTosCheckboxChange(checked) {
+            setTosAccepted(checked);
+        }
+
+        function handleTosUI() {
+            const accepted = getTosAccepted();
+            const overlay = document.getElementById('tos-block-overlay');
+            const checkbox = document.getElementById('tos-checkbox');
+
+            if (checkbox) checkbox.checked = accepted;
+
+            if (!accepted) {
+                overlay.classList.add('show');
+            } else {
+                overlay.classList.remove('show');
+            }
+
+            const welcomeDropdown = document.getElementById('welcome-more-dropdown');
+            const treeDropdown = document.getElementById('tree-more-dropdown');
+            if (welcomeDropdown && welcomeDropdown.classList.contains('show')) buildMoreDropdown('welcome-more-dropdown');
+            if (treeDropdown && treeDropdown.classList.contains('show')) buildMoreDropdown('tree-more-dropdown');
+        }
+
+        // =========================================================================
         // HTML 提示系統 (取代 alert)
         // =========================================================================
         function showToast(message, type = 'warning') {
@@ -1745,9 +1827,12 @@
                 resetCanvasView();
                 checkDailySleepPrompt(); // 問今天有沒有熬夜
             }
+            handleTosUI();
         }
 
         function initFirstAction() {
+            if (!getTosAccepted()) return showToast("⚠️ 請先勾選同意隱私權政策與服務條款！", "error");
+
             let demandInput = document.getElementById('init-demand').value.trim();
             let actionInput = document.getElementById('init-action').value.trim();
 
@@ -2012,6 +2097,7 @@
         document.addEventListener('DOMContentLoaded', () => {
             const m = parseFloat(localStorage.getItem('brain_lt_multiplier')) || 0.1;
             document.getElementById('lt-multiplier').textContent = `× ${m}`;
+            handleTosUI();
         });
 
         function toggleInfoPanel() {
@@ -2351,6 +2437,18 @@
                 const data = await res.json();
                 if (data.loggedIn) {
                     currentUser = data.user;
+                    // 同步 TOS 狀態
+                    const localAccepted = getTosAccepted();
+                    if (currentUser.tosAccepted) {
+                        // DB 說好 -> 本地也設為好
+                        if (!localAccepted) {
+                            localStorage.setItem('brain_tos_accepted', 'true');
+                        }
+                    } else if (localAccepted) {
+                        // 本地說好但 DB 說不 (可能是剛登入的新使用者在 Welcome 頁勾選了) -> 同步回 DB
+                        setTosAccepted(true);
+                    }
+
                     const savedMode = localStorage.getItem(STORAGE_KEY_MODE);
                     if (!savedMode || savedMode === 'local') {
                         setStorageMode('both');
@@ -2364,6 +2462,7 @@
 
             updateAuthUI();
             updateMoreDropdowns();
+            handleTosUI(); // 確保 UI 狀態正確反映最終同步結果
 
             // ===== Load data based on mode =====
             const mode = getStorageMode();
@@ -2995,8 +3094,28 @@
             const dropdown = document.getElementById(dropdownId);
             const mode = getStorageMode();
             const isLoggedIn = !!currentUser;
+            const tosAccepted = getTosAccepted();
 
-            let html = '<div class="more-dropdown-header">儲存模式</div>';
+            let html = '';
+
+            // 如果未同意 TOS，只顯示同意按鈕與刪除按鈕
+            if (!tosAccepted) {
+                html += '<div class="more-dropdown-header" style="color:var(--bad);">授權設定</div>';
+                html += `<label class="more-dropdown-item" style="cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                    <input type="checkbox" onchange="setTosAccepted(this.checked)" ${tosAccepted ? 'checked' : ''} style="width: 16px; height: 16px;">
+                    <span style="flex:1;">✅ 我已閱讀並同意服務條款與隱私權</span>
+                </label>`;
+
+                html += '<div class="more-dropdown-divider"></div>';
+                html += '<div class="more-dropdown-header" style="color:var(--bad);">危險操作</div>';
+                html += `<button class="more-dropdown-item" onclick="deleteAllDataFlow(); closeAllDropdowns();" style="color:var(--bad);">
+                    <span class="item-icon">🗑️</span> 刪除所有資料 (Remove all my data)
+                </button>`;
+                dropdown.innerHTML = html;
+                return;
+            }
+
+            html += '<div class="more-dropdown-header">儲存模式</div>';
 
             // Local only
             html += `<button class="more-dropdown-item ${mode === 'local' ? 'active' : ''}" onclick="switchMode('local')">
@@ -3049,6 +3168,10 @@
             // Legal links
             html += '<div class="more-dropdown-divider"></div>';
             html += '<div class="more-dropdown-header">法規與條款</div>';
+            html += `<label class="more-dropdown-item" style="cursor: pointer; display: flex; align-items: center; gap: 8px; font-weight: bold;">
+                <input type="checkbox" onchange="setTosAccepted(this.checked)" checked style="width: 16px; height: 16px;">
+                <span style="flex:1; color: var(--primary);">✅ 已同意服務條款與隱私權</span>
+            </label>`;
             html += `<button class="more-dropdown-item" onclick="window.open('privacy.html', '_blank'); closeAllDropdowns();">
                 <span class="item-icon">📄</span> 隱私權政策 (Privacy Policy)
             </button>`;
@@ -3152,6 +3275,7 @@
         // =========================================================================
         // Page Init
         // =========================================================================
+        handleTosUI();
         checkAuth();
         initApp();
     </script>
