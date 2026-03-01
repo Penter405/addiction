@@ -14,7 +14,7 @@
 | 📊 **四階段 CP 編輯器** | 提示 → 渴望 → 回應 → 獎賞，拖曳 CP 物件到各階段 |
 | 🛡️ **系統防護機制** | 好習慣短期 CP 必須 > 0、壞習慣短期 CP 必須 < 0 |
 | 🔐 **Google OAuth 2.0** | 安全登入，token 以 AES-256-GCM 加密存於 MongoDB |
-| ☁️ **Google Drive 同步** | 行為樹資料自動同步至 Google Drive JSON 檔案 |
+| ☁️ **Google Drive 同步** | 內建自訂的 Drive Picker（支援選取資料夾與檔案），行為樹自動同步至 JSON 檔案 |
 | 💾 **本機儲存** | localStorage + 本機檔案匯出入，即使雲端全壞資料仍安全 |
 | 📋 **稽核日誌** | 所有操作（登入、登出、同步）紀錄於 MongoDB AuditLog |
 
@@ -33,7 +33,7 @@ graph LR
 ```
 
 **Frontend** (`docs/index.html`) — 純 HTML/CSS/JS 單頁應用，部署於 GitHub Pages  
-**Backend** (`api/`) — Vercel Serverless Functions (Node.js)  
+**Backend** (`api/`) — Vercel Serverless Functions (Node.js)。注意：為避開 Hobby 方案 12 個無伺服器函式的限制，共用模組放在 `api/_lib/` 目錄（Vercel 會忽略底線開頭的檔案），並將多個 Drive API 端點整合至 `browse-drive.js`。  
 **Database** — MongoDB Atlas（使用者資訊、加密 token、稽核日誌）  
 **Cloud Storage** — Google Drive（使用 `drive.file` 最小權限範圍）
 

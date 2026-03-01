@@ -12,11 +12,12 @@ exam/
 │   │   ├── google/callback.js  # OAuth: handle callback, create session
 │   │   ├── me.js               # GET current user info
 │   │   └── logout.js           # POST logout, clear session
-│   ├── lib/
+│   ├── _lib/                   # (底線開頭避開 Vercel API 數量限制)
 │   │   ├── cors.js             # CORS middleware
 │   │   ├── crypto.js           # AES-256-GCM encrypt/decrypt
 │   │   ├── db.js               # MongoDB connection + schemas
 │   │   └── session.js          # HMAC session create/verify/clear
+│   ├── browse-drive.js         # GET/POST list folders/files and load file by ID
 │   ├── create-drive-file.js    # POST create new JSON on Drive
 │   ├── load-from-drive.js      # GET read tree data from Drive
 │   ├── set-drive-file.js       # POST set Drive file ID for user
@@ -125,7 +126,8 @@ stateDiagram-v2
 
 | Method | Endpoint | Body | Description |
 |--------|----------|------|-------------|
-| POST | `/api/create-drive-file` | `{ fileName }` | Create new JSON file on Drive |
+| POST | `/api/create-drive-file` | `{ fileName, folderName }` | Create new JSON file on Drive |
+| GET / POST | `/api/browse-drive` | `?action=folders` or `{ action: 'load', fileId }` | Consolidated endpoint for custom Drive Picker UI (lists folders, files, or loads by ID) |
 | POST | `/api/set-drive-file` | `{ fileId }` | Set existing file as sync target |
 | POST | `/api/sync-drive` | `{ treeData, triggerAction }` | Write tree data to Drive |
 | GET | `/api/load-from-drive` | — | Read tree data from Drive |
@@ -150,6 +152,7 @@ stateDiagram-v2
   encryptedRefreshToken: Object,
   driveFileId: String,     // Google Drive file ID
   driveFileName: String,
+  driveFolderName: String, // Google Drive parent folder path
   createdAt: Date,
   updatedAt: Date
 }
