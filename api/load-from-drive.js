@@ -1,8 +1,8 @@
 const { google } = require('googleapis');
-const { connectDB, User, AuditLog } = require('./lib/db');
-const { encrypt, decrypt } = require('./lib/crypto');
-const { getSession } = require('./lib/session');
-const { handleCors } = require('./lib/cors');
+const { connectDB, User, AuditLog } = require('./_lib/db');
+const { encrypt, decrypt } = require('./_lib/crypto');
+const { getSession } = require('./_lib/session');
+const { handleCors } = require('./_lib/cors');
 
 module.exports = async function handler(req, res) {
     if (handleCors(req, res)) return;
@@ -13,7 +13,7 @@ module.exports = async function handler(req, res) {
 
     const userId = getSession(req);
     if (!userId) {
-        return res.status(401).json({ error: '未登入' });
+        return res.status(401).json({ error: '?�登?? });
     }
 
     try {
@@ -21,14 +21,14 @@ module.exports = async function handler(req, res) {
         const user = await User.findOne({ googleId: userId });
 
         if (!user || !user.driveFileId) {
-            return res.status(400).json({ error: '尚未設定同步檔案' });
+            return res.status(400).json({ error: '尚未設�??�步檔�?' });
         }
 
         if (!user.encryptedAccessToken || !user.encryptedRefreshToken) {
-            return res.status(400).json({ error: '缺少 OAuth token，請重新登入' });
+            return res.status(400).json({ error: '缺�? OAuth token，�??�新?�入' });
         }
 
-        // 解密 tokens
+        // �?? tokens
         let accessToken = decrypt(user.encryptedAccessToken);
         const refreshToken = decrypt(user.encryptedRefreshToken);
 
@@ -43,7 +43,7 @@ module.exports = async function handler(req, res) {
             refresh_token: refreshToken,
         });
 
-        // 監聽 token 刷新
+        // ??�� token ?�新
         oauth2Client.on('tokens', async (newTokens) => {
             try {
                 const updateData = {
@@ -62,14 +62,14 @@ module.exports = async function handler(req, res) {
             }
         });
 
-        // 從 Drive 讀取檔案
+        // �?Drive 讀?��?�?
         const drive = google.drive({ version: 'v3', auth: oauth2Client });
         const response = await drive.files.get({
             fileId: user.driveFileId,
             alt: 'media',
         });
 
-        // 記錄 audit log
+        // 記�? audit log
         await AuditLog.create({
             userId,
             action: 'load_drive',
@@ -81,6 +81,6 @@ module.exports = async function handler(req, res) {
         res.status(200).json({ success: true, data: response.data });
     } catch (err) {
         console.error('Load from drive error:', err);
-        res.status(500).json({ error: '讀取 Drive 失敗', detail: err.message });
+        res.status(500).json({ error: '讀??Drive 失�?', detail: err.message });
     }
 };

@@ -1,6 +1,6 @@
-const { getSession, clearSession } = require('../lib/session');
-const { connectDB, AuditLog } = require('../lib/db');
-const { handleCors } = require('../lib/cors');
+const { getSession, clearSession } = require('../_lib/session');
+const { connectDB, AuditLog } = require('../_lib/db');
+const { handleCors } = require('../_lib/cors');
 
 module.exports = async function handler(req, res) {
     if (handleCors(req, res)) return;

@@ -1,30 +1,30 @@
 const { google } = require('googleapis');
-const { connectDB, User, AuditLog } = require('./lib/db');
-const { decrypt } = require('./lib/crypto');
-const { getSession } = require('./lib/session');
-const { handleCors } = require('./lib/cors');
+const { connectDB, User, AuditLog } = require('./_lib/db');
+const { decrypt } = require('./_lib/crypto');
+const { getSession } = require('./_lib/session');
+const { handleCors } = require('./_lib/cors');
 
 // Consolidated endpoint: handles listing folders, listing files, and loading a file by ID
 // Usage:
-//   GET  /api/browse-drive?action=folders        → list folders
-//   GET  /api/browse-drive?action=files           → list .json files
-//   POST /api/browse-drive  { action: 'load', fileId: '...' }  → load file by ID
+//   GET  /api/browse-drive?action=folders        ??list folders
+//   GET  /api/browse-drive?action=files           ??list .json files
+//   POST /api/browse-drive  { action: 'load', fileId: '...' }  ??load file by ID
 
 module.exports = async function handler(req, res) {
     if (handleCors(req, res)) return;
 
     const userId = getSession(req);
-    if (!userId) return res.status(401).json({ error: '未登入' });
+    if (!userId) return res.status(401).json({ error: '?�登?? });
 
     // Get action from query (GET) or body (POST)
     const action = req.query?.action || req.body?.action;
-    if (!action) return res.status(400).json({ error: '缺少 action 參數' });
+    if (!action) return res.status(400).json({ error: '缺�? action ?�數' });
 
     try {
         await connectDB();
         const user = await User.findOne({ googleId: userId });
         if (!user || !user.encryptedAccessToken) {
-            return res.status(400).json({ error: '缺少 OAuth token' });
+            return res.status(400).json({ error: '缺�? OAuth token' });
         }
 
         const oauth2Client = new google.auth.OAuth2(
@@ -73,7 +73,7 @@ module.exports = async function handler(req, res) {
         // ===== Action: load file by ID =====
         if (action === 'load') {
             const fileId = req.body?.fileId;
-            if (!fileId) return res.status(400).json({ error: '缺少 fileId' });
+            if (!fileId) return res.status(400).json({ error: '缺�? fileId' });
 
             const response = await drive.files.get({ fileId, alt: 'media' });
 
@@ -86,9 +86,9 @@ module.exports = async function handler(req, res) {
             return res.status(200).json({ success: true, data: response.data });
         }
 
-        return res.status(400).json({ error: '未知的 action: ' + action });
+        return res.status(400).json({ error: '?�知??action: ' + action });
     } catch (err) {
         console.error('Browse drive error:', err);
-        res.status(500).json({ error: '操作失敗', detail: err.message });
+        res.status(500).json({ error: '?��?失�?', detail: err.message });
     }
 };

@@ -1,8 +1,8 @@
 const { google } = require('googleapis');
-const { connectDB, User, AuditLog } = require('./lib/db');
-const { encrypt, decrypt } = require('./lib/crypto');
-const { getSession } = require('./lib/session');
-const { handleCors } = require('./lib/cors');
+const { connectDB, User, AuditLog } = require('./_lib/db');
+const { encrypt, decrypt } = require('./_lib/crypto');
+const { getSession } = require('./_lib/session');
+const { handleCors } = require('./_lib/cors');
 
 module.exports = async function handler(req, res) {
     if (handleCors(req, res)) return;
@@ -13,23 +13,23 @@ module.exports = async function handler(req, res) {
 
     const userId = getSession(req);
     if (!userId) {
-        return res.status(401).json({ error: '未登入' });
+        return res.status(401).json({ error: '?�登?? });
     }
 
     const { treeData, triggerAction, syncTimestamp } = req.body || {};
     if (!treeData) {
-        return res.status(400).json({ error: '缺少 treeData' });
+        return res.status(400).json({ error: '缺�? treeData' });
     }
 
-    // ===== 結構驗證：treeData 必須符合預期格式 =====
+    // ===== 結�?驗�?：treeData 必�?符�??��??��? =====
     if (typeof treeData.name !== 'string' || !Array.isArray(treeData.children)) {
-        return res.status(400).json({ error: 'treeData 格式無效：需要 name (string) 和 children (array)' });
+        return res.status(400).json({ error: 'treeData ?��??��?：�?�?name (string) ??children (array)' });
     }
 
-    // ===== 大小限制：防止濫用（最大 5MB）=====
+    // ===== 大�??�制：防止濫?��??��?5MB�?====
     const payloadSize = JSON.stringify(req.body).length;
     if (payloadSize > 5 * 1024 * 1024) {
-        return res.status(413).json({ error: '資料過大，上限為 5MB' });
+        return res.status(413).json({ error: '資�??�大，�??�為 5MB' });
     }
 
     try {
@@ -37,18 +37,18 @@ module.exports = async function handler(req, res) {
         const user = await User.findOne({ googleId: userId });
 
         if (!user || !user.driveFileId) {
-            return res.status(400).json({ error: '尚未設定同步檔案，請先選擇 Google Drive 檔案' });
+            return res.status(400).json({ error: '尚未設�??�步檔�?，�??�選??Google Drive 檔�?' });
         }
 
         if (!user.encryptedAccessToken || !user.encryptedRefreshToken) {
-            return res.status(400).json({ error: '缺少 OAuth token，請重新登入' });
+            return res.status(400).json({ error: '缺�? OAuth token，�??�新?�入' });
         }
 
-        // 解密 tokens
+        // �?? tokens
         let accessToken = decrypt(user.encryptedAccessToken);
         const refreshToken = decrypt(user.encryptedRefreshToken);
 
-        // 設定 OAuth client
+        // 設�? OAuth client
         const oauth2Client = new google.auth.OAuth2(
             process.env.GOOGLE_CLIENT_ID,
             process.env.Client_secret,
@@ -60,7 +60,7 @@ module.exports = async function handler(req, res) {
             refresh_token: refreshToken,
         });
 
-        // 監聽 token 刷新事件
+        // ??�� token ?�新事件
         oauth2Client.on('tokens', async (newTokens) => {
             try {
                 const updateData = {
@@ -79,14 +79,14 @@ module.exports = async function handler(req, res) {
             }
         });
 
-        // 準備要寫入的 JSON 內容
+        // 準�?要寫?��? JSON ?�容
         const fileContent = JSON.stringify({
             syncTimestamp: syncTimestamp || new Date().toISOString(),
             triggerAction: triggerAction || 'unknown',
             treeData,
         }, null, 2);
 
-        // 呼叫 Google Drive API 更新檔案
+        // ?�叫 Google Drive API ?�新檔�?
         const drive = google.drive({ version: 'v3', auth: oauth2Client });
 
         await drive.files.update({
@@ -97,7 +97,7 @@ module.exports = async function handler(req, res) {
             },
         });
 
-        // 記錄 audit log
+        // 記�? audit log
         await AuditLog.create({
             userId,
             action: 'sync_drive',
@@ -110,7 +110,7 @@ module.exports = async function handler(req, res) {
     } catch (err) {
         console.error('Sync drive error:', err);
 
-        // 記錄失敗 audit log
+        // 記�?失�? audit log
         try {
             await AuditLog.create({
                 userId,
@@ -123,6 +123,6 @@ module.exports = async function handler(req, res) {
             console.error('Audit log error:', logErr);
         }
 
-        res.status(500).json({ error: 'Drive 同步失敗', detail: err.message });
+        res.status(500).json({ error: 'Drive ?�步失�?', detail: err.message });
     }
 };

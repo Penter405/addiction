@@ -1,7 +1,7 @@
 const { google } = require('googleapis');
-const { connectDB, User, AuditLog } = require('../../lib/db');
-const { encrypt } = require('../../lib/crypto');
-const { createSession } = require('../../lib/session');
+const { connectDB, User, AuditLog } = require('../../_lib/db');
+const { encrypt } = require('../../_lib/crypto');
+const { createSession } = require('../../_lib/session');
 
 module.exports = async function handler(req, res) {
     if (req.method !== 'GET') {
@@ -11,10 +11,10 @@ module.exports = async function handler(req, res) {
     const { code, state } = req.query;
 
     if (!code) {
-        return res.status(400).json({ error: '缺少授權碼' });
+        return res.status(400).json({ error: '缺�??��?�? });
     }
 
-    // 驗證 CSRF state
+    // 驗�? CSRF state
     const cookieHeader = req.headers.cookie || '';
     const cookies = Object.fromEntries(
         cookieHeader.split(';').map(c => {
@@ -24,7 +24,7 @@ module.exports = async function handler(req, res) {
     );
     const savedState = cookies['oauth_state'];
     if (!state || state !== savedState) {
-        return res.status(403).json({ error: 'State 驗證失敗，可能是 CSRF 攻擊' });
+        return res.status(403).json({ error: 'State 驗�?失�?，可?�是 CSRF ?��?' });
     }
 
     try {
@@ -34,16 +34,16 @@ module.exports = async function handler(req, res) {
             process.env.GOOGLE_REDIRECT_URI
         );
 
-        // 用授權碼換取 tokens
+        // ?��?權碼?��? tokens
         const { tokens } = await oauth2Client.getToken(code);
         oauth2Client.setCredentials(tokens);
 
-        // 取得使用者資訊
+        // ?��?使用?��?�?
         const oauth2 = google.oauth2({ version: 'v2', auth: oauth2Client });
         const userInfo = await oauth2.userinfo.get();
         const { id: googleId, email, name, picture } = userInfo.data;
 
-        // 加密 tokens
+        // ?��? tokens
         const encryptedAccessToken = encrypt(tokens.access_token);
         const encryptedRefreshToken = tokens.refresh_token
             ? encrypt(tokens.refresh_token)
@@ -60,7 +60,7 @@ module.exports = async function handler(req, res) {
             updatedAt: new Date(),
         };
 
-        // 只在有 refresh_token 時才更新（避免覆蓋掉舊的）
+        // ?�在??refresh_token ?��??�新（避?��??��??��?�?
         if (encryptedRefreshToken) {
             updateData.encryptedRefreshToken = encryptedRefreshToken;
         }
@@ -71,7 +71,7 @@ module.exports = async function handler(req, res) {
             { upsert: true, new: true }
         );
 
-        // 記錄 audit log
+        // 記�? audit log
         await AuditLog.create({
             userId: googleId,
             action: 'login',
@@ -79,7 +79,7 @@ module.exports = async function handler(req, res) {
             status: 'success',
         });
 
-        // 建立 session（token 同時會設在 cookie，也回傳供 URL 傳遞）
+        // 建�? session（token ?��??�設??cookie，�??�傳�?URL ?��?�?
         const token = createSession(res, googleId);
 
         // 清除 oauth_state cookie
@@ -96,12 +96,12 @@ module.exports = async function handler(req, res) {
             res.setHeader('Set-Cookie', clearState);
         }
 
-        // 轉導回前端首頁 (GitHub Pages)，並附帶 token 讓前端存入 localStorage
+        // 轉�??��?端�???(GitHub Pages)，並?�帶 token 讓�?端�???localStorage
         const frontendUrl = process.env.FRONTEND_URL || 'https://penter405.github.io/addiction/';
         res.redirect(302, `${frontendUrl}?token=${encodeURIComponent(token)}`);
 
     } catch (err) {
         console.error('OAuth callback error:', err);
-        res.status(500).json({ error: 'OAuth 登入失敗', detail: err.message });
+        res.status(500).json({ error: 'OAuth ?�入失�?', detail: err.message });
     }
 };

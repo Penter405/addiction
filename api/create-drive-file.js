@@ -1,8 +1,8 @@
 const { google } = require('googleapis');
-const { connectDB, User, AuditLog } = require('./lib/db');
-const { encrypt, decrypt } = require('./lib/crypto');
-const { getSession } = require('./lib/session');
-const { handleCors } = require('./lib/cors');
+const { connectDB, User, AuditLog } = require('./_lib/db');
+const { encrypt, decrypt } = require('./_lib/crypto');
+const { getSession } = require('./_lib/session');
+const { handleCors } = require('./_lib/cors');
 
 module.exports = async function handler(req, res) {
     if (handleCors(req, res)) return;
@@ -13,20 +13,20 @@ module.exports = async function handler(req, res) {
 
     const userId = getSession(req);
     if (!userId) {
-        return res.status(401).json({ error: '未登入' });
+        return res.status(401).json({ error: '?�登?? });
     }
 
     const { fileName, folderName } = req.body || {};
     if (!fileName) {
-        return res.status(400).json({ error: '缺少 fileName' });
+        return res.status(400).json({ error: '缺�? fileName' });
     }
 
-    // ===== 檔名驗證：只允許 .json，長度 ≤ 100 =====
+    // ===== 檔�?驗�?：只?�許 .json，長�???100 =====
     if (typeof fileName !== 'string' || fileName.length > 100) {
-        return res.status(400).json({ error: '檔案名稱過長（上限 100 字元）' });
+        return res.status(400).json({ error: '檔�??�稱?�長（�???100 字�?�? });
     }
     if (!fileName.toLowerCase().endsWith('.json')) {
-        return res.status(400).json({ error: '只允許建立 .json 檔案' });
+        return res.status(400).json({ error: '?��?許建�?.json 檔�?' });
     }
 
     try {
@@ -34,14 +34,14 @@ module.exports = async function handler(req, res) {
         const user = await User.findOne({ googleId: userId });
 
         if (!user || !user.encryptedAccessToken || !user.encryptedRefreshToken) {
-            return res.status(400).json({ error: '缺少 OAuth token，請重新登入' });
+            return res.status(400).json({ error: '缺�? OAuth token，�??�新?�入' });
         }
 
-        // 解密 tokens
+        // �?? tokens
         const accessToken = decrypt(user.encryptedAccessToken);
         const refreshToken = decrypt(user.encryptedRefreshToken);
 
-        // 設定 OAuth client
+        // 設�? OAuth client
         const oauth2Client = new google.auth.OAuth2(
             process.env.GOOGLE_CLIENT_ID,
             process.env.Client_secret,
@@ -53,7 +53,7 @@ module.exports = async function handler(req, res) {
             refresh_token: refreshToken,
         });
 
-        // 監聽 token 刷新事件
+        // ??�� token ?�新事件
         oauth2Client.on('tokens', async (newTokens) => {
             try {
                 const updateData = {
@@ -72,7 +72,7 @@ module.exports = async function handler(req, res) {
             }
         });
 
-        // 在 Google Drive 建立新的空 JSON 檔案
+        // ??Google Drive 建�??��?�?JSON 檔�?
         const drive = google.drive({ version: 'v3', auth: oauth2Client });
 
         // If folderName provided, find or create the folder
@@ -125,7 +125,7 @@ module.exports = async function handler(req, res) {
 
         const fileId = file.data.id;
 
-        // 儲存 fileId, fileName, folderName 到 User
+        // ?��? fileId, fileName, folderName ??User
         const updateFields = { driveFileId: fileId, driveFileName: fileName, updatedAt: new Date() };
         if (folderName && folderName.trim()) {
             updateFields.driveFolderName = folderName.trim();
@@ -135,7 +135,7 @@ module.exports = async function handler(req, res) {
             { $set: updateFields }
         );
 
-        // 記錄 audit log
+        // 記�? audit log
         await AuditLog.create({
             userId,
             action: 'create_drive_file',
@@ -147,6 +147,6 @@ module.exports = async function handler(req, res) {
         res.status(200).json({ success: true, fileId, fileName });
     } catch (err) {
         console.error('Create drive file error:', err);
-        res.status(500).json({ error: '建立 Drive 檔案失敗', detail: err.message });
+        res.status(500).json({ error: '建�? Drive 檔�?失�?', detail: err.message });
     }
 };
