@@ -240,6 +240,7 @@
             left: 0;
             cursor: grab;
             z-index: 1;
+            touch-action: none;
         }
 
         .tree-canvas-container:active {
@@ -1651,7 +1652,7 @@
             const overlay = document.getElementById('tos-block-overlay');
             const checkbox = document.getElementById('tos-checkbox');
             const welcomeView = document.getElementById('view-welcome');
-            const isWelcomeVisible = welcomeView && welcomeView.style.display !== 'none';
+            const isWelcomeVisible = welcomeView && welcomeView.classList.contains('active');
 
             if (checkbox) checkbox.checked = accepted;
 
@@ -1808,6 +1809,68 @@
         });
 
         window.addEventListener('mouseup', () => { isDragging = false; });
+
+        // --- 手機觸控支援 ---
+        let lastTouchDist = 0;
+        let isPinching = false;
+
+        canvas.addEventListener('touchstart', (e) => {
+            if (e.target.closest('.node-box')) return;
+            if (e.touches.length === 1) {
+                // 單點：平移
+                isDragging = true;
+                isPinching = false;
+                startX = e.touches[0].clientX - panX;
+                startY = e.touches[0].clientY - panY;
+            } else if (e.touches.length === 2) {
+                // 兩點：縮放
+                isDragging = false;
+                isPinching = true;
+                lastTouchDist = Math.hypot(
+                    e.touches[0].clientX - e.touches[1].clientX,
+                    e.touches[0].clientY - e.touches[1].clientY
+                );
+            }
+        });
+
+        canvas.addEventListener('touchmove', (e) => {
+            if (isDragging && e.touches.length === 1) {
+                panX = e.touches[0].clientX - startX;
+                panY = e.touches[0].clientY - startY;
+                updateCanvasTransform();
+            } else if (isPinching && e.touches.length === 2) {
+                const dist = Math.hypot(
+                    e.touches[0].clientX - e.touches[1].clientX,
+                    e.touches[0].clientY - e.touches[1].clientY
+                );
+                const zoomSensitivity = 0.005;
+                const delta = (dist - lastTouchDist) * zoomSensitivity;
+                let newScale = scale * (1 + delta);
+                newScale = Math.max(0.3, Math.min(newScale, 2.5));
+
+                // 縮放中心設為兩指中點
+                const midX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+                const midY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+                const rect = canvas.getBoundingClientRect();
+                const relX = midX - rect.left;
+                const relY = midY - rect.top;
+
+                panX = relX - (relX - panX) * (newScale / scale);
+                panY = relY - (relY - panY) * (newScale / scale);
+                scale = newScale;
+                lastTouchDist = dist;
+                updateCanvasTransform();
+            }
+        });
+
+        canvas.addEventListener('touchend', () => {
+            isDragging = false;
+            isPinching = false;
+        });
+        canvas.addEventListener('touchcancel', () => {
+            isDragging = false;
+            isPinching = false;
+        });
 
         function updateCanvasTransform() {
             zoomLayer.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`;
