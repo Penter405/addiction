@@ -1305,6 +1305,157 @@
             flex: 1;
             margin-bottom: 0;
         }
+
+        /* ================= Mobile Responsiveness (Small Screens) ================= */
+        @media (max-width: 600px) {
+            .welcome-box {
+                margin: 40px auto;
+                padding: 20px;
+                width: 95%;
+            }
+
+            .welcome-box h1 {
+                font-size: 1.5rem;
+            }
+
+            .welcome-box p {
+                font-size: 0.95rem;
+            }
+
+            button {
+                padding: 10px 18px;
+                font-size: 0.95rem;
+            }
+
+            .canvas-ui-layer {
+                top: 10px;
+                left: 10px;
+                padding-right: 120px;
+                /* Space for auth-bar */
+                pointer-events: none;
+            }
+
+            .canvas-ui-layer>* {
+                padding: 10px 15px;
+                pointer-events: auto;
+            }
+
+            .canvas-ui-layer h2 {
+                font-size: 1.1rem;
+                padding-left: 15px !important;
+            }
+
+            #info-panel p {
+                font-size: 0.8rem !important;
+                line-height: 1.5 !important;
+            }
+
+            .auth-bar {
+                top: 10px;
+                right: 10px;
+                gap: 8px;
+            }
+
+            .auth-bar .user-info {
+                padding: 6px 10px;
+                font-size: 0.8rem;
+            }
+
+            .btn-more {
+                width: 36px;
+                height: 36px;
+                font-size: 1.2rem;
+            }
+
+            .more-dropdown {
+                min-width: 220px;
+                right: 0;
+                max-width: calc(100vw - 20px);
+            }
+
+            .pipeline-container {
+                gap: 12px;
+            }
+
+            .stage-box {
+                min-width: 200px;
+                padding: 15px;
+                min-height: 220px;
+            }
+
+            .editor-header {
+                padding: 15px;
+            }
+
+            .token-creator {
+                padding: 15px;
+                gap: 10px;
+            }
+
+            .cp-token {
+                padding: 8px 12px;
+                font-size: 0.85rem;
+            }
+
+            .score-board {
+                padding: 15px 15px 25px 15px;
+                font-size: 1.1rem;
+            }
+
+            .score-board>div {
+                gap: 20px !important;
+            }
+
+            .modal-box {
+                padding: 20px;
+            }
+
+            .conflict-compare {
+                grid-template-columns: 1fr;
+            }
+
+            .conflict-modal {
+                padding: 20px;
+                width: 95%;
+            }
+
+            .conflict-side {
+                max-height: 250px;
+            }
+
+            .tos-block-content {
+                padding: 25px;
+                width: 95%;
+            }
+
+            .tos-block-content h2 {
+                font-size: 1.3rem;
+            }
+
+            .toast {
+                width: 90%;
+                font-size: 0.95rem;
+                padding: 10px 20px;
+            }
+
+            .modal-actions {
+                flex-direction: column;
+            }
+
+            .modal-actions button {
+                width: 100%;
+            }
+
+            .node-box {
+                min-width: 140px;
+                padding: 10px 15px;
+                font-size: 0.9rem;
+            }
+
+            .node-box.root-node {
+                min-width: 120px;
+            }
+        }
     </style>
 </head>
 
@@ -2169,6 +2320,34 @@
 
             el.addEventListener('dragstart', () => { draggedTokenId = token.id; setTimeout(() => el.style.opacity = '0.5', 0); });
             el.addEventListener('dragend', () => el.style.opacity = '1');
+
+            // 手機觸控拖動
+            el.addEventListener('touchstart', (e) => {
+                if (e.touches.length > 1) return;
+                draggedTokenId = token.id;
+                el.style.opacity = '0.5';
+                el._touchStartX = e.touches[0].clientX;
+                el._touchStartY = e.touches[0].clientY;
+            }, { passive: true });
+
+            el.addEventListener('touchmove', (e) => {
+                if (!draggedTokenId) return;
+                // 我們不需要移動元素，只需要在結束時判斷位置
+            }, { passive: true });
+
+            el.addEventListener('touchend', (e) => {
+                if (draggedTokenId === token.id) {
+                    el.style.opacity = '1';
+                    const touch = e.changedTouches[0];
+                    const targetEl = document.elementFromPoint(touch.clientX, touch.clientY);
+                    const dropZone = targetEl ? targetEl.closest('.drop-zone') : null;
+                    if (dropZone) {
+                        const zoneId = dropZone.id.replace('zone-', '');
+                        drop({ preventDefault: () => { } }, zoneId === 'token-dock' ? 'dock' : zoneId);
+                    }
+                    draggedTokenId = null;
+                }
+            });
 
             document.getElementById(token.stage === 'dock' ? 'token-dock' : `zone-${token.stage}`).appendChild(el);
             checkDockHint();
