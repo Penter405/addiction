@@ -3069,10 +3069,18 @@
                     const fileName = generateFileName();
                     showToast('⏳ 正在建立檔案...', 'warning');
                     try {
+                        const reqBody = { fileName, folderName: folderName || undefined };
+                        // Tell backend how to handle existing folders
+                        if (selectedFolderId) {
+                            reqBody.folderConflictStrategy = 'use_existing';
+                            reqBody.existingFolderId = selectedFolderId;
+                        } else if (folderName) {
+                            reqBody.folderConflictStrategy = 'create_new';
+                        }
                         const createRes = await fetch(API_BASE + '/api/create-drive-file', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json', ...authHeaders() },
-                            body: JSON.stringify({ fileName, folderName: folderName || undefined }),
+                            body: JSON.stringify(reqBody),
                         });
                         const createData = await createRes.json();
                         if (createData.success) {
