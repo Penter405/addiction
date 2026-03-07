@@ -2932,18 +2932,29 @@
             if ((mode === 'drive' || mode === 'both') && currentUser) {
                 try {
                     const fileName = generateFileName();
+                    const reqBody = { fileName };
+                    if (currentUser.driveFolderId) {
+                        reqBody.parentFolderId = currentUser.driveFolderId;
+                    }
                     const createRes = await fetch(API_BASE + '/api/create-drive-file', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json', ...authHeaders() },
-                        body: JSON.stringify({ fileName }),
+                        body: JSON.stringify(reqBody),
                     });
                     const createData = await createRes.json();
                     if (createData.success) {
                         currentUser.hasDriveFile = true;
+                        currentUser.driveFolderName = createData.folderName || null;
+                        currentUser.driveFolderId = createData.folderId || null;
                         updateAuthUI();
                         await syncToDriveInternal('conflict_resolve');
                         localStorage.setItem(STORAGE_KEY_SAVE_DATE, new Date().toISOString().slice(0, 10));
                         showToast('✅ 已建立新版本並同步至 Google Drive', 'success');
+                    } else if (createData.error === 'folder_access_lost') {
+                        currentUser.driveFolderId = null;
+                        currentUser.driveFolderName = null;
+                        showToast('⚠️ 先前使用的資料夾已無法存取，請重新選擇資料夾', 'error');
+                        openDrivePicker();
                     } else {
                         if (createRes.status === 402 || createRes.status === 403) {
                             showToast('⚠️ Google Drive 空間不足，無法建立檔案', 'error');
@@ -3003,17 +3014,17 @@
                 if (!data.success) throw new Error(data.error || '載入失敗');
 
                 const folders = data.folders || [];
-                let selectedFolderId = null;
+                let selectedFolderId = data.currentFolderId || null;
                 let selectedFolderName = data.currentFolder || '';
 
                 // Build folder list HTML
                 let listHTML = '<div class="picker-list">';
                 // Root (no folder) option
-                listHTML += `<div class="picker-item${!selectedFolderName ? ' active' : ''}" data-id="" data-name="">
+                listHTML += `<div class="picker-item${!selectedFolderId ? ' active' : ''}" data-id="" data-name="">
                     <span>📁</span> <span>根目錄 (My Drive)</span>
                 </div>`;
                 folders.forEach(f => {
-                    const isActive = f.name === selectedFolderName;
+                    const isActive = selectedFolderId && f.id === selectedFolderId;
                     const date = new Date(f.modifiedTime).toLocaleDateString();
                     listHTML += `<div class="picker-item${isActive ? ' active' : ''}" data-id="${f.id}" data-name="${f.name}">
                         <span>📂</span> <span>${f.name}</span> <span class="picker-meta">${date}</span>
@@ -3085,6 +3096,8 @@
                         const createData = await createRes.json();
                         if (createData.success) {
                             currentUser.hasDriveFile = true;
+                            currentUser.driveFolderName = createData.folderName || null;
+                            currentUser.driveFolderId = createData.folderId || null;
                             updateAuthUI();
                             showToast(`☁️ 已在${folderName ? `「${folderName}」` : '根目錄'}建立同步檔案`, 'success');
                         } else {
@@ -3174,15 +3187,27 @@
                     if (needNewFile) {
                         // Next day or import diff → create new file first
                         const fileName = generateFileName();
+                        const reqBody = { fileName };
+                        if (currentUser.driveFolderId) {
+                            reqBody.parentFolderId = currentUser.driveFolderId;
+                        }
                         const createRes = await fetch(API_BASE + '/api/create-drive-file', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json', ...authHeaders() },
-                            body: JSON.stringify({ fileName }),
+                            body: JSON.stringify(reqBody),
                         });
                         const createData = await createRes.json();
                         if (createData.success) {
                             currentUser.hasDriveFile = true;
+                            currentUser.driveFolderName = createData.folderName || null;
+                            currentUser.driveFolderId = createData.folderId || null;
                             updateAuthUI();
+                        } else if (createData.error === 'folder_access_lost') {
+                            currentUser.driveFolderId = null;
+                            currentUser.driveFolderName = null;
+                            showToast('⚠️ 先前使用的資料夾已無法存取，請重新選擇資料夾', 'error');
+                            openDrivePicker();
+                            return;
                         } else {
                             throw new Error(createData.error || '建立新檔案失敗');
                         }

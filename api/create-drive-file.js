@@ -57,7 +57,36 @@ async function createDriveFolder(drive, folderName) {
     return { id: created.data.id, name: created.data.name };
 }
 
-async function resolveParentFolder(drive, folderName, folderConflictStrategy, existingFolderId) {
+async function verifyFolderAccess(drive, folderId) {
+    try {
+        const resp = await drive.files.get({
+            fileId: folderId,
+            fields: 'id, name, trashed',
+            spaces: 'drive',
+        });
+        if (resp.data.trashed) return null;
+        return { id: resp.data.id, name: resp.data.name };
+    } catch {
+        return null;
+    }
+}
+
+async function resolveParentFolder(drive, folderName, folderConflictStrategy, existingFolderId, parentFolderId) {
+    // Case 1: parentFolderId provided (e.g. daily rotation) — verify access
+    if (parentFolderId) {
+        const verified = await verifyFolderAccess(drive, parentFolderId);
+        if (verified) {
+            return {
+                parentFolderId: verified.id,
+                parentFolderName: verified.name,
+                resolution: 'verified_existing',
+            };
+        }
+        // Access lost — tell frontend
+        return { accessLost: true };
+    }
+
+    // Case 2: no folder requested
     if (!folderName || typeof folderName !== 'string' || !folderName.trim()) {
         return { parentFolderId: null, parentFolderName: null, resolution: 'no_folder' };
     }
@@ -136,7 +165,7 @@ module.exports = async function handler(req, res) {
         return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    const { fileName, folderName, folderConflictStrategy, existingFolderId } = req.body || {};
+    const { fileName, folderName, folderConflictStrategy, existingFolderId, parentFolderId } = req.body || {};
     if (!fileName) {
         return res.status(400).json({ error: 'Missing fileName' });
     }
@@ -188,8 +217,16 @@ module.exports = async function handler(req, res) {
             drive,
             folderName,
             folderConflictStrategy,
-            existingFolderId
+            existingFolderId,
+            parentFolderId
         );
+
+        if (folderResult.accessLost) {
+            return res.status(410).json({
+                error: 'folder_access_lost',
+                message: 'The previously used folder is no longer accessible. Please re-select a folder.',
+            });
+        }
 
         if (folderResult.conflict) {
             return res.status(409).json({
@@ -234,6 +271,12 @@ module.exports = async function handler(req, res) {
         };
         if (folderResult.parentFolderName) {
             updateFields.driveFolderName = folderResult.parentFolderName;
+        }
+        if (folderResult.parentFolderId) {
+            updateFields.driveFolderId = folderResult.parentFolderId;
+        } else {
+            updateFields.driveFolderId = null;
+            updateFields.driveFolderName = null;
         }
 
         await User.findOneAndUpdate({ googleId: userId }, { $set: updateFields });

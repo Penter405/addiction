@@ -47,6 +47,7 @@ module.exports = async function handler(req, res) {
                 fields: 'files(id, name, modifiedTime)',
                 orderBy: 'modifiedTime desc',
                 pageSize: 50,
+                spaces: 'drive',
             });
             const folders = (result.data.files || []).map((f) => ({
                 id: f.id,
@@ -57,6 +58,7 @@ module.exports = async function handler(req, res) {
                 success: true,
                 folders,
                 currentFolder: user.driveFolderName || null,
+                currentFolderId: user.driveFolderId || null,
             });
         }
 

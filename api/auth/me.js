@@ -57,6 +57,8 @@ module.exports = async function handler(req, res) {
                 email: user.email,
                 picture: user.picture,
                 hasDriveFile: !!user.driveFileId,
+                driveFolderName: user.driveFolderName || null,
+                driveFolderId: user.driveFolderId || null,
                 tosAccepted: !!user.tosAccepted,
             },
         });

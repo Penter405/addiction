@@ -29,6 +29,7 @@ const userSchema = new mongoose.Schema({
   driveFileId: { type: String, default: null },
   driveFileName: { type: String, default: null },
   driveFolderName: { type: String, default: null },
+  driveFolderId: { type: String, default: null },
   tosAccepted: { type: Boolean, default: false },
   tosAcceptedAt: { type: Date },
   createdAt: { type: Date, default: Date.now },
