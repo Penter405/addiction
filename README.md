@@ -112,3 +112,44 @@ vercel --prod
 ## 📄 License
 
 This project is for educational purposes.
+---
+
+## API Abuse Protection (New)
+
+### Folder conflict algorithm (`POST /api/create-drive-file`)
+
+- If `folderName` does not exist: create the folder automatically.
+- If `folderName` already exists and no strategy is provided: API returns `409 folder_conflict` with existing folder list and choices.
+- Client sends one of:
+  - `folderConflictStrategy: "use_existing"` (optionally with `existingFolderId`)
+  - `folderConflictStrategy: "create_new"` (API creates a unique name like `MyFolder (2)`).
+
+### New anti-DDoS controls
+
+- Per-endpoint rate limiting by IP + session/user (`api/_lib/security.js`)
+- Burst protection (warm in-memory guard) before DB work
+- Persistent abuse scoring + temporary blocking (MongoDB TTL-backed state)
+- Optional bot challenge verification (`turnstile`, `recaptcha`, `hcaptcha`)
+- Rate-limit headers on responses: `X-RateLimit-*`, `Retry-After`
+
+### New environment variables
+
+| Variable | Description |
+|---|---|
+| `RATE_SHORT_WINDOW_MS` | Short window size (default `10000`) |
+| `RATE_LONG_WINDOW_MS` | Long window size (default `600000`) |
+| `RATE_SHORT_LIMIT` | Default short-window request cap |
+| `RATE_LONG_LIMIT` | Default long-window request cap |
+| `RATE_BLOCK_MS` | Temporary block duration when abuse detected |
+| `BOT_CHALLENGE_PROVIDER` | `turnstile` or `recaptcha` or `hcaptcha` |
+| `TURNSTILE_SECRET_KEY` | Required when provider is `turnstile` |
+| `RECAPTCHA_SECRET_KEY` | Required when provider is `recaptcha` |
+| `HCAPTCHA_SECRET_KEY` | Required when provider is `hcaptcha` |
+
+### Extra protection for `github pages -> vercel -> mongodb`
+
+1. Enable Vercel WAF managed rules and Bot protection.
+2. Put login + drive mutation paths (`/api/create-drive-file`, `/api/sync-drive`, `/api/set-drive-file`) behind stricter WAF rules.
+3. Enable MongoDB IP access control to allow only Vercel egress where possible.
+4. Add Vercel firewall rule for geo/ASN filtering if attacks are regional.
+5. Alert on `429`, `403 challenge_required`, and sudden `AuditLog` spikes.

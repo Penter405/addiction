@@ -1,6 +1,7 @@
 const { getSession, clearSession } = require('../_lib/session');
 const { connectDB, AuditLog } = require('../_lib/db');
 const { handleCors } = require('../_lib/cors');
+const { protectEndpoint, parseIp } = require('../_lib/security');
 
 module.exports = async function handler(req, res) {
     if (handleCors(req, res)) return;
@@ -10,6 +11,13 @@ module.exports = async function handler(req, res) {
     }
 
     const userId = getSession(req);
+    const guard = await protectEndpoint(req, res, {
+        scope: 'auth_logout',
+        userId,
+        shortLimit: 20,
+        longLimit: 100,
+    });
+    if (!guard || guard.ok !== true) return;
 
     if (userId) {
         try {
@@ -17,7 +25,7 @@ module.exports = async function handler(req, res) {
             await AuditLog.create({
                 userId,
                 action: 'logout',
-                ip: req.headers['x-forwarded-for'] || req.socket?.remoteAddress || 'unknown',
+                ip: parseIp(req),
                 status: 'success',
             });
         } catch (err) {

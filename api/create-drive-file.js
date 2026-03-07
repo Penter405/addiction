@@ -3,6 +3,118 @@ const { connectDB, User, AuditLog } = require('./_lib/db');
 const { encrypt, decrypt } = require('./_lib/crypto');
 const { getSession } = require('./_lib/session');
 const { handleCors } = require('./_lib/cors');
+const { protectEndpoint, parseIp } = require('./_lib/security');
+
+const FILE_NAME_REGEX = /^[^\\/\\r\\n]{1,100}$/;
+const FOLDER_STRATEGIES = new Set(['use_existing', 'create_new']);
+
+function escapeDriveQueryValue(value) {
+    return String(value).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+}
+
+async function listFoldersByExactName(drive, folderName) {
+    const escaped = escapeDriveQueryValue(folderName);
+    const response = await drive.files.list({
+        q: `name='${escaped}' and mimeType='application/vnd.google-apps.folder' and trashed=false`,
+        fields: 'files(id, name, modifiedTime)',
+        orderBy: 'modifiedTime desc',
+        pageSize: 20,
+        spaces: 'drive',
+    });
+
+    return response.data.files || [];
+}
+
+async function pickUniqueFolderName(drive, baseName) {
+    const escaped = escapeDriveQueryValue(baseName);
+    const response = await drive.files.list({
+        q: `mimeType='application/vnd.google-apps.folder' and trashed=false and name contains '${escaped}'`,
+        fields: 'files(name)',
+        pageSize: 200,
+        spaces: 'drive',
+    });
+
+    const existingNames = new Set((response.data.files || []).map((f) => f.name));
+    if (!existingNames.has(baseName)) return baseName;
+
+    for (let i = 2; i <= 2000; i += 1) {
+        const candidate = `${baseName} (${i})`;
+        if (!existingNames.has(candidate)) return candidate;
+    }
+
+    return `${baseName} ${Date.now()}`;
+}
+
+async function createDriveFolder(drive, folderName) {
+    const created = await drive.files.create({
+        resource: {
+            name: folderName,
+            mimeType: 'application/vnd.google-apps.folder',
+        },
+        fields: 'id, name',
+    });
+
+    return { id: created.data.id, name: created.data.name };
+}
+
+async function resolveParentFolder(drive, folderName, folderConflictStrategy, existingFolderId) {
+    if (!folderName || typeof folderName !== 'string' || !folderName.trim()) {
+        return { parentFolderId: null, parentFolderName: null, resolution: 'no_folder' };
+    }
+
+    const trimmedFolderName = folderName.trim();
+    const existingFolders = await listFoldersByExactName(drive, trimmedFolderName);
+
+    if (!existingFolders.length) {
+        const folder = await createDriveFolder(drive, trimmedFolderName);
+        return {
+            parentFolderId: folder.id,
+            parentFolderName: folder.name,
+            resolution: 'created_new',
+        };
+    }
+
+    if (!folderConflictStrategy) {
+        return {
+            conflict: {
+                requestedFolderName: trimmedFolderName,
+                existingFolders: existingFolders.map((f) => ({
+                    id: f.id,
+                    name: f.name,
+                    modifiedTime: f.modifiedTime,
+                })),
+                choices: ['use_existing', 'create_new'],
+            },
+        };
+    }
+
+    if (!FOLDER_STRATEGIES.has(folderConflictStrategy)) {
+        const error = new Error('Invalid folderConflictStrategy');
+        error.statusCode = 400;
+        throw error;
+    }
+
+    if (folderConflictStrategy === 'use_existing') {
+        const chosenFolder =
+            existingFolderId && existingFolders.find((f) => f.id === existingFolderId)
+                ? existingFolders.find((f) => f.id === existingFolderId)
+                : existingFolders[0];
+
+        return {
+            parentFolderId: chosenFolder.id,
+            parentFolderName: chosenFolder.name,
+            resolution: 'used_existing',
+        };
+    }
+
+    const uniqueName = await pickUniqueFolderName(drive, trimmedFolderName);
+    const folder = await createDriveFolder(drive, uniqueName);
+    return {
+        parentFolderId: folder.id,
+        parentFolderName: folder.name,
+        resolution: 'created_new_after_conflict',
+    };
+}
 
 module.exports = async function handler(req, res) {
     if (handleCors(req, res)) return;
@@ -12,21 +124,25 @@ module.exports = async function handler(req, res) {
     }
 
     const userId = getSession(req);
+    const guard = await protectEndpoint(req, res, {
+        scope: 'drive_create_file',
+        userId,
+        shortLimit: 12,
+        longLimit: 60,
+    });
+    if (!guard || guard.ok !== true) return;
+
     if (!userId) {
-        return res.status(401).json({ error: '未登入' });
+        return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    const { fileName, folderName } = req.body || {};
+    const { fileName, folderName, folderConflictStrategy, existingFolderId } = req.body || {};
     if (!fileName) {
-        return res.status(400).json({ error: '缺少 fileName' });
+        return res.status(400).json({ error: 'Missing fileName' });
     }
 
-    // ===== 檔名驗證：只允許 .json，長度 ≤ 100 =====
-    if (typeof fileName !== 'string' || fileName.length > 100) {
-        return res.status(400).json({ error: '檔案名稱過長（上限 100 字元）' });
-    }
-    if (!fileName.toLowerCase().endsWith('.json')) {
-        return res.status(400).json({ error: '只允許建立 .json 檔案' });
+    if (typeof fileName !== 'string' || !FILE_NAME_REGEX.test(fileName) || !fileName.toLowerCase().endsWith('.json')) {
+        return res.status(400).json({ error: 'Invalid fileName (must be <=100 chars and end with .json)' });
     }
 
     try {
@@ -34,14 +150,12 @@ module.exports = async function handler(req, res) {
         const user = await User.findOne({ googleId: userId });
 
         if (!user || !user.encryptedAccessToken || !user.encryptedRefreshToken) {
-            return res.status(400).json({ error: '缺少 OAuth token，請重新登入' });
+            return res.status(400).json({ error: 'Missing OAuth token. Please log in again.' });
         }
 
-        // 解密 tokens
         const accessToken = decrypt(user.encryptedAccessToken);
         const refreshToken = decrypt(user.encryptedRefreshToken);
 
-        // 設定 OAuth client
         const oauth2Client = new google.auth.OAuth2(
             process.env.GOOGLE_CLIENT_ID,
             process.env.Client_secret,
@@ -53,7 +167,6 @@ module.exports = async function handler(req, res) {
             refresh_token: refreshToken,
         });
 
-        // 監聽 token 刷新事件
         oauth2Client.on('tokens', async (newTokens) => {
             try {
                 const updateData = {
@@ -63,90 +176,89 @@ module.exports = async function handler(req, res) {
                 if (newTokens.refresh_token) {
                     updateData.encryptedRefreshToken = encrypt(newTokens.refresh_token);
                 }
-                await User.findOneAndUpdate(
-                    { googleId: userId },
-                    { $set: updateData }
-                );
+                await User.findOneAndUpdate({ googleId: userId }, { $set: updateData });
             } catch (err) {
                 console.error('Token refresh save error:', err);
             }
         });
 
-        // 在 Google Drive 建立新的空 JSON 檔案
         const drive = google.drive({ version: 'v3', auth: oauth2Client });
 
-        // If folderName provided, find or create the folder
-        let parentFolderId = null;
-        if (folderName && typeof folderName === 'string' && folderName.trim()) {
-            const trimmedFolder = folderName.trim();
-            // Search for existing folder
-            const folderSearch = await drive.files.list({
-                q: `name='${trimmedFolder.replace(/'/g, "\\'")}' and mimeType='application/vnd.google-apps.folder' and trashed=false`,
-                fields: 'files(id, name)',
-                spaces: 'drive',
+        const folderResult = await resolveParentFolder(
+            drive,
+            folderName,
+            folderConflictStrategy,
+            existingFolderId
+        );
+
+        if (folderResult.conflict) {
+            return res.status(409).json({
+                error: 'folder_conflict',
+                message: 'A folder with this name already exists. Choose how to proceed.',
+                ...folderResult.conflict,
             });
-            if (folderSearch.data.files && folderSearch.data.files.length > 0) {
-                parentFolderId = folderSearch.data.files[0].id;
-            } else {
-                // Create the folder
-                const folderMeta = await drive.files.create({
-                    resource: {
-                        name: trimmedFolder,
-                        mimeType: 'application/vnd.google-apps.folder',
-                    },
-                    fields: 'id',
-                });
-                parentFolderId = folderMeta.data.id;
-            }
         }
 
         const fileMetadata = {
             name: fileName,
             mimeType: 'application/json',
         };
-        if (parentFolderId) {
-            fileMetadata.parents = [parentFolderId];
+        if (folderResult.parentFolderId) {
+            fileMetadata.parents = [folderResult.parentFolderId];
         }
 
         const media = {
             mimeType: 'application/json',
-            body: JSON.stringify({
-                syncTimestamp: new Date().toISOString(),
-                triggerAction: 'create',
-                treeData: null,
-            }, null, 2),
+            body: JSON.stringify(
+                {
+                    syncTimestamp: new Date().toISOString(),
+                    triggerAction: 'create',
+                    treeData: null,
+                },
+                null,
+                2
+            ),
         };
 
         const file = await drive.files.create({
             resource: fileMetadata,
-            media: media,
+            media,
             fields: 'id, name',
         });
 
         const fileId = file.data.id;
-
-        // 儲存 fileId, fileName, folderName 到 User
-        const updateFields = { driveFileId: fileId, driveFileName: fileName, updatedAt: new Date() };
-        if (folderName && folderName.trim()) {
-            updateFields.driveFolderName = folderName.trim();
+        const updateFields = {
+            driveFileId: fileId,
+            driveFileName: fileName,
+            updatedAt: new Date(),
+        };
+        if (folderResult.parentFolderName) {
+            updateFields.driveFolderName = folderResult.parentFolderName;
         }
-        await User.findOneAndUpdate(
-            { googleId: userId },
-            { $set: updateFields }
-        );
 
-        // 記錄 audit log
+        await User.findOneAndUpdate({ googleId: userId }, { $set: updateFields });
+
         await AuditLog.create({
             userId,
             action: 'create_drive_file',
             fileId,
-            ip: req.headers['x-forwarded-for'] || req.socket?.remoteAddress || 'unknown',
+            ip: parseIp(req),
             status: 'success',
         });
 
-        res.status(200).json({ success: true, fileId, fileName });
+        res.status(200).json({
+            success: true,
+            fileId,
+            fileName,
+            folderId: folderResult.parentFolderId,
+            folderName: folderResult.parentFolderName,
+            folderResolution: folderResult.resolution,
+        });
     } catch (err) {
         console.error('Create drive file error:', err);
-        res.status(500).json({ error: '建立 Drive 檔案失敗', detail: err.message });
+        const statusCode = err.statusCode || 500;
+        const message = err.statusCode ? err.message : 'Failed to create Drive file';
+        res.status(statusCode).json({ error: message, detail: err.message });
     }
 };
+

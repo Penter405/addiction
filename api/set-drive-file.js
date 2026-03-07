@@ -1,6 +1,7 @@
 const { connectDB, User, AuditLog } = require('./_lib/db');
 const { getSession } = require('./_lib/session');
 const { handleCors } = require('./_lib/cors');
+const { protectEndpoint, parseIp } = require('./_lib/security');
 
 const FILE_ID_REGEX = /^[a-zA-Z0-9_-]{10,80}$/;
 
@@ -12,14 +13,22 @@ module.exports = async function handler(req, res) {
     }
 
     const userId = getSession(req);
+    const guard = await protectEndpoint(req, res, {
+        scope: 'drive_set_file',
+        userId,
+        shortLimit: 15,
+        longLimit: 80,
+    });
+    if (!guard || guard.ok !== true) return;
+
     if (!userId) {
-        return res.status(401).json({ error: '未登入' });
+        return res.status(401).json({ error: 'Unauthorized' });
     }
 
     const { fileId } = req.body || {};
 
     if (!fileId || !FILE_ID_REGEX.test(fileId)) {
-        return res.status(400).json({ error: 'fileId 格式無效' });
+        return res.status(400).json({ error: 'Invalid fileId format' });
     }
 
     try {
@@ -34,13 +43,13 @@ module.exports = async function handler(req, res) {
             userId,
             action: 'set_file',
             fileId,
-            ip: req.headers['x-forwarded-for'] || req.socket?.remoteAddress || 'unknown',
+            ip: parseIp(req),
             status: 'success',
         });
 
         res.status(200).json({ success: true, fileId });
     } catch (err) {
         console.error('Set drive file error:', err);
-        res.status(500).json({ error: '設定失敗' });
+        res.status(500).json({ error: 'Failed to update file setting' });
     }
 };

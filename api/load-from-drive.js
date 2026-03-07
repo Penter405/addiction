@@ -3,6 +3,7 @@ const { connectDB, User, AuditLog } = require('./_lib/db');
 const { encrypt, decrypt } = require('./_lib/crypto');
 const { getSession } = require('./_lib/session');
 const { handleCors } = require('./_lib/cors');
+const { protectEndpoint, parseIp } = require('./_lib/security');
 
 module.exports = async function handler(req, res) {
     if (handleCors(req, res)) return;
@@ -12,8 +13,16 @@ module.exports = async function handler(req, res) {
     }
 
     const userId = getSession(req);
+    const guard = await protectEndpoint(req, res, {
+        scope: 'drive_load',
+        userId,
+        shortLimit: 20,
+        longLimit: 100,
+    });
+    if (!guard || guard.ok !== true) return;
+
     if (!userId) {
-        return res.status(401).json({ error: '未登入' });
+        return res.status(401).json({ error: 'Unauthorized' });
     }
 
     try {
@@ -21,15 +30,14 @@ module.exports = async function handler(req, res) {
         const user = await User.findOne({ googleId: userId });
 
         if (!user || !user.driveFileId) {
-            return res.status(400).json({ error: '尚未設定同步檔案' });
+            return res.status(400).json({ error: 'No Drive file selected' });
         }
 
         if (!user.encryptedAccessToken || !user.encryptedRefreshToken) {
-            return res.status(400).json({ error: '缺少 OAuth token，請重新登入' });
+            return res.status(400).json({ error: 'Missing OAuth token. Please log in again.' });
         }
 
-        // 解密 tokens
-        let accessToken = decrypt(user.encryptedAccessToken);
+        const accessToken = decrypt(user.encryptedAccessToken);
         const refreshToken = decrypt(user.encryptedRefreshToken);
 
         const oauth2Client = new google.auth.OAuth2(
@@ -43,7 +51,6 @@ module.exports = async function handler(req, res) {
             refresh_token: refreshToken,
         });
 
-        // 監聽 token 刷新
         oauth2Client.on('tokens', async (newTokens) => {
             try {
                 const updateData = {
@@ -53,34 +60,29 @@ module.exports = async function handler(req, res) {
                 if (newTokens.refresh_token) {
                     updateData.encryptedRefreshToken = encrypt(newTokens.refresh_token);
                 }
-                await User.findOneAndUpdate(
-                    { googleId: userId },
-                    { $set: updateData }
-                );
+                await User.findOneAndUpdate({ googleId: userId }, { $set: updateData });
             } catch (err) {
                 console.error('Token refresh save error:', err);
             }
         });
 
-        // 從 Drive 讀取檔案
         const drive = google.drive({ version: 'v3', auth: oauth2Client });
         const response = await drive.files.get({
             fileId: user.driveFileId,
             alt: 'media',
         });
 
-        // 記錄 audit log
         await AuditLog.create({
             userId,
             action: 'load_drive',
             fileId: user.driveFileId,
-            ip: req.headers['x-forwarded-for'] || req.socket?.remoteAddress || 'unknown',
+            ip: parseIp(req),
             status: 'success',
         });
 
         res.status(200).json({ success: true, data: response.data });
     } catch (err) {
         console.error('Load from drive error:', err);
-        res.status(500).json({ error: '讀取 Drive 失敗', detail: err.message });
+        res.status(500).json({ error: 'Failed to load from Drive', detail: err.message });
     }
 };

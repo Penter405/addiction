@@ -1,6 +1,8 @@
-﻿const { connectDB, User } = require('../_lib/db');
-const { getSession } = require('../_lib/session');
+const { connectDB, User } = require('../_lib/db');
+const { getSession, clearSession } = require('../_lib/session');
 const { handleCors } = require('../_lib/cors');
+const { protectEndpoint } = require('../_lib/security');
+
 module.exports = async function handler(req, res) {
     if (handleCors(req, res)) return;
 
@@ -9,8 +11,14 @@ module.exports = async function handler(req, res) {
     }
 
     const userId = getSession(req);
-    console.log('[auth/me] Authorization header:', req.headers.authorization ? 'present' : 'missing');
-    console.log('[auth/me] userId from session:', userId ? userId.substring(0, 8) + '...' : null);
+    const guard = await protectEndpoint(req, res, {
+        scope: 'auth_me',
+        userId,
+        shortLimit: 30,
+        longLimit: 200,
+    });
+    if (!guard || guard.ok !== true) return;
+
     if (!userId) {
         return res.status(200).json({ loggedIn: false });
     }
@@ -19,11 +27,8 @@ module.exports = async function handler(req, res) {
         await connectDB();
 
         if (req.method === 'DELETE') {
-            if (userId) {
-                await User.deleteOne({ googleId: userId });
-            }
-            // Clear session cookie
-            res.setHeader('Set-Cookie', 'session=; Path=/; HttpOnly; Secure; SameSite=None; Max-Age=0');
+            await User.deleteOne({ googleId: userId });
+            clearSession(res);
             return res.status(200).json({ success: true, message: 'Account and data deleted' });
         }
 
@@ -57,6 +62,6 @@ module.exports = async function handler(req, res) {
         });
     } catch (err) {
         console.error('Auth me error:', err);
-        res.status(500).json({ error: '伺服器錯誤' });
+        res.status(500).json({ error: 'Server error' });
     }
 };
