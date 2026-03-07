@@ -5,7 +5,7 @@ const { getSession } = require('./_lib/session');
 const { handleCors } = require('./_lib/cors');
 const { protectEndpoint, parseIp } = require('./_lib/security');
 
-const FILE_NAME_REGEX = /^[^\\/\\r\\n]{1,100}$/;
+const FILE_NAME_REGEX = /^[^\/\r\n]{1,100}$/;
 const FOLDER_STRATEGIES = new Set(['use_existing', 'create_new']);
 
 function escapeDriveQueryValue(value) {
