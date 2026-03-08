@@ -884,7 +884,8 @@
             box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
             min-width: 260px;
             z-index: 200;
-            overflow: hidden;
+            overflow-y: auto;
+            max-height: calc(100vh - 70px);
             animation: dropIn 0.2s ease;
         }
 
@@ -1371,6 +1372,7 @@
                 min-width: 220px;
                 right: 0;
                 max-width: calc(100vw - 20px);
+                max-height: calc(100vh - 60px);
             }
 
             .pipeline-container {
@@ -1921,6 +1923,9 @@
         let panX = 0, panY = 0;
         let isDragging = false;
         let startX, startY;
+        let touchStartNodeBox = null;
+        let touchDidPan = false;
+        let touchStartClientX = 0, touchStartClientY = 0;
 
         // 滑鼠滾輪：對準游標縮放
         canvas.addEventListener('wheel', (e) => {
@@ -1966,17 +1971,22 @@
         let isPinching = false;
 
         canvas.addEventListener('touchstart', (e) => {
-            if (e.target.closest('.node-box')) return;
+            const nodeBox = e.target.closest('.node-box');
             if (e.touches.length === 1) {
-                // 單點：平移
+                // 單點：平移（即使手指開始在節點上也允許滑動）
+                touchStartNodeBox = nodeBox;
+                touchDidPan = false;
                 isDragging = true;
                 isPinching = false;
                 startX = e.touches[0].clientX - panX;
                 startY = e.touches[0].clientY - panY;
+                touchStartClientX = e.touches[0].clientX;
+                touchStartClientY = e.touches[0].clientY;
             } else if (e.touches.length === 2) {
                 // 兩點：縮放
                 isDragging = false;
                 isPinching = true;
+                touchStartNodeBox = null;
                 lastTouchDist = Math.hypot(
                     e.touches[0].clientX - e.touches[1].clientX,
                     e.touches[0].clientY - e.touches[1].clientY
@@ -1986,6 +1996,11 @@
 
         canvas.addEventListener('touchmove', (e) => {
             if (isDragging && e.touches.length === 1) {
+                // 如果滑動距離小於 10px，不當成平移（可能是想點擊）
+                const dx = e.touches[0].clientX - touchStartClientX;
+                const dy = e.touches[0].clientY - touchStartClientY;
+                if (!touchDidPan && Math.sqrt(dx * dx + dy * dy) < 10) return;
+                touchDidPan = true;
                 panX = e.touches[0].clientX - startX;
                 panY = e.touches[0].clientY - startY;
                 updateCanvasTransform();
@@ -2015,12 +2030,18 @@
         });
 
         canvas.addEventListener('touchend', () => {
+            // 如果手指沒有滑動超過門檻，就當成點擊
+            if (isDragging && touchStartNodeBox && !touchDidPan) {
+                touchStartNodeBox.click();
+            }
             isDragging = false;
             isPinching = false;
+            touchStartNodeBox = null;
         });
         canvas.addEventListener('touchcancel', () => {
             isDragging = false;
             isPinching = false;
+            touchStartNodeBox = null;
         });
 
         function updateCanvasTransform() {
@@ -2390,6 +2411,12 @@
             const m = parseFloat(localStorage.getItem('brain_lt_multiplier')) || 0.1;
             document.getElementById('lt-multiplier').textContent = `× ${m}`;
             handleTosUI();
+
+            // 手機：預設摺疊左上角說明面板，避免小螢幕遮擋內容
+            if (window.innerWidth <= 600) {
+                document.getElementById('info-panel').style.display = 'none';
+                document.getElementById('info-toggle').textContent = '▶';
+            }
         });
 
         function toggleInfoPanel() {
