@@ -1697,7 +1697,13 @@
 
             <div class="token-creator">
                 <input type="text" id="cp-name" placeholder="CP 變數名稱 (例：看到甜點、多巴胺分泌)" style="flex: 2; min-width: 250px;">
-                <input type="number" id="cp-score" placeholder="分數 (+/-)" style="flex: 1; min-width: 120px;">
+                <div style="display: flex; align-items: center; gap: 4px; flex: 1; min-width: 150px;">
+                    <input type="text" inputmode="decimal" id="cp-score" placeholder="分數"
+                        style="flex: 1; min-width: 80px;">
+                    <button type="button" onclick="toggleScoreSign()"
+                        style="padding: 10px 12px; font-size: 1.1rem; min-width: 42px; background: #7f8c8d; border-radius: 8px;"
+                        title="切換正負">±</button>
+                </div>
                 <select id="cp-time" style="flex: 1; min-width: 180px;">
                     <option value="st">短期 CP (Short-term)</option>
                     <option value="lt">長期 CP (Long-term)</option>
@@ -2328,6 +2334,21 @@
         }
 
         function goToTree() { initApp(); }
+
+        function toggleScoreSign() {
+            const input = document.getElementById('cp-score');
+            const val = input.value.trim();
+            if (!val) {
+                input.value = '-';
+                input.focus();
+                return;
+            }
+            if (val.startsWith('-')) {
+                input.value = val.substring(1);
+            } else {
+                input.value = '-' + val;
+            }
+        }
 
         function createCPToken() {
             let nameInput = document.getElementById('cp-name').value.trim();
