@@ -5,9 +5,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Privacy Policy - Brain Behavior Tree</title>
-    <!-- Use the main stylesheet -->
-    <link rel="stylesheet" href="index.css">
     <style>
+        body {
+            background: #f5f7fa;
+            padding: 20px;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+        }
+
         .page-container {
             max-width: 800px;
             margin: 40px auto;
@@ -15,7 +19,6 @@
             background: white;
             border-radius: 12px;
             box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
         }
 
         .lang-switch {
@@ -37,9 +40,9 @@
         }
 
         .lang-switch button.active {
-            background: var(--primary, #007bff);
+            background: #3498DB;
             color: white;
-            border-color: var(--primary, #007bff);
+            border-color: #3498DB;
         }
 
         .content-section {
@@ -65,7 +68,7 @@
         }
 
         a {
-            color: var(--primary, #007bff);
+            color: #3498DB;
             text-decoration: none;
         }
 
@@ -73,19 +76,44 @@
             text-decoration: underline;
         }
 
-        /* Back to Home Link */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 12px 0;
+            font-size: 0.9rem;
+        }
+
+        th {
+            background: #f0f4f8;
+            text-align: left;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+        }
+
+        td {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            color: #444;
+            vertical-align: top;
+        }
+
         .back-link {
             display: inline-block;
             margin-top: 30px;
             font-weight: 500;
         }
+
+        code {
+            background: #f5f5f5;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.88em;
+        }
     </style>
 </head>
 
-<body style="background: #f5f7fa; padding: 20px;">
-
+<body>
     <div class="page-container">
-        <!-- Language Switcher -->
         <div class="lang-switch">
             <button id="btn-zh" class="active" onclick="switchLang('zh')">繁體中文</button>
             <button id="btn-en" onclick="switchLang('en')">English</button>
@@ -95,96 +123,269 @@
         <div id="content-zh" class="content-section active">
             <h1>隱私權政策 (Privacy Policy)</h1>
             <p>最後更新日期：2026年3月</p>
-            <p>感謝您使用「人類行為與大腦決策視覺化樹狀圖」(Brain Behavior Tree)。您的隱私對我們非常重要，本隱私權政策旨在說明我們如何收集、使用和保護您的資訊，特別是關於 Google Drive
-                資料的存取。</p>
+            <p>感謝您使用「大腦重塑系統」(Brain Behavior Tree)。本政策說明我們收集、儲存及保護您資訊的方式。</p>
 
-            <h2>1. 我們收集哪些資料？</h2>
-            <p>本應用程式<strong>不會</strong>在伺服器上儲存您的「行為樹內容」或任何行為分析資料。但為了提供快速登入與 Google Drive 的同步功能，我們會在雲端資料庫 (MongoDB)
-                中儲存以下必要資訊：</p>
+            <h2>1. 我們在雲端資料庫 (MongoDB) 儲存什麼？</h2>
+            <p>若您選擇以 Google 帳號登入，我們在伺服器資料庫中儲存以下資訊：</p>
+
+            <h3>帳號資料 (Users)</h3>
+            <table>
+                <tr>
+                    <th>欄位</th>
+                    <th>說明</th>
+                </tr>
+                <tr>
+                    <td>Google 帳戶 ID</td>
+                    <td>您的 Google 專屬識別碼，不可見於外部</td>
+                </tr>
+                <tr>
+                    <td>內部編號 (internalId)</td>
+                    <td>我們系統內部的匿名流水號（如 #1、#2…）</td>
+                </tr>
+                <tr>
+                    <td>Email 信箱</td>
+                    <td>您的 Google 帳號 Email</td>
+                </tr>
+                <tr>
+                    <td>姓名 / 頭像</td>
+                    <td>顯示於介面的名稱與個人圖片連結</td>
+                </tr>
+                <tr>
+                    <td>加密 OAuth 令牌</td>
+                    <td>用於向 Google API 發出請求的存取憑證，以 AES-256-GCM 加密儲存</td>
+                </tr>
+                <tr>
+                    <td>Google Drive 檔案 ID/名稱</td>
+                    <td>您選擇用來同步的 JSON 檔案</td>
+                </tr>
+                <tr>
+                    <td>Google Drive 資料夾 ID/名稱</td>
+                    <td>上述檔案所在的資料夾</td>
+                </tr>
+                <tr>
+                    <td>服務條款同意紀錄</td>
+                    <td>您是否已同意條款，以及同意的時間</td>
+                </tr>
+                <tr>
+                    <td>帳號建立/更新時間</td>
+                    <td>時間戳記</td>
+                </tr>
+            </table>
+
+            <h3>操作日誌 (AuditLog)</h3>
+            <p>我們記錄您對本系統的使用操作，用於除錯與安全維護：</p>
+            <table>
+                <tr>
+                    <th>欄位</th>
+                    <th>說明</th>
+                </tr>
+                <tr>
+                    <td>內部匿名編號</td>
+                    <td>使用系統內部流水號，<strong>不含 Google ID 或 Email</strong></td>
+                </tr>
+                <tr>
+                    <td>操作類型</td>
+                    <td>登入、登出、同步 Drive、載入 Drive、建立檔案等</td>
+                </tr>
+                <tr>
+                    <td>Drive 檔案 ID</td>
+                    <td>操作對象的檔案（如有）</td>
+                </tr>
+                <tr>
+                    <td>IP 位址</td>
+                    <td>發出請求的 IP</td>
+                </tr>
+                <tr>
+                    <td>時間戳記</td>
+                    <td>操作發生的時間</td>
+                </tr>
+                <tr>
+                    <td>狀態 / 錯誤訊息</td>
+                    <td>成功或失敗及原因</td>
+                </tr>
+            </table>
+            <p>日誌使用<strong>匿名編號</strong>，在您刪除帳號後，這些日誌即無法與您的真實身分連結。</p>
+
+            <h3>安全防護資料 (Rate Limiting)</h3>
+            <p>為防止濫用，我們暫時記錄：IP 位址、匿名用戶編號、請求次數、User-Agent 雜湊值、可疑分數。這些資料<strong>在 24 小時後自動刪除</strong>。</p>
+
+            <h3>封禁名單 (BannedUsers)</h3>
+            <p>若使用者嚴重濫用服務，我們會永久封禁其帳號。封禁記錄僅包含以 SHA-256 + 伺服器端隨機鹽值計算的<strong>單向雜湊值</strong>（無法反推出 Google ID 或
+                Email），不含任何可識別個人的資訊。</p>
+
+            <h2>2. 行為樹內容儲存在哪裡？</h2>
+            <p>您的個人行為樹分析資料<strong>不會</strong>儲存在我們的伺服器上。資料僅存於：</p>
             <ul>
-                <li><strong>基本帳號資訊：</strong>包括您的 Google 帳戶 ID、姓名、Email 信箱與個人頭像。</li>
-                <li><strong>Google Drive ID：</strong>您選擇用來備份與同步資料的 Google Drive 檔案專屬 ID。</li>
+                <li><strong>您的瀏覽器 Local Storage：</strong>設定、節點、登入 token、偏好設定</li>
+                <li><strong>您的 Google Drive（如已授權）：</strong>透過 <code>drive.file</code> 範圍，僅存取本應用程式建立或您明確選擇的 JSON 檔案</li>
             </ul>
-            <p>除此之外，所有屬於您個人的「行為樹分析資料」僅儲存於下列位置：</p>
+
+            <h2>3. Google Drive API 使用範圍</h2>
             <ul>
-                <li><strong>您的瀏覽器本機儲存 (Local Storage)：</strong>所有的設定和節點資料僅存在於您的裝置上。</li>
-                <li><strong>您的 Google Drive（如果您選擇授權）：</strong>我們透過 Google OAuth 2.0 取得授權，以讀取和寫入專屬於本應用程式的 JSON 檔案。</li>
+                <li>我們<strong>只能存取</strong>本應用程式建立，或您透過 Google Drive Picker 明確開啟的特定檔案</li>
+                <li>我們<strong>無法存取</strong>您 Drive 中的其他任何檔案、照片或資料夾</li>
             </ul>
-            <p><strong>系統日誌 (Server Logs)：</strong>我們的伺服器日誌僅用於維護系統運作，且日誌中的使用者 ID 會經過匿名化處理轉換為隨機編號（例如 User #1 至 User
-                #99999），不會記錄您的真實 Email，也無法反向追蹤您的真實身分。</p>
 
-            <h2>2. Google Drive API 的使用與資料保護</h2>
-            <p>本應用程式需要使用 <code>drive.file</code> 的授權範圍。這意味著：</p>
+            <h2>4. 資料刪除</h2>
+            <p>您可以隨時在應用程式選單中點擊「刪除所有資料」：</p>
             <ul>
-                <li>我們<strong>只能存取</strong>由本應用程式建立，或由您明確透過 Google Drive Picker 選擇開啟的特定檔案。</li>
-                <li>我們<strong>無法存取、檢視或修改</strong>您 Google Drive 中的其他個人檔案或資料夾。</li>
-                <li>我們僅透過此授權將您的「行為樹資料」同步與備份至您的專屬雲端硬碟空間。</li>
+                <li>帳號資料（Google ID、Email、名稱、頭像、OAuth 令牌、Drive 路徑）將被<strong>完全刪除</strong></li>
+                <li>以匿名編號記錄的操作日誌可能保留（無法再連結至您的身分）</li>
+                <li>封禁記錄（若有）為單向雜湊，可能永久保留以防止再次濫用</li>
             </ul>
 
-            <h2>3. 資訊分享與揭露</h2>
-            <p>本應用程式<strong>絕對不會</strong>將您的任何資料或分析結果販售、交易或出租給第三方。您的心理狀態與行為紀錄屬於您個人所有。</p>
+            <h2>5. 資料安全</h2>
+            <ul>
+                <li>OAuth 令牌以 <strong>AES-256-GCM</strong> 加密後儲存</li>
+                <li>封禁識別使用 <strong>SHA-256 + 伺服器端鹽值</strong>單向雜湊</li>
+                <li>所有 API 皆有頻率限制與防濫用保護</li>
+            </ul>
 
-            <h2>4. 資料安全性</h2>
-            <p>為了保障系統同步的安全，我們在伺服器端使用了符合業界標準的加密技術（如 AES-256-GCM 加密 OAuth 令牌）來處理向 Google API
-                發出的請求。除此之外，應用程式所有的視覺化分析都是在您的前端瀏覽器進行處理。</p>
+            <h2>6. 資料不分享</h2>
+            <p>我們<strong>絕對不會</strong>將您的任何資料販售、交易或出租給第三方。</p>
 
-            <h2>5. 聯絡我們</h2>
-            <p>如果您有任何關於隱私權的疑慮，或需要撤銷權限（您亦可隨時在您的 Google 帳戶安全性設定中移除授權），請隨時與我們聯絡，或直接於您的 Google 帳戶頁面中撤銷應用程式授權。</p>
+            <h2>7. 聯絡與撤銷授權</h2>
+            <p>如有隱私疑慮，或需撤銷 Google 授權，請至 <a href="https://myaccount.google.com/permissions" target="_blank">Google
+                    帳戶安全設定</a> 移除本應用程式。您也可在應用程式中選擇「刪除所有資料」。</p>
         </div>
 
         <!-- English Version -->
         <div id="content-en" class="content-section">
             <h1>Privacy Policy</h1>
             <p>Last Updated: March 2026</p>
-            <p>Thank you for using "Brain Behavior Tree". Your privacy is extremely important to us. This Privacy Policy
-                outlines how we collect, use, and protect your information, particularly regarding Google Drive access.
-            </p>
+            <p>Thank you for using "Brain Behavior Tree". This policy explains what data we collect, store, and how we
+                protect it.</p>
 
-            <h2>1. What Data Do We Collect?</h2>
-            <p>This application <strong>does not</strong> store your specific "Behavior Tree" content or psychological
-                analysis on our servers. However, to facilitate fast login and Google Drive synchronization reliably, we
-                do store the following basic information in our database (MongoDB):</p>
+            <h2>1. What Do We Store in Our Database (MongoDB)?</h2>
+            <p>If you log in with Google, we store the following in our server database:</p>
+
+            <h3>Account Data (Users)</h3>
+            <table>
+                <tr>
+                    <th>Field</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td>Google Account ID</td>
+                    <td>Your Google-issued unique identifier</td>
+                </tr>
+                <tr>
+                    <td>Internal ID (internalId)</td>
+                    <td>An anonymous sequential number (#1, #2…) used in logs instead of your Google ID</td>
+                </tr>
+                <tr>
+                    <td>Email</td>
+                    <td>Your Google account email address</td>
+                </tr>
+                <tr>
+                    <td>Name / Picture</td>
+                    <td>Display name and profile picture URL</td>
+                </tr>
+                <tr>
+                    <td>Encrypted OAuth tokens</td>
+                    <td>Access credentials for Google API — stored encrypted with AES-256-GCM</td>
+                </tr>
+                <tr>
+                    <td>Google Drive File ID/Name</td>
+                    <td>The JSON file you chose for syncing</td>
+                </tr>
+                <tr>
+                    <td>Google Drive Folder ID/Name</td>
+                    <td>The folder containing your sync file</td>
+                </tr>
+                <tr>
+                    <td>TOS consent record</td>
+                    <td>Whether you accepted terms and when</td>
+                </tr>
+                <tr>
+                    <td>Account timestamps</td>
+                    <td>Created / last updated</td>
+                </tr>
+            </table>
+
+            <h3>Activity Logs (AuditLog)</h3>
+            <p>We log your actions for debugging and security purposes:</p>
+            <table>
+                <tr>
+                    <th>Field</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td>Anonymous internal ID</td>
+                    <td>Sequential number only — <strong>no Google ID or email</strong></td>
+                </tr>
+                <tr>
+                    <td>Action type</td>
+                    <td>Login, logout, Drive sync, file create/load, etc.</td>
+                </tr>
+                <tr>
+                    <td>Drive File ID</td>
+                    <td>The file involved (if any)</td>
+                </tr>
+                <tr>
+                    <td>IP address</td>
+                    <td>IP of the request</td>
+                </tr>
+                <tr>
+                    <td>Timestamp</td>
+                    <td>When the action occurred</td>
+                </tr>
+                <tr>
+                    <td>Status / Error message</td>
+                    <td>Success or failure details</td>
+                </tr>
+            </table>
+            <p>Logs use an <strong>anonymous sequential number</strong>. After account deletion, logs can no longer be
+                linked to your identity.</p>
+
+            <h3>Rate Limiting Data (Security)</h3>
+            <p>To prevent abuse, we temporarily store: IP address, anonymous user ID, request counts, user-agent hash,
+                and suspicion scores. This data <strong>automatically expires after 24 hours</strong>.</p>
+
+            <h3>Ban Records (BannedUsers)</h3>
+            <p>Users who severely abuse the service may be permanently banned. The ban record stores only a
+                <strong>one-way SHA-256 hash</strong> (with a server-side random salt) — it cannot be reversed to
+                identify your Google ID or email.</p>
+
+            <h2>2. Where Is Your Behavior Tree Data Stored?</h2>
+            <p>Your actual behavior tree analysis data is <strong>never</strong> stored on our servers. It lives only
+                in:</p>
             <ul>
-                <li><strong>Basic Account Information:</strong> Your Google Account ID, Name, Email, and Profile
-                    Picture.</li>
-                <li><strong>Google Drive ID:</strong> The specific File ID of the Google Drive file you selected for
-                    syncing.</li>
+                <li><strong>Your browser's Local Storage:</strong> settings, nodes, login token, preferences</li>
+                <li><strong>Your Google Drive (if authorized):</strong> via the <code>drive.file</code> scope — only
+                    files created by this app or explicitly selected by you</li>
             </ul>
-            <p>Beyond this, your actual "Behavior Tree Data" is purely stored in one of the following locations:</p>
+
+            <h2>3. Google Drive API Scope</h2>
             <ul>
-                <li><strong>Your Browser's Local Storage:</strong> All configurations and node data reside directly on
-                    your device.</li>
-                <li><strong>Your Google Drive (If authorized):</strong> We request authorization via Google OAuth 2.0 to
-                    essentially read/write specific JSON files for sync purposes.</li>
+                <li>We can <strong>only access</strong> files created by this app or files you explicitly open via the
+                    Drive Picker</li>
+                <li>We <strong>cannot access</strong> any other files, photos, or folders in your Drive</li>
             </ul>
-            <p><strong>Server Logs:</strong> Our server logs are strictly used for debugging and operational purposes.
-                User IDs within the logs are heavily anonymized into untraceable sequence numbers (e.g., User #1 to User
-                #99999). We do not display or log your real email address within behavior tracking operations.</p>
 
-            <h2>2. Use of Google Drive API & Data Protection</h2>
-            <p>This application requires access to the <code>drive.file</code> scope. This strictly means:</p>
+            <h2>4. Data Deletion</h2>
+            <p>Use "Remove all my data" in the app menu at any time:</p>
             <ul>
-                <li>We <strong>can only access</strong> the specific files created by this application, or the files you
-                    explicitly open via the Google Drive Picker.</li>
-                <li>We <strong>cannot access, view, or modify</strong> any other personal files, photos, or folders in
-                    your Google Drive.</li>
-                <li>We solely use this access to sync and backup your "Behavior Tree Data" directly to your cloud
-                    storage.</li>
+                <li>All account data (Google ID, email, name, picture, tokens, Drive paths) is <strong>permanently
+                        deleted</strong></li>
+                <li>Anonymous audit log entries may be retained (cannot be linked to your identity after deletion)</li>
+                <li>Ban records (if any) use one-way hashes and may be retained permanently to prevent re-abuse</li>
             </ul>
 
-            <h2>3. Information Sharing and Disclosure</h2>
-            <p>We <strong>do not and will never</strong> sell, trade, or rent your personal data or psychological
-                analysis results to third parties. Your behavioral tracking belongs to you alone.</p>
+            <h2>5. Data Security</h2>
+            <ul>
+                <li>OAuth tokens encrypted with <strong>AES-256-GCM</strong></li>
+                <li>Ban identification uses <strong>SHA-256 + server-side salt</strong> one-way hash</li>
+                <li>All APIs have rate limiting and abuse protection</li>
+            </ul>
 
-            <h2>4. Data Security</h2>
-            <p>To ensure secure synchronization, our server employs industry-standard encryption (such as AES-256-GCM
-                for OAuth tokens) when making requests to Google APIs. Beyond this secure bridge, your visual analysis
-                is processed entirely within your client browser.</p>
+            <h2>6. No Data Sharing</h2>
+            <p>We will <strong>never</strong> sell, trade, or rent your personal data to any third party.</p>
 
-            <h2>5. Contact & Revocation</h2>
-            <p>If you have any privacy concerns, or wish to revoke permissions, please feel free to contact us. You can
-                also manually remove authorization for our app directly from the Security settings of your Google
-                Account at any time.</p>
+            <h2>7. Contact & Revocation</h2>
+            <p>To revoke Google authorization, visit <a href="https://myaccount.google.com/permissions"
+                    target="_blank">Google Account Security Settings</a>. To delete all your data from our database, use
+                the "Remove all my data" option in the app.</p>
         </div>
 
         <a href="index.html" class="back-link">← 回到主頁面 (Back to Home)</a>
@@ -192,10 +393,8 @@
 
     <script>
         function switchLang(lang) {
-            // Update buttons
             document.getElementById('btn-zh').classList.toggle('active', lang === 'zh');
             document.getElementById('btn-en').classList.toggle('active', lang === 'en');
-            // Update content visibility
             document.getElementById('content-zh').classList.toggle('active', lang === 'zh');
             document.getElementById('content-en').classList.toggle('active', lang === 'en');
         }

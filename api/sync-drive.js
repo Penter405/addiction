@@ -105,7 +105,7 @@ module.exports = async function handler(req, res) {
         });
 
         await AuditLog.create({
-            userId,
+            userInternalId: user.internalId,
             action: 'sync_drive',
             fileId: user.driveFileId,
             ip: parseIp(req),
@@ -118,7 +118,7 @@ module.exports = async function handler(req, res) {
 
         try {
             await AuditLog.create({
-                userId,
+                userInternalId: user ? user.internalId : 0,
                 action: 'sync_drive',
                 ip: parseIp(req),
                 status: 'error',

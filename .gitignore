@@ -5,3 +5,5 @@ log/
 .env.example
 chat2.txt
 image/
+gen_hash.cpp
+gen_hash.exe

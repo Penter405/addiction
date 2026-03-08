@@ -39,8 +39,10 @@ module.exports = async function handler(req, res) {
             { $set: { driveFileId: fileId, updatedAt: new Date() } }
         );
 
+        const user = await User.findOne({ googleId: userId }, 'internalId');
+
         await AuditLog.create({
-            userId,
+            userInternalId: user ? user.internalId : 0,
             action: 'set_file',
             fileId,
             ip: parseIp(req),

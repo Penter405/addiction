@@ -5,8 +5,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Terms of Service - Brain Behavior Tree</title>
-    <link rel="stylesheet" href="index.css">
     <style>
+        body {
+            background: #f5f7fa;
+            padding: 20px;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+        }
+
         .page-container {
             max-width: 800px;
             margin: 40px auto;
@@ -14,7 +19,6 @@
             background: white;
             border-radius: 12px;
             box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
         }
 
         .lang-switch {
@@ -36,9 +40,9 @@
         }
 
         .lang-switch button.active {
-            background: var(--primary, #007bff);
+            background: #3498DB;
             color: white;
-            border-color: var(--primary, #007bff);
+            border-color: #3498DB;
         }
 
         .content-section {
@@ -64,12 +68,19 @@
         }
 
         a {
-            color: var(--primary, #007bff);
+            color: #3498DB;
             text-decoration: none;
         }
 
         a:hover {
             text-decoration: underline;
+        }
+
+        code {
+            background: #f5f5f5;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.88em;
         }
 
         .back-link {
@@ -80,10 +91,8 @@
     </style>
 </head>
 
-<body style="background: #f5f7fa; padding: 20px;">
-
+<body>
     <div class="page-container">
-        <!-- Language Switcher -->
         <div class="lang-switch">
             <button id="btn-zh" class="active" onclick="switchLang('zh')">繁體中文</button>
             <button id="btn-en" onclick="switchLang('en')">English</button>
@@ -95,24 +104,51 @@
             <p>最後更新日期：2026年3月</p>
 
             <h2>1. 接受條款</h2>
-            <p>透過存取和使用「人類行為與大腦決策視覺化樹狀圖」(本應用程式)，即表示您同意接受並遵守本服務條款。如果您不同意這些條款的任何部分，請勿使用本應用程式。</p>
+            <p>透過存取和使用「大腦重塑系統」(本應用程式)，即表示您同意接受並遵守本服務條款。如果您不同意任何部分，請勿使用本應用程式。</p>
 
             <h2>2. 服務說明</h2>
-            <p>本應用程式提供使用者視覺化大腦行為與決策流程的工具。我們提供本地儲存及 Google Drive 同步服務，方便使用者保存和分析個人行為樹。</p>
+            <p>本應用程式提供使用者視覺化大腦行為與決策流程的工具，提供本地儲存及 Google Drive 同步服務，方便保存和分析個人行為樹。</p>
 
-            <h2>3. 使用者責任與免責聲明</h2>
-            <p>本應用程式是「依現狀」提供，我們不對其特定用途的適用性提供任何明示或暗示的保證。</p>
+            <h2>3. 我們收集與儲存的資料</h2>
+            <p>若您選擇登入 Google 帳號，我們會在資料庫中儲存必要的帳號資訊、操作日誌（以匿名編號記錄，不含 Google ID）、以及時效性的安全防護資料。詳細說明請見 <a
+                    href="privacy.html">隱私權政策</a>。</p>
+            <p>您的行為樹資料本身僅儲存於您的瀏覽器或您自己的 Google Drive，<strong>不會</strong>上傳至我們的伺服器。</p>
+
+            <h2>4. 使用者責任與免責聲明</h2>
+            <p>本應用程式依「現狀」提供，不提供任何形式的保證。</p>
             <ul>
-                <li>使用者必須為其記錄的行為、決策及任何由本應用程式產生的分析後果負全責。本應用程式非專業醫療或心理諮商工具。</li>
-                <li>我們不保證服務將永遠不中斷、安全或無誤。資料遺失（包含上傳至 Google Drive 時發生的不可抗力因素）我們概不負責，請自行妥善備份資料。</li>
+                <li>本應用程式非專業醫療或心理諮商工具，使用者需自行承擔所有決策責任。</li>
+                <li>我們不保證服務永遠不中斷或無誤，資料遺失（包含 Google Drive 不可抗力因素）概不負責，請自行備份。</li>
             </ul>
 
-            <h2>4. 帳戶與 Google 授權</h2>
-            <p>若您選擇登入並連結 Google Drive，我們的伺服器將會記錄您的基本帳號資訊以建立專屬的快速登入身分，同時保存您指定的雲端檔案 ID（作為行為樹同步目標）。您隨時有權撤銷本應用程式存取您 Google
-                帳戶 <code>drive.file</code> 範圍的權限，且您可以隨時在應用程式中選擇「刪除所有資料」以徹底清空我們資料庫中存放的這些基本紀錄。</p>
+            <h2>5. 帳戶與 Google 授權</h2>
+            <p>若您連結 Google Drive，我們的伺服器僅記錄必要的帳號資訊以建立快速登入身分（詳見隱私權政策），並保存您指定的雲端路徑作為同步目標。您隨時可以：</p>
+            <ul>
+                <li>在 <a href="https://myaccount.google.com/permissions" target="_blank">Google 帳戶安全設定</a> 中撤銷本應用程式的
+                    <code>drive.file</code> 授權</li>
+                <li>在應用程式選單中點擊「刪除所有資料」，永久清除我們資料庫中的您的帳號記錄</li>
+            </ul>
 
-            <h2>5. 條款修改</h2>
-            <p>我們保留隨時修改本服務條款的權利。重大變更將會透過應用程式通知使用者，繼續使用代表您同意新的條款。</p>
+            <h2>6. 禁止濫用與帳號封禁</h2>
+            <p>以下行為將導致帳號被永久封禁：</p>
+            <ul>
+                <li>對 API 發出自動化的過量請求（爬蟲、壓力攻擊）</li>
+                <li>嘗試破壞、繞過或操縱系統安全機制</li>
+                <li>任何非法或惡意的使用方式</li>
+            </ul>
+            <p>封禁記錄以<strong>單向不可逆雜湊值</strong>儲存，我們無法從中得知您的 Google ID 或 Email。被封禁的帳號無法透過重新申請繞過封禁。即使您刪除帳號後再重新登入，封禁仍會生效。
+            </p>
+
+            <h2>7. 資料保留政策</h2>
+            <ul>
+                <li><strong>帳號刪除後：</strong>您的帳號資料（Email、名稱、頭像、OAuth 令牌、Drive ID）立即永久刪除</li>
+                <li><strong>操作日誌：</strong>以匿名編號記錄，刪除帳號後無法再與您連結，可能保留於系統</li>
+                <li><strong>安全防護資料：</strong> 24 小時自動到期</li>
+                <li><strong>封禁記錄：</strong>永久保留（僅雜湊值，不含可識別個人的資訊）</li>
+            </ul>
+
+            <h2>8. 條款修改</h2>
+            <p>我們保留隨時修改本服務條款的權利。重大變更將透過應用程式通知使用者，繼續使用代表您同意新的條款。</p>
         </div>
 
         <!-- English Version -->
@@ -121,35 +157,61 @@
             <p>Last Updated: March 2026</p>
 
             <h2>1. Acceptance of Terms</h2>
-            <p>By accessing and using "Brain Behavior Tree" (the Application), you accept and agree to be bound by the
-                terms and provisions of this agreement. If you do not agree to these terms, please do not use this
-                Application.</p>
+            <p>By accessing and using "Brain Behavior Tree" (the Application), you accept and agree to be bound by these
+                Terms. If you do not agree, please do not use this Application.</p>
 
             <h2>2. Description of Service</h2>
-            <p>The Application provides visual tools to map out behavior patterns and decision-making processes. We
-                offer features such as local browser storage and Google Drive synchronization to save and load your
-                behavior trees.</p>
+            <p>The Application provides visual tools to map behavior patterns and decision-making processes, with local
+                browser storage and optional Google Drive synchronization.</p>
 
-            <h2>3. User Responsibilities & Disclaimers</h2>
-            <p>The Application is provided "AS IS", without warranty of any kind, express or implied.</p>
+            <h2>3. Data We Collect and Store</h2>
+            <p>If you log in with Google, we store necessary account information, activity logs (recorded with an
+                anonymous ID — not your Google ID), and temporary security data. See our <a href="privacy.html">Privacy
+                    Policy</a> for full details.</p>
+            <p>Your actual behavior tree data is stored only in your browser or your own Google Drive — it is
+                <strong>never</strong> uploaded to our servers.</p>
+
+            <h2>4. User Responsibilities & Disclaimers</h2>
+            <p>The Application is provided "AS IS" without warranty of any kind.</p>
             <ul>
-                <li>Users are entirely responsible for the behavior decisions they make and any resulting consequences.
-                    This Application is not a substitute for professional medical or psychological counseling.</li>
-                <li>We do not guarantee that the service will be entirely uninterrupted, secure, or error-free. We are
-                    not liable for any data loss, including errors occurring during Google Drive synchronization. Please
-                    keep your own backups.</li>
+                <li>This Application is not a substitute for professional medical or psychological counseling. Users are
+                    entirely responsible for their own decisions.</li>
+                <li>We do not guarantee uninterrupted or error-free service. We are not liable for data loss, including
+                    from Google Drive sync failures. Please keep your own backups.</li>
             </ul>
 
-            <h2>4. Accounts and Google Authorization</h2>
-            <p>If you choose to log in and link your Google Drive, our server will record your basic account profile to
-                establish a fast-login identity, along with the cloud File ID you specify for synchronization. You have
-                the right to revoke our Application's access to your <code>drive.file</code> scope at any time via your
-                Google security settings. Additionally, you may permanently erase all your records from our database by
-                using the completely verifiable "Remove all my data" option within the application.</p>
+            <h2>5. Accounts and Google Authorization</h2>
+            <p>If you link Google Drive, our server records only the account information necessary to maintain your
+                login session and Drive sync path (see Privacy Policy). You may at any time:</p>
+            <ul>
+                <li>Revoke our <code>drive.file</code> access via <a href="https://myaccount.google.com/permissions"
+                        target="_blank">Google Account Security Settings</a></li>
+                <li>Use "Remove all my data" in the app to permanently erase your account record from our database</li>
+            </ul>
 
-            <h2>5. Modifications</h2>
-            <p>We reserve the right to modify these Terms of Service at any time. Significant changes will be
-                communicated via the Application. Continued use signifies acceptance of the new terms.</p>
+            <h2>6. Prohibited Use & Account Bans</h2>
+            <p>The following may result in a permanent account ban:</p>
+            <ul>
+                <li>Automated excessive API requests (bots, scrapers, stress attacks)</li>
+                <li>Attempting to exploit, bypass, or manipulate system security</li>
+                <li>Any illegal or malicious use</li>
+            </ul>
+            <p>Ban records are stored as a <strong>one-way irreversible hash</strong> — we cannot recover your Google ID
+                or email from it. Bans persist even if you delete and re-register your account.</p>
+
+            <h2>7. Data Retention Policy</h2>
+            <ul>
+                <li><strong>After account deletion:</strong> All personal data (email, name, picture, tokens, Drive IDs)
+                    is immediately and permanently deleted</li>
+                <li><strong>Activity logs:</strong> Use anonymous sequential IDs; cannot be linked to your identity
+                    after deletion; may be retained in system</li>
+                <li><strong>Rate limiting data:</strong> Auto-expires after 24 hours</li>
+                <li><strong>Ban records:</strong> Retained permanently (hash only — no identifiable information)</li>
+            </ul>
+
+            <h2>8. Modifications</h2>
+            <p>We reserve the right to modify these Terms at any time. Significant changes will be communicated via the
+                Application. Continued use signifies acceptance of the new terms.</p>
         </div>
 
         <a href="index.html" class="back-link">← 回到主頁面 (Back to Home)</a>

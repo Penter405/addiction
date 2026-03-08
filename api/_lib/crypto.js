@@ -48,4 +48,16 @@ function decrypt(data) {
     return decrypted;
 }
 
-module.exports = { encrypt, decrypt };
+module.exports = { encrypt, decrypt, hashGoogleId };
+
+/**
+ * One-way SHA-256 hash of googleId + server salt
+ * Used for BannedUsers lookup — cannot be reversed to reveal identity
+ * @param {string} googleId
+ * @returns {string} hex hash
+ */
+function hashGoogleId(googleId) {
+    const salt = process.env.BAN_HASH_SALT;
+    if (!salt) throw new Error('BAN_HASH_SALT 環境變數未設定');
+    return crypto.createHash('sha256').update(googleId + salt).digest('hex');
+}

@@ -27,6 +27,7 @@ module.exports = async function handler(req, res) {
         await connectDB();
 
         if (req.method === 'DELETE') {
+            // Delete all user data — tokens, Drive metadata, everything
             await User.deleteOne({ googleId: userId });
             clearSession(res);
             return res.status(200).json({ success: true, message: 'Account and data deleted' });

@@ -282,7 +282,7 @@ module.exports = async function handler(req, res) {
         await User.findOneAndUpdate({ googleId: userId }, { $set: updateFields });
 
         await AuditLog.create({
-            userId,
+            userInternalId: user.internalId,
             action: 'create_drive_file',
             fileId,
             ip: parseIp(req),

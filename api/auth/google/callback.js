@@ -1,6 +1,6 @@
 const { google } = require('googleapis');
-const { connectDB, User, AuditLog } = require('../../_lib/db');
-const { encrypt } = require('../../_lib/crypto');
+const { connectDB, User, AuditLog, BannedUser, getNextInternalId } = require('../../_lib/db');
+const { encrypt, hashGoogleId } = require('../../_lib/crypto');
 const { createSession } = require('../../_lib/session');
 const { protectEndpoint, parseIp } = require('../../_lib/security');
 
@@ -48,10 +48,19 @@ module.exports = async function handler(req, res) {
         const userInfo = await oauth2.userinfo.get();
         const { id: googleId, email, name, picture } = userInfo.data;
 
+        // ── Ban check (one-way hash, cannot reveal identity) ──
+        await connectDB();
+        const googleIdHash = hashGoogleId(googleId);
+        const isBanned = await BannedUser.findOne({ googleIdHash });
+        if (isBanned) {
+            return res.status(403).json({
+                error: 'account_banned',
+                message: 'This account has been permanently suspended due to abuse.',
+            });
+        }
+
         const encryptedAccessToken = encrypt(tokens.access_token);
         const encryptedRefreshToken = tokens.refresh_token ? encrypt(tokens.refresh_token) : undefined;
-
-        await connectDB();
 
         const updateData = {
             email,
@@ -60,19 +69,25 @@ module.exports = async function handler(req, res) {
             encryptedAccessToken,
             updatedAt: new Date(),
         };
-
         if (encryptedRefreshToken) {
             updateData.encryptedRefreshToken = encryptedRefreshToken;
         }
 
-        await User.findOneAndUpdate(
+        // Assign internalId on first login (upsert with $setOnInsert)
+        const existingUser = await User.findOne({ googleId });
+        if (!existingUser) {
+            const internalId = await getNextInternalId();
+            updateData.internalId = internalId;
+        }
+
+        const user = await User.findOneAndUpdate(
             { googleId },
             { $set: updateData, $setOnInsert: { createdAt: new Date() } },
             { upsert: true, new: true }
         );
 
         await AuditLog.create({
-            userId: googleId,
+            userInternalId: user.internalId,
             action: 'login',
             ip: parseIp(req),
             status: 'success',

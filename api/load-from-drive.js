@@ -73,7 +73,7 @@ module.exports = async function handler(req, res) {
         });
 
         await AuditLog.create({
-            userId,
+            userInternalId: user.internalId,
             action: 'load_drive',
             fileId: user.driveFileId,
             ip: parseIp(req),
