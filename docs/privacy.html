@@ -109,6 +109,36 @@
             border-radius: 4px;
             font-size: 0.88em;
         }
+
+        /* Site Footer */
+        .site-footer {
+            width: 100%;
+            background: rgba(44, 62, 80, 0.95);
+            color: #aaa;
+            text-align: center;
+            padding: 14px 20px;
+            font-size: 0.82rem;
+            margin-top: 40px;
+            box-sizing: border-box;
+            letter-spacing: 0.02em;
+        }
+
+        .site-footer a {
+            color: #7fc3f5;
+            text-decoration: none;
+            margin: 0 8px;
+            transition: color 0.2s;
+        }
+
+        .site-footer a:hover {
+            color: #fff;
+            text-decoration: underline;
+        }
+
+        .site-footer .footer-sep {
+            color: #555;
+            margin: 0 4px;
+        }
     </style>
 </head>
 
@@ -345,7 +375,8 @@
             <h3>Ban Records (BannedUsers)</h3>
             <p>Users who severely abuse the service may be permanently banned. The ban record stores only a
                 <strong>one-way SHA-256 hash</strong> (with a server-side random salt) — it cannot be reversed to
-                identify your Google ID or email.</p>
+                identify your Google ID or email.
+            </p>
 
             <h2>2. Where Is Your Behavior Tree Data Stored?</h2>
             <p>Your actual behavior tree analysis data is <strong>never</strong> stored on our servers. It lives only
@@ -390,6 +421,16 @@
 
         <a href="index.html" class="back-link">← 回到主頁面 (Back to Home)</a>
     </div>
+
+    <footer class="site-footer">
+        <span>&copy; 2026 大腦重塑系統 (Brain Behavior Tree)</span>
+        <span class="footer-sep">|</span>
+        <a href="index.html">主頁 Home</a>
+        <span class="footer-sep">|</span>
+        <a href="privacy.html">Privacy Policy · 隱私權政策</a>
+        <span class="footer-sep">|</span>
+        <a href="tos.html">Terms of Service · 服務條款</a>
+    </footer>
 
     <script>
         function switchLang(lang) {

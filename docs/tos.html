@@ -88,6 +88,36 @@
             margin-top: 30px;
             font-weight: 500;
         }
+
+        /* Site Footer */
+        .site-footer {
+            width: 100%;
+            background: rgba(44, 62, 80, 0.95);
+            color: #aaa;
+            text-align: center;
+            padding: 14px 20px;
+            font-size: 0.82rem;
+            margin-top: 40px;
+            box-sizing: border-box;
+            letter-spacing: 0.02em;
+        }
+
+        .site-footer a {
+            color: #7fc3f5;
+            text-decoration: none;
+            margin: 0 8px;
+            transition: color 0.2s;
+        }
+
+        .site-footer a:hover {
+            color: #fff;
+            text-decoration: underline;
+        }
+
+        .site-footer .footer-sep {
+            color: #555;
+            margin: 0 4px;
+        }
     </style>
 </head>
 
@@ -125,7 +155,8 @@
             <p>若您連結 Google Drive，我們的伺服器僅記錄必要的帳號資訊以建立快速登入身分（詳見隱私權政策），並保存您指定的雲端路徑作為同步目標。您隨時可以：</p>
             <ul>
                 <li>在 <a href="https://myaccount.google.com/permissions" target="_blank">Google 帳戶安全設定</a> 中撤銷本應用程式的
-                    <code>drive.file</code> 授權</li>
+                    <code>drive.file</code> 授權
+                </li>
                 <li>在應用程式選單中點擊「刪除所有資料」，永久清除我們資料庫中的您的帳號記錄</li>
             </ul>
 
@@ -169,7 +200,8 @@
                 anonymous ID — not your Google ID), and temporary security data. See our <a href="privacy.html">Privacy
                     Policy</a> for full details.</p>
             <p>Your actual behavior tree data is stored only in your browser or your own Google Drive — it is
-                <strong>never</strong> uploaded to our servers.</p>
+                <strong>never</strong> uploaded to our servers.
+            </p>
 
             <h2>4. User Responsibilities & Disclaimers</h2>
             <p>The Application is provided "AS IS" without warranty of any kind.</p>
@@ -216,6 +248,16 @@
 
         <a href="index.html" class="back-link">← 回到主頁面 (Back to Home)</a>
     </div>
+
+    <footer class="site-footer">
+        <span>&copy; 2026 大腦重塑系統 (Brain Behavior Tree)</span>
+        <span class="footer-sep">|</span>
+        <a href="index.html">主頁 Home</a>
+        <span class="footer-sep">|</span>
+        <a href="privacy.html">Privacy Policy · 隱私權政策</a>
+        <span class="footer-sep">|</span>
+        <a href="tos.html">Terms of Service · 服務條款</a>
+    </footer>
 
     <script>
         function switchLang(lang) {
