@@ -884,6 +884,7 @@
             box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
             min-width: 260px;
             z-index: 200;
+            overflow-x: hidden;
             overflow-y: auto;
             max-height: calc(100vh - 70px);
             animation: dropIn 0.2s ease;
@@ -1339,6 +1340,9 @@
             .canvas-ui-layer>* {
                 padding: 10px 15px;
                 pointer-events: auto;
+                max-width: calc(100vw - 140px);
+                overflow: hidden;
+                word-break: break-word;
             }
 
             .canvas-ui-layer h2 {
@@ -1369,10 +1373,15 @@
             }
 
             .more-dropdown {
+                position: fixed;
+                top: 55px;
+                right: 10px;
                 min-width: 220px;
-                right: 0;
                 max-width: calc(100vw - 20px);
-                max-height: calc(100vh - 60px);
+                max-height: calc(100vh - 65px);
+                max-height: calc(100dvh - 65px);
+                overflow-y: auto;
+                -webkit-overflow-scrolling: touch;
             }
 
             .pipeline-container {
