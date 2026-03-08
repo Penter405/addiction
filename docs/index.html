@@ -8,32 +8,39 @@
     <style>
         /* ================= Site Footer ================= */
         .site-footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
             width: 100%;
-            background: rgba(44, 62, 80, 0.95);
-            color: #aaa;
+            background: transparent;
+            color: #999;
             text-align: center;
-            padding: 14px 20px;
-            font-size: 0.82rem;
-            position: relative;
-            z-index: 50;
+            padding: 7px 20px;
+            font-size: 0.78rem;
+            z-index: 200;
             box-sizing: border-box;
             letter-spacing: 0.02em;
+            pointer-events: none;
+            /* don't block canvas drag */
+            backdrop-filter: blur(4px);
         }
 
         .site-footer a {
-            color: #7fc3f5;
+            color: #888;
             text-decoration: none;
             margin: 0 8px;
             transition: color 0.2s;
+            pointer-events: auto;
+            /* links are still clickable */
         }
 
         .site-footer a:hover {
-            color: #fff;
+            color: #555;
             text-decoration: underline;
         }
 
         .site-footer .footer-sep {
-            color: #555;
+            color: #ccc;
             margin: 0 4px;
         }
 
