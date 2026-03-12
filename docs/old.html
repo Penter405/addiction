@@ -301,191 +301,6 @@
             /* 給予內部一點初始緩衝空間 */
         }
 
-        /* ================= Habit Loop 4-Column Canvas ================= */
-        .habit-canvas-container {
-            width: 100vw;
-            height: 100vh;
-            overflow: hidden;
-            background: radial-gradient(circle, #EAECEE 2px, transparent 2px);
-            background-size: 30px 30px;
-            background-color: var(--bg-color);
-            position: fixed;
-            top: 0;
-            left: 0;
-            cursor: grab;
-            z-index: 1;
-            touch-action: none;
-        }
-        .habit-canvas-container:active { cursor: grabbing; }
-
-        .habit-columns {
-            display: flex;
-            min-width: 100%;
-            min-height: 100%;
-            padding: 80px 20px 20px;
-            box-sizing: border-box;
-            gap: 12px;
-        }
-
-        .habit-column {
-            flex: 1;
-            min-width: 180px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 10px;
-            padding-top: 10px;
-        }
-
-        .habit-column-header {
-            font-size: 1.1rem;
-            font-weight: bold;
-            padding: 6px 18px;
-            border-radius: 12px;
-            color: #fff;
-            text-align: center;
-            user-select: none;
-            width: 90%;
-            max-width: 200px;
-        }
-        .habit-column[data-stage="cue"] .habit-column-header { background: var(--cue); }
-        .habit-column[data-stage="craving"] .habit-column-header { background: var(--craving); }
-        .habit-column[data-stage="response"] .habit-column-header { background: var(--response); }
-        .habit-column[data-stage="reward"] .habit-column-header { background: var(--reward); }
-
-        .habit-node {
-            background: #fff;
-            border: 2px solid #ccc;
-            border-radius: 10px;
-            padding: 10px 14px;
-            width: 85%;
-            max-width: 200px;
-            cursor: pointer;
-            font-size: 0.92rem;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-            position: relative;
-            user-select: none;
-            transition: box-shadow 0.15s;
-            word-break: break-word;
-        }
-        .habit-node:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.12); }
-        .habit-column[data-stage="cue"] .habit-node { border-color: var(--cue); }
-        .habit-column[data-stage="craving"] .habit-node { border-color: var(--craving); }
-        .habit-column[data-stage="response"] .habit-node { border-color: var(--response); }
-        .habit-column[data-stage="reward"] .habit-node { border-color: var(--reward); }
-
-        .habit-node .node-actions {
-            position: absolute;
-            top: 4px;
-            right: 6px;
-            display: flex;
-            gap: 4px;
-        }
-        .habit-node .node-actions button {
-            background: none;
-            border: none;
-            cursor: pointer;
-            font-size: 0.8rem;
-            padding: 2px;
-            opacity: 0.5;
-        }
-        .habit-node .node-actions button:hover { opacity: 1; }
-
-        .habit-node-add {
-            border: 2px dashed #ccc;
-            border-radius: 10px;
-            padding: 8px 14px;
-            width: 85%;
-            max-width: 200px;
-            cursor: pointer;
-            font-size: 0.88rem;
-            color: #999;
-            text-align: center;
-            background: transparent;
-            user-select: none;
-            transition: border-color 0.2s, color 0.2s;
-        }
-        .habit-node-add:hover { border-color: #888; color: #666; }
-
-        .habit-edge-svg {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            pointer-events: none;
-            z-index: 2;
-        }
-        .habit-edge-svg path {
-            fill: none;
-            stroke: var(--craving);
-            stroke-width: 2;
-            marker-end: url(#arrowhead);
-        }
-
-        /* ================= File Settings Pipeline ================= */
-        .file-settings-container {
-            max-width: 700px;
-            margin: 40px auto;
-            padding: 30px;
-        }
-        .pipeline-row {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 16px;
-            margin: 30px 0;
-            flex-wrap: wrap;
-        }
-        .pipeline-node {
-            background: #fff;
-            border: 2px solid var(--cue);
-            border-radius: 14px;
-            padding: 18px;
-            min-width: 140px;
-            text-align: center;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-        }
-        .pipeline-node .node-label { font-size: 0.85rem; color: #888; margin-bottom: 6px; }
-        .pipeline-node .node-folder { font-size: 0.95rem; font-weight: bold; color: var(--text-main); margin: 6px 0; }
-        .pipeline-arrow {
-            font-size: 1.4rem;
-            color: #bbb;
-            user-select: none;
-        }
-        .toggle-row {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 12px;
-            margin: 20px 0;
-        }
-        .toggle-switch {
-            position: relative;
-            width: 48px;
-            height: 26px;
-        }
-        .toggle-switch input { opacity: 0; width: 0; height: 0; }
-        .toggle-slider {
-            position: absolute;
-            cursor: pointer;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background-color: #ccc;
-            border-radius: 26px;
-            transition: 0.3s;
-        }
-        .toggle-slider::before {
-            content: "";
-            position: absolute;
-            height: 20px; width: 20px;
-            left: 3px; bottom: 3px;
-            background-color: white;
-            border-radius: 50%;
-            transition: 0.3s;
-        }
-        .toggle-switch input:checked + .toggle-slider { background-color: var(--good); }
-        .toggle-switch input:checked + .toggle-slider::before { transform: translateX(22px); }
-
         /* 浮動的標題 UI (蓋在畫布上方) */
         .canvas-ui-layer {
             position: fixed;
@@ -1890,85 +1705,27 @@
             <div style="position: relative;">
                 <span id="info-toggle" onclick="toggleInfoPanel()"
                     style="cursor:pointer; position:absolute; left:-5px; top:2px; font-size:1rem; color:#999; user-select:none;">▼</span>
-                <h2 style="margin: 0; color: var(--text-main); padding-left: 20px;">🔄 習慣迴路畫布</h2>
+                <h2 style="margin: 0; color: var(--text-main); padding-left: 20px;">🧠 大腦行為決策樹</h2>
                 <div id="info-panel" style="padding-left: 20px;">
-                    <p style="margin: 5px 0 0 0; color: var(--craving); font-size: 0.95rem; font-weight: bold; line-height: 1.8;">
-                        提示→渴望→回應→獎賞，四階段習慣迴路。<br>
-                        點擊「➕」新增節點，拖曳連線建立關聯。
+                    <p
+                        style="margin: 5px 0 0 0; color: var(--craving); font-size: 0.95rem; font-weight: bold; line-height: 1.8;">
+                        按住滑鼠拖曳平移畫布，使用滾輪縮放。<br>
+                        👑 = 長期CP最高的行動（理想選擇）。<br>
+                        <span style="color:var(--bad);">■</span><span style="color:var(--good);">■</span> 色線 =
+                        大腦預設執行的短期CP最高行動<br>
+                        <span style="font-size:0.85rem;">（紅=長期有害，綠=長期有益）</span>
                     </p>
                 </div>
             </div>
         </div>
 
-        <!-- SVG Edge Overlay -->
-        <svg class="habit-edge-svg" id="habit-edge-svg">
-            <defs>
-                <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
-                    <polygon points="0 0, 10 3.5, 0 7" fill="var(--craving)" />
-                </marker>
-            </defs>
-        </svg>
-
-        <!-- 4-Column Habit Loop Canvas -->
-        <div class="habit-canvas-container" id="habit-canvas">
-            <div class="habit-columns" id="habit-columns">
-                <div class="habit-column" data-stage="cue">
-                    <div class="habit-column-header">💡 提示 Cue</div>
-                    <div class="habit-nodes-area" data-stage="cue"></div>
-                    <div class="habit-node-add" onclick="addHabitNodePrompt('cue')">➕ 新增提示</div>
-                </div>
-                <div class="habit-column" data-stage="craving">
-                    <div class="habit-column-header">🔥 渴望 Craving</div>
-                    <div class="habit-nodes-area" data-stage="craving"></div>
-                    <div class="habit-node-add" onclick="addHabitNodePrompt('craving')">➕ 新增渴望</div>
-                </div>
-                <div class="habit-column" data-stage="response">
-                    <div class="habit-column-header">⚡ 回應 Response</div>
-                    <div class="habit-nodes-area" data-stage="response"></div>
-                    <div class="habit-node-add" onclick="addHabitNodePrompt('response')">➕ 新增回應</div>
-                </div>
-                <div class="habit-column" data-stage="reward">
-                    <div class="habit-column-header">🏆 獎賞 Reward</div>
-                    <div class="habit-nodes-area" data-stage="reward"></div>
-                    <div class="habit-node-add" onclick="addHabitNodePrompt('reward')">➕ 新增獎賞</div>
+        <!-- 無邊界畫布容器 -->
+        <div class="tree-canvas-container" id="tree-canvas">
+            <div class="tree-zoom-layer" id="tree-zoom-layer">
+                <div id="tree-render-area">
+                    <!-- Javascript 動態渲染 Real Tree -->
                 </div>
             </div>
-        </div>
-    </div>
-
-    <!-- ================= View: 檔案自動化設定 ================= -->
-    <div id="view-file-settings" class="view">
-        <div class="file-settings-container">
-            <button onclick="switchView('view-tree')" style="background: var(--cue); margin-bottom: 20px; padding: 8px 18px; border: none; border-radius: 8px; color: #fff; cursor: pointer; font-size: 0.95rem;">⬅️ 返回</button>
-            <h2>📁 檔案自動化設定</h2>
-
-            <div class="pipeline-row">
-                <div class="pipeline-node">
-                    <div class="node-label">Google Drive (載入)</div>
-                    <div class="node-folder" id="load-folder-display">未設定</div>
-                    <button onclick="pickLoadFolder()" style="padding:6px 14px; border:1px solid var(--cue); border-radius:8px; background:#fff; cursor:pointer; font-size:0.85rem;">📂 選擇資料夾</button>
-                </div>
-                <div class="pipeline-arrow">──→</div>
-                <div class="pipeline-node" style="border-color: var(--craving);">
-                    <div class="node-label">🌐 Web</div>
-                    <div style="font-size: 1.5rem;">🧠</div>
-                </div>
-                <div class="pipeline-arrow">──→</div>
-                <div class="pipeline-node" style="border-color: var(--reward);">
-                    <div class="node-label">Google Drive (儲存)</div>
-                    <div class="node-folder" id="save-folder-display">未設定</div>
-                    <button id="btn-pick-save-folder" onclick="pickSaveFolder()" style="padding:6px 14px; border:1px solid var(--reward); border-radius:8px; background:#fff; cursor:pointer; font-size:0.85rem; display:none;">📂 選擇資料夾</button>
-                </div>
-            </div>
-
-            <div class="toggle-row">
-                <label class="toggle-switch">
-                    <input type="checkbox" id="separate-folders-toggle" onchange="toggleSeparateFolders(this.checked)">
-                    <span class="toggle-slider"></span>
-                </label>
-                <span style="font-size:0.9rem;">自動載入與儲存可以用不同資料夾</span>
-            </div>
-            <p id="folder-status-text" style="text-align:center; color:#888; font-size:0.85rem;">載入與儲存將會使用相同資料夾</p>
         </div>
     </div>
 
@@ -2229,8 +1986,8 @@
         // =========================================================================
         // 無邊界畫布：滑鼠縮放與平移邏輯
         // =========================================================================
-        const canvas = document.getElementById('habit-canvas');
-        const zoomLayer = document.getElementById('habit-columns');
+        const canvas = document.getElementById('tree-canvas');
+        const zoomLayer = document.getElementById('tree-zoom-layer');
         let scale = 1;
         let panX = 0, panY = 0;
         let isDragging = false;
@@ -2370,8 +2127,6 @@
         // 系統狀態與資料初始化
         // =========================================================================
         let humanTree = { name: "human", children: [] };
-        let habitGraph = { nodes: [], edges: [] };
-        let edgeDragFrom = null;
         let currentDemandId = null, currentActionId = null, currentTokens = [], draggedTokenId = null;
         let hasInitialized = false;
 
@@ -2422,9 +2177,9 @@
             if (!hasInitialized) switchView('view-welcome');
             else {
                 renderTree();
-                renderHabitCanvas();
                 switchView('view-tree');
-                checkDailySleepPrompt();
+                resetCanvasView();
+                checkDailySleepPrompt(); // 問今天有沒有熬夜
             }
             handleTosUI();
         }
@@ -2951,12 +2706,11 @@
             updateMoreDropdowns();
         }
 
-        // Save data to localStorage
+        // Save humanTree to localStorage
         function saveToLocal() {
             try {
                 const data = JSON.stringify({
                     humanTree: serializeTreeForSync(),
-                    habitGraph: { nodes: habitGraph.nodes, edges: habitGraph.edges },
                     hasInitialized,
                     savedAt: new Date().toISOString()
                 });
@@ -2967,17 +2721,12 @@
             }
         }
 
-        // Load from localStorage
+        // Load humanTree from localStorage
         function loadFromLocal() {
             try {
                 const raw = localStorage.getItem(STORAGE_KEY_TREE);
                 if (!raw) return null;
                 const data = JSON.parse(raw);
-                // Load habitGraph if present
-                if (data && data.habitGraph) {
-                    habitGraph.nodes = data.habitGraph.nodes || [];
-                    habitGraph.edges = data.habitGraph.edges || [];
-                }
                 if (data && data.humanTree) return data.humanTree;
             } catch (e) { /* ignore parse errors */ }
             return null;
@@ -2985,42 +2734,34 @@
 
         // Restore humanTree from a serialized tree object
         function restoreTreeFromSerialized(saved) {
-            if (!saved) return false;
-            // New habitGraph format
-            if (saved.habitGraph) {
-                habitGraph.nodes = saved.habitGraph.nodes || [];
-                habitGraph.edges = saved.habitGraph.edges || [];
-            }
-            // Legacy humanTree format
-            if (saved.children && saved.children.length > 0) {
-                const stageNames = ['dock', 'cue', 'craving', 'response', 'reward'];
-                humanTree = {
-                    name: saved.name || 'human',
-                    children: saved.children.map(demand => ({
-                        id: demand.id,
-                        name: demand.name,
-                        actions: (demand.actions || []).map(action => {
-                            const tokens = [];
-                            if (action.tokenSlots) {
-                                action.tokenSlots.forEach((slot, idx) => {
-                                    (slot || []).forEach(t => {
-                                        tokens.push({
-                                            id: t.id, name: t.name, score: t.score,
-                                            timeType: t.timeType, stage: stageNames[idx] || 'dock',
-                                        });
+            if (!saved || !saved.children || saved.children.length === 0) return false;
+            const stageNames = ['dock', 'cue', 'craving', 'response', 'reward'];
+            humanTree = {
+                name: saved.name || 'human',
+                children: saved.children.map(demand => ({
+                    id: demand.id,
+                    name: demand.name,
+                    actions: (demand.actions || []).map(action => {
+                        const tokens = [];
+                        if (action.tokenSlots) {
+                            action.tokenSlots.forEach((slot, idx) => {
+                                (slot || []).forEach(t => {
+                                    tokens.push({
+                                        id: t.id, name: t.name, score: t.score,
+                                        timeType: t.timeType, stage: stageNames[idx] || 'dock',
                                     });
                                 });
-                            } else if (action.tokens) {
-                                action.tokens.forEach(t => tokens.push({ ...t }));
-                            }
-                            return {
-                                id: action.id, name: action.name, cp: action.cp,
-                                st: action.st, lt: action.lt, isNew: action.isNew, tokens,
-                            };
-                        }),
-                    })),
-                };
-            }
+                            });
+                        } else if (action.tokens) {
+                            action.tokens.forEach(t => tokens.push({ ...t }));
+                        }
+                        return {
+                            id: action.id, name: action.name, cp: action.cp,
+                            st: action.st, lt: action.lt, isNew: action.isNew, tokens,
+                        };
+                    }),
+                })),
+            };
             hasInitialized = true;
             return true;
         }
@@ -3483,7 +3224,7 @@
             }
         }
 
-        // Serialize data for sync (includes both humanTree and habitGraph)
+        // Serialize humanTree for sync
         function serializeTreeForSync() {
             const stageMap = { dock: 0, cue: 1, craving: 2, response: 3, reward: 4 };
             return {
@@ -3505,7 +3246,6 @@
                         };
                     }),
                 })),
-                habitGraph: { nodes: habitGraph.nodes, edges: habitGraph.edges },
             };
         }
 
@@ -3786,167 +3526,6 @@
             }
         });
 
-        // =========================================================================
-        // Habit Loop Canvas Rendering & Interaction
-        // =========================================================================
-        function renderHabitCanvas() {
-            const stages = ['cue', 'craving', 'response', 'reward'];
-            stages.forEach(stage => {
-                const area = document.querySelector(`.habit-nodes-area[data-stage="${stage}"]`);
-                if (!area) return;
-                area.innerHTML = '';
-                habitGraph.nodes.filter(n => n.stage === stage).forEach(node => {
-                    const div = document.createElement('div');
-                    div.className = 'habit-node';
-                    div.dataset.nodeId = node.id;
-                    div.innerHTML = `
-                        <div class="node-actions">
-                            <button onclick="startEdgeDrag('${node.id}')" title="連線">🔗</button>
-                            <button onclick="deleteHabitNode('${node.id}')" title="刪除">✕</button>
-                        </div>
-                        <span>${node.text}</span>
-                    `;
-                    div.addEventListener('click', (e) => {
-                        if (e.target.closest('.node-actions')) return;
-                        if (edgeDragFrom && edgeDragFrom !== node.id) {
-                            endEdgeDrag(node.id);
-                        }
-                    });
-                    area.appendChild(div);
-                });
-            });
-            drawEdges();
-        }
-
-        function addHabitNodePrompt(stage) {
-            const stageLabels = { cue: '提示', craving: '渴望', response: '回應', reward: '獎賞' };
-            const text = prompt(`輸入${stageLabels[stage] || stage}的內容：`);
-            if (!text || !text.trim()) return;
-            habitGraph.nodes.push({
-                id: generateId(),
-                text: text.trim(),
-                stage: stage
-            });
-            renderHabitCanvas();
-            saveToLocal();
-            showToast(`✅ 已新增${stageLabels[stage]}節點`, 'success');
-        }
-
-        function deleteHabitNode(nodeId) {
-            habitGraph.nodes = habitGraph.nodes.filter(n => n.id !== nodeId);
-            habitGraph.edges = habitGraph.edges.filter(e => e.from !== nodeId && e.to !== nodeId);
-            renderHabitCanvas();
-            saveToLocal();
-        }
-
-        function startEdgeDrag(nodeId) {
-            edgeDragFrom = nodeId;
-            showToast('🔗 請點擊目標節點來建立連線', 'info');
-        }
-
-        function endEdgeDrag(toId) {
-            if (!edgeDragFrom || edgeDragFrom === toId) { edgeDragFrom = null; return; }
-            // Check for duplicate
-            const exists = habitGraph.edges.some(e => e.from === edgeDragFrom && e.to === toId);
-            if (!exists) {
-                habitGraph.edges.push({ id: generateId(), from: edgeDragFrom, to: toId });
-                renderHabitCanvas();
-                saveToLocal();
-                showToast('✅ 已建立連線', 'success');
-            } else {
-                showToast('⚠️ 連線已存在', 'error');
-            }
-            edgeDragFrom = null;
-        }
-
-        function deleteHabitEdge(edgeId) {
-            habitGraph.edges = habitGraph.edges.filter(e => e.id !== edgeId);
-            renderHabitCanvas();
-            saveToLocal();
-        }
-
-        function drawEdges() {
-            const svg = document.getElementById('habit-edge-svg');
-            if (!svg) return;
-            // Clear existing paths (keep defs)
-            svg.querySelectorAll('path').forEach(p => p.remove());
-            habitGraph.edges.forEach(edge => {
-                const fromEl = document.querySelector(`[data-node-id="${edge.from}"]`);
-                const toEl = document.querySelector(`[data-node-id="${edge.to}"]`);
-                if (!fromEl || !toEl) return;
-                const fromRect = fromEl.getBoundingClientRect();
-                const toRect = toEl.getBoundingClientRect();
-                const x1 = fromRect.right;
-                const y1 = fromRect.top + fromRect.height / 2;
-                const x2 = toRect.left;
-                const y2 = toRect.top + toRect.height / 2;
-                const mx = (x1 + x2) / 2;
-                const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-                path.setAttribute('d', `M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}`);
-                path.style.cursor = 'pointer';
-                path.style.pointerEvents = 'stroke';
-                path.addEventListener('click', () => {
-                    if (confirm('刪除這條連線？')) deleteHabitEdge(edge.id);
-                });
-                svg.appendChild(path);
-            });
-        }
-
-        // =========================================================================
-        // File Settings JS
-        // =========================================================================
-        function initFileSettings() {
-            const sepBtnToggle = document.getElementById('separate-folders-toggle');
-            const sepFolders = localStorage.getItem('brain_separate_folders') === 'true';
-            if (sepBtnToggle) sepBtnToggle.checked = sepFolders;
-            toggleSeparateFolders(sepFolders, true);
-
-            const lfName = localStorage.getItem('brain_load_folder_name') || '未設定';
-            const sfName = localStorage.getItem('brain_save_folder_name') || '未設定';
-            const loadDisplay = document.getElementById('load-folder-display');
-            const saveDisplay = document.getElementById('save-folder-display');
-            if (loadDisplay) loadDisplay.textContent = sepFolders ? lfName : sfName;
-            if (saveDisplay) saveDisplay.textContent = sfName;
-        }
-
-        function toggleSeparateFolders(checked, init) {
-            localStorage.setItem('brain_separate_folders', checked ? 'true' : 'false');
-            const saveBtn = document.getElementById('btn-pick-save-folder');
-            if (saveBtn) saveBtn.style.display = checked ? 'inline-block' : 'none';
-
-            const statusText = document.getElementById('folder-status-text');
-            if (!statusText) return;
-            if (checked) {
-                statusText.textContent = '左右將會存取不同資料夾';
-                const ld = document.getElementById('load-folder-display');
-                if (ld) ld.textContent = localStorage.getItem('brain_load_folder_name') || '未設定';
-            } else {
-                statusText.textContent = '載入與儲存將會使用相同資料夾';
-                const sfName = localStorage.getItem('brain_save_folder_name') || '未設定';
-                const ld = document.getElementById('load-folder-display');
-                const sd = document.getElementById('save-folder-display');
-                if (ld) ld.textContent = sfName;
-                if (sd) sd.textContent = sfName;
-                if (!init) {
-                    localStorage.setItem('brain_load_folder_id', localStorage.getItem('brain_save_folder_id') || '');
-                    localStorage.setItem('brain_load_folder_name', sfName);
-                }
-            }
-        }
-
-        function pickLoadFolder() {
-            if (!currentUser) { showToast('⚠️ 請先登入 Google', 'error'); return; }
-            openDrivePicker();
-        }
-
-        function pickSaveFolder() {
-            if (!currentUser) { showToast('⚠️ 請先登入 Google', 'error'); return; }
-            openDrivePicker();
-        }
-
-        // =========================================================================
-        // ☰ More Options Dropdown (Restructured)
-        // =========================================================================
         function buildMoreDropdown(dropdownId) {
             const dropdown = document.getElementById(dropdownId);
             const mode = getStorageMode();
@@ -3962,12 +3541,14 @@
                     <input type="checkbox" onchange="setTosAccepted(this.checked)" ${tosAccepted ? 'checked' : ''} style="width: 16px; height: 16px;">
                     <span style="flex:1;">✅ 我已閱讀並同意服務條款與隱私權</span>
                 </label>`;
+
                 html += `<button class="more-dropdown-item" onclick="window.open('privacy.html', '_blank'); closeAllDropdowns();">
                     <span class="item-icon">📄</span> 隱私權政策 (Privacy Policy)
                 </button>`;
                 html += `<button class="more-dropdown-item" onclick="window.open('tos.html', '_blank'); closeAllDropdowns();">
                     <span class="item-icon">📜</span> 服務條款 (Terms of Service)
                 </button>`;
+
                 html += '<div class="more-dropdown-divider"></div>';
                 html += '<div class="more-dropdown-header" style="color:var(--bad);">危險操作</div>';
                 html += `<button class="more-dropdown-item" onclick="deleteAllDataFlow(); closeAllDropdowns();" style="color:var(--bad);">
@@ -3977,16 +3558,55 @@
                 return;
             }
 
-            // === New simplified menu ===
-            html += `<button class="more-dropdown-item" onclick="switchView('view-file-settings'); closeAllDropdowns(); initFileSettings();">
-                <span class="item-icon">📁</span> 檔案自動化設定
+            html += '<div class="more-dropdown-header">儲存模式</div>';
+
+            // Local only
+            html += `<button class="more-dropdown-item ${mode === 'local' ? 'active' : ''}" onclick="switchMode('local')">
+                <span class="item-icon">📂</span> 僅使用本機 (Local Only)
+            </button>`;
+
+            // Drive only (requires login)
+            if (isLoggedIn) {
+                html += `<button class="more-dropdown-item ${mode === 'drive' ? 'active' : ''}" onclick="switchMode('drive')">
+                    <span class="item-icon">☁️</span> 僅使用 Google Drive
+                </button>`;
+                html += `<button class="more-dropdown-item ${mode === 'both' ? 'active' : ''}" onclick="switchMode('both')">
+                    <span class="item-icon">🔄</span> 本機與雲端同步 (Sync Both)
+                </button>`;
+            }
+
+            html += '<div class="more-dropdown-divider"></div>';
+            html += '<div class="more-dropdown-header">檔案操作</div>';
+
+            html += `<button class="more-dropdown-item" onclick="exportToLocalFile(); closeAllDropdowns();">
+                <span class="item-icon">💾</span> 匯出到本機檔案
             </button>`;
             html += `<button class="more-dropdown-item" onclick="importFromLocalFile(); closeAllDropdowns();">
-                <span class="item-icon">📥</span> 手動匯入
+                <span class="item-icon">📂</span> 從本機檔案匯入
             </button>`;
-            html += `<button class="more-dropdown-item" onclick="exportToLocalFile(); closeAllDropdowns();">
-                <span class="item-icon">💾</span> 手動存檔
-            </button>`;
+
+            // Import from Google Drive (manual, doesn't change mode)
+            if (isLoggedIn) {
+                html += `<button class="more-dropdown-item" onclick="importFromDrive(); closeAllDropdowns();">
+                    <span class="item-icon">☁️</span> 從 Google Drive 匯入
+                </button>`;
+            }
+
+            // Divider + change save path
+            html += '<div class="more-dropdown-divider"></div>';
+            html += '<div class="more-dropdown-header">儲存路徑</div>';
+
+            // Local path — show status based on mode
+            const localActive = (mode === 'local' || mode === 'both');
+            html += `<div class="more-dropdown-item" style="cursor:default; font-size:0.88rem;">
+                <span class="item-icon">💻</span> 本機儲存 <span style="color:#999; font-size:0.78rem;">(無法更改路徑)</span>
+            </div>`;
+
+            if (isLoggedIn) {
+                html += `<button class="more-dropdown-item" onclick="openDrivePicker(); closeAllDropdowns();">
+                    <span class="item-icon">📁</span> 更換 Google Drive 路徑
+                </button>`;
+            }
 
             // Legal links
             html += '<div class="more-dropdown-divider"></div>';

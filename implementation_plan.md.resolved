@@ -1,0 +1,110 @@
+# Habit Loop Canvas Restructuring
+
+Restructure the web app so the main canvas is a **4-part Habit Loop** (提示→渴望→回應→獎賞) with directed graph editing (nodes + edges). Move the old tree canvas to `old.html`. Simplify the ☰ menu and add a file automation settings view.
+
+## User Review Required
+
+> [!IMPORTANT]
+> The **old tree canvas and all its functionality** will be fully preserved in `old.html`. The new [index.html](file:///c:/Users/ba/OneDrive/%E6%A1%8C%E9%9D%A2/exam/docs/index.html) replaces `view-tree` with the habit loop canvas but **keeps** `view-welcome`, `view-editor`, and all shared infrastructure (TOS, Auth, Drive sync, toasts, modals, conflict resolution, footer).
+
+> [!WARNING]
+> The `humanTree` data model changes. The new canvas uses a flat `{ nodes: [], edges: [] }` structure instead of the tree hierarchy. **Existing serialized tree data will NOT automatically migrate** — the old format is only usable in `old.html`.
+
+## Proposed Changes
+
+### Component 1: Preserve Old Canvas
+
+#### [NEW] [old.html](file:///c:/Users/ba/OneDrive/桌面/exam/docs/old.html)
+- Full copy of current [index.html](file:///c:/Users/ba/OneDrive/%E6%A1%8C%E9%9D%A2/exam/docs/index.html) (all 3736 lines) — preserving tree canvas, editor, auth, everything
+- Zero modifications to the copied content
+
+---
+
+### Component 2: New Habit Loop Canvas
+
+#### [MODIFY] [index.html](file:///c:/Users/ba/OneDrive/桌面/exam/docs/index.html)
+
+**CSS additions (~200 lines):**
+- `.habit-canvas-container` — full-viewport canvas with grid background (reuses existing infinite canvas pattern)
+- `.habit-column` — 4 vertical columns for Cue/Craving/Response/Reward, each with header + color accent
+- `.habit-node` — draggable node boxes with stage-colored borders
+- `.habit-node-add` — dashed add-node buttons per column
+- `.habit-edge-svg` — SVG overlay layer for arrow rendering
+- `.habit-column-header` — stage label + emoji at top of each column
+
+**HTML changes:**
+- Replace `view-tree` inner content: remove `tree-canvas-container`, `tree-zoom-layer`, `tree-render-area`, `canvas-ui-layer`
+- New content: 4-column layout with SVG overlay, column headers, node add buttons
+- Keep `auth-bar` and `more-options-wrapper` in `view-tree`
+
+**JS changes:**
+- New data model:
+  ```js
+  let habitGraph = { nodes: [], edges: [] };
+  // Node: { id, text, stage: "cue"|"craving"|"response"|"reward", x, y }
+  // Edge: { id, from: nodeId, to: nodeId }
+  ```
+- `renderHabitCanvas()` — renders nodes into columns, draws SVG arrows
+- `addHabitNode(stage, text)` — adds node to specified stage
+- `startEdgeDrag(nodeId)` / `endEdgeDrag(nodeId)` — creates edge between two nodes
+- `deleteHabitNode(nodeId)` — removes node and connected edges
+- `deleteHabitEdge(edgeId)` — removes an edge
+- Canvas panning/zooming reused from existing code (same `tree-canvas-container` approach)
+- [serializeTreeForSync()](file:///c:/Users/ba/OneDrive/%E6%A1%8C%E9%9D%A2/exam/docs/index.html#3227-3251) updated to serialize `habitGraph` instead of `humanTree`
+- [restoreTreeFromSerialized()](file:///c:/Users/ba/OneDrive/%E6%A1%8C%E9%9D%A2/exam/docs/index.html#2735-2768) updated to handle new format
+
+---
+
+### Component 2b: ☰ Menu Restructure
+
+#### [MODIFY] [index.html](file:///c:/Users/ba/OneDrive/桌面/exam/docs/index.html)
+
+- [buildMoreDropdown()](file:///c:/Users/ba/OneDrive/%E6%A1%8C%E9%9D%A2/exam/docs/index.html#3529-3634) function: replace the 3 sections (儲存模式, 檔案操作, 儲存路徑) with:
+  1. `📁 檔案自動化設定` → calls [switchView('view-file-settings')](file:///c:/Users/ba/OneDrive/%E6%A1%8C%E9%9D%A2/exam/docs/index.html#2167-2175)
+  2. `📥 手動匯入` → calls [importFromLocalFile()](file:///c:/Users/ba/OneDrive/%E6%A1%8C%E9%9D%A2/exam/docs/index.html#3371-3374)
+  3. `💾 手動存檔` → calls [exportToLocalFile()](file:///c:/Users/ba/OneDrive/%E6%A1%8C%E9%9D%A2/exam/docs/index.html#3351-3370)
+- Keep unchanged: 法規與條款 section, 危險操作 section, TOS-not-accepted fallback
+
+---
+
+### Component 3: File Automation Settings View
+
+#### [MODIFY] [index.html](file:///c:/Users/ba/OneDrive/桌面/exam/docs/index.html)
+
+**HTML:** Add new `<div id="view-file-settings" class="view">` after `view-editor`, containing:
+- Back button (← 返回)
+- Title: 📁 檔案自動化設定
+- Horizontal pipeline visualization:
+  ```
+  Google Drive (載入) ──→ 🌐 Web ──→ Google Drive (儲存)
+  ```
+- Left node: Load folder picker button + current folder display
+- Center: Web icon/label
+- Right node: Save folder picker button
+- Toggle switch: "自動載入與儲存可以用不同資料夾"
+- Status text showing current folder configuration
+
+**CSS:** Pipeline layout styles, toggle switch styles
+
+**JS:**
+- `initFileSettings()` — reads localStorage and populates UI
+- Toggle handler for `brain_separate_folders` localStorage key
+- Reuses existing [openDrivePicker()](file:///c:/Users/ba/OneDrive/%E6%A1%8C%E9%9D%A2/exam/docs/index.html#3107-3226) with minor adaptation for load/save distinction
+- [switchView('view-file-settings')](file:///c:/Users/ba/OneDrive/%E6%A1%8C%E9%9D%A2/exam/docs/index.html#2167-2175) integration
+- Persist `brain_load_folder_id`, `brain_save_folder_id`, `brain_separate_folders` to localStorage
+
+## Verification Plan
+
+### Manual Verification (Browser)
+
+1. **Open [index.html](file:///c:/Users/ba/OneDrive/%E6%A1%8C%E9%9D%A2/exam/docs/index.html) in localhost** — verify the 4-column habit loop canvas appears after initialization
+2. **Add nodes** — click "➕ 新增提示" etc., verify nodes appear in correct columns
+3. **Connect nodes** — drag from one node to another, verify SVG arrow appears
+4. **Delete nodes/edges** — use delete buttons, verify cleanup
+5. **Open ☰ menu** — verify it shows 📁 檔案自動化設定, 📥 手動匯入, 💾 手動存檔
+6. **Click "💾 手動存檔"** — verify JSON file downloads
+7. **Click "📥 手動匯入"** — verify file picker opens
+8. **Click "📁 檔案自動化設定"** — verify settings view appears
+9. **Toggle switch** — verify separate folder picker shows/hides
+10. **Back button** — verify returns to canvas
+11. **Open `old.html`** — verify full original tree canvas + editor + auth works
