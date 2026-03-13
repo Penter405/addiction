@@ -1,17 +1,17 @@
-# Fix Runtime Errors and Consolidate Logic into habit.js
+﻿# Fix Runtime Errors and Consolidate Logic into habit.js
 
 The application currently has runtime errors due to duplicate declarations (e.g., `API_BASE`) and missing function definitions (e.g., [checkAuth](file:///c:/Users/ba/OneDrive/%E6%A1%8C%E9%9D%A2/exam/docs/old.html#2808-2941)) in [habit.js](file:///c:/Users/ba/OneDrive/%E6%A1%8C%E9%9D%A2/exam/docs/js/habit.js) that rely on code currently in [index.html](file:///c:/Users/ba/OneDrive/%E6%A1%8C%E9%9D%A2/exam/docs/index.html). This plan moves all remaining logic to [habit.js](file:///c:/Users/ba/OneDrive/%E6%A1%8C%E9%9D%A2/exam/docs/js/habit.js).
 
 ## User Review Required
 
 > [!IMPORTANT]
-> All custom JavaScript logic will be moved to [habit.js](file:///c:/Users/ba/OneDrive/桌面/exam/docs/js/habit.js). The inline `<script>` in [index.html](file:///c:/Users/ba/OneDrive/%E6%A1%8C%E9%9D%A2/exam/docs/index.html) will be significantly reduced to avoid duplication and global namespace conflicts.
+> All custom JavaScript logic will be moved to [habit.js](file:///c:/Users/ba/OneDrive/獢/exam/docs/js/habit.js). The inline `<script>` in [index.html](file:///c:/Users/ba/OneDrive/%E6%A1%8C%E9%9D%A2/exam/docs/index.html) will be significantly reduced to avoid duplication and global namespace conflicts.
 
 ## Proposed Changes
 
 ### Component 1: Consolidate habit.js
 
-#### [MODIFY] [habit.js](file:///c:/Users/ba/OneDrive/桌面/exam/docs/js/habit.js)
+#### [MODIFY] [habit.js](file:///c:/Users/ba/OneDrive/獢/exam/docs/js/habit.js)
 
 1. **Move Auth Logic**: Add [authHeaders](file:///c:/Users/ba/OneDrive/%E6%A1%8C%E9%9D%A2/exam/docs/js/habit.js#588-594), [loginGoogle](file:///c:/Users/ba/OneDrive/%E6%A1%8C%E9%9D%A2/exam/docs/old.html#2793-2796), [logoutGoogle](file:///c:/Users/ba/OneDrive/%E6%A1%8C%E9%9D%A2/exam/docs/old.html#2797-2807), [checkAuth](file:///c:/Users/ba/OneDrive/%E6%A1%8C%E9%9D%A2/exam/docs/old.html#2808-2941), and [updateAuthUI](file:///c:/Users/ba/OneDrive/%E6%A1%8C%E9%9D%A2/exam/docs/old.html#2942-2983) to [habit.js](file:///c:/Users/ba/OneDrive/%E6%A1%8C%E9%9D%A2/exam/docs/js/habit.js).
 2. **Move UI Utilities**: Add [showToast](file:///c:/Users/ba/OneDrive/%E6%A1%8C%E9%9D%A2/exam/docs/old.html#1903-1914), [showModal](file:///c:/Users/ba/OneDrive/%E6%A1%8C%E9%9D%A2/exam/docs/index.html#430-473), and missing TOS functions ([getTosAccepted](file:///c:/Users/ba/OneDrive/%E6%A1%8C%E9%9D%A2/exam/docs/old.html#1840-1846), [setTosAccepted](file:///c:/Users/ba/OneDrive/%E6%A1%8C%E9%9D%A2/exam/docs/index.html#395-406)) to [habit.js](file:///c:/Users/ba/OneDrive/%E6%A1%8C%E9%9D%A2/exam/docs/js/habit.js).
@@ -20,7 +20,7 @@ The application currently has runtime errors due to duplicate declarations (e.g.
 
 ### Component 2: Cleanup index.html
 
-#### [MODIFY] [index.html](file:///c:/Users/ba/OneDrive/桌面/exam/docs/index.html)
+#### [MODIFY] [index.html](file:///c:/Users/ba/OneDrive/獢/exam/docs/index.html)
 
 1. **Remove Duplicate `API_BASE`**: Remove the `const API_BASE` declaration from the inline script.
 2. **Remove Moved Functions**: Delete all functions that have been moved to [habit.js](file:///c:/Users/ba/OneDrive/%E6%A1%8C%E9%9D%A2/exam/docs/js/habit.js).
@@ -32,8 +32,8 @@ The application currently has runtime errors due to duplicate declarations (e.g.
 1. Open [index.html](file:///c:/Users/ba/OneDrive/%E6%A1%8C%E9%9D%A2/exam/docs/index.html) in the browser.
 2. Press `F12` to open the console and verify **zero errors** appear.
 3. Verify [checkAuth()](file:///c:/Users/ba/OneDrive/%E6%A1%8C%E9%9D%A2/exam/docs/old.html#2808-2941) runs successfully on load.
-4. Test ☰ menu items and "Start Analysis" flow.
-��動化設定" — verify settings view appears with pipeline visualization
-7. Click back button — verify returns to canvas
-8. Click "💾 手動存檔" — verify JSON file downloads
-9. Open [old.html](file:///c:/Users/ba/OneDrive/%E6%A1%8C%E9%9D%A2/exam/docs/old.html) — verify original tree canvas works
+4. Test ??menu items and "Start Analysis" flow.
+??閮剖?" ??verify settings view appears with pipeline visualization
+7. Click back button ??verify returns to canvas
+8. Click "? ??摮?" ??verify JSON file downloads
+9. Open [old.html](file:///c:/Users/ba/OneDrive/%E6%A1%8C%E9%9D%A2/exam/docs/old.html) ??verify original tree canvas works
