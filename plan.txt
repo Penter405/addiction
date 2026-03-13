@@ -1,10 +1,3 @@
-﻿after you cheak all in index.html .change the index.html to this, but keet let old.html(old.html is that i coped from index.html, maybe cors would block it) work(let them use same backend function )
-:
-1.remove welcome page and action edit page, but user still need to allow tos and privacy policy.
-2. change canva to the struct:
-root{human brain:human has some base demand need to be serve, and sometime they love try something new}  , and 5 more node below:
-提示 渴望 回應 獎賞 底層需求
-
-3. 在 not root node 的邊邊右邊，放3個button:"remove" ,"cp_value","link"
-4. every node can be add cp value of 長期短期, use the cp_value button to edit cp value
-5.user can user link button to link a node(or user can create a new node")
+﻿addiction-murex.vercel.app/api/browse-drive:1  Failed to load resource: the server responded with a status of 500 ()
+addiction-murex.vercel.app/api/sync-drive:1  Failed to load resource: the server responded with a status of 400 ()
+addiction-murex.vercel.app/api/sync-drive:1  Failed to load resource: the server responded with a status of 400 ()

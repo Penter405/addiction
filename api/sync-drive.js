@@ -30,7 +30,10 @@ module.exports = async function handler(req, res) {
         return res.status(400).json({ error: 'Missing treeData' });
     }
 
-    if (typeof treeData.name !== 'string' || !Array.isArray(treeData.children)) {
+    const isLegacyFormat = typeof treeData.name === 'string' && Array.isArray(treeData.children);
+    const isNewFormat = treeData.version === 2 && typeof treeData.humanTree === 'object' && typeof treeData.nodeTree === 'object';
+    
+    if (!isLegacyFormat && !isNewFormat) {
         return res.status(400).json({ error: 'Invalid treeData format' });
     }
 

@@ -8,3 +8,5 @@ image/
 gen_hash.cpp
 gen_hash.exe
 error.txt
+diffs.txt
+diffs_utf8.txt

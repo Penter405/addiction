@@ -1676,6 +1676,59 @@
         </div>
     </div>
 
+    <!-- ================= Automation Settings Modal ================= -->
+    <div class="modal-overlay" id="automation-settings-modal">
+        <div class="modal-box" style="max-width: 600px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h3 style="margin: 0;">⚙️ 自動化檔案設定</h3>
+                <button onclick="closeAutomationSettings()" style="background:none; border:none; font-size:1.5rem; cursor:pointer; color:#999;">&times;</button>
+            </div>
+            
+            <div style="display: flex; align-items: center; justify-content: space-between; padding: 40px 20px; background: #f8f9fa; border-radius: 8px; margin-bottom: 20px;">
+                
+                <!-- Node 1: Auto Import -->
+                <div style="text-align: center; flex: 1;">
+                    <button onclick="closeAutomationSettings(); importFromDrive();" class="modal-btn-primary" style="padding: 15px 25px; border-radius: 30px; font-weight: bold; background: #4caf50; border: none; color: white; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 100%;">
+                        📥 自動匯入
+                    </button>
+                    <div style="font-size: 0.8rem; color: #666; margin-top: 8px;">選擇雲端來源</div>
+                </div>
+
+                <!-- Line 1 -->
+                <div style="flex: 0.5; height: 4px; background: #ccc; position: relative;">
+                    <div style="position: absolute; right: -5px; top: -4px; border-top: 6px solid transparent; border-bottom: 6px solid transparent; border-left: 8px solid #ccc;"></div>
+                </div>
+
+                <!-- Node 2: Web -->
+                <div style="text-align: center; flex: 1;">
+                    <div style="padding: 15px 25px; border-radius: 30px; font-weight: bold; background: #2196f3; color: white; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 100%;">
+                        🌐 Web 網頁
+                    </div>
+                    <div style="font-size: 0.8rem; color: #666; margin-top: 8px;">目前操作區</div>
+                </div>
+
+                <!-- Line 2 -->
+                <div style="flex: 0.5; height: 4px; background: #ccc; position: relative;">
+                    <div style="position: absolute; right: -5px; top: -4px; border-top: 6px solid transparent; border-bottom: 6px solid transparent; border-left: 8px solid #ccc;"></div>
+                </div>
+
+                <!-- Node 3: Auto Save -->
+                <div style="text-align: center; flex: 1;">
+                    <button onclick="closeAutomationSettings(); openDrivePicker();" class="modal-btn-primary" style="padding: 15px 25px; border-radius: 30px; font-weight: bold; background: #ff9800; border: none; color: white; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 100%;">
+                        📤 自動儲存
+                    </button>
+                    <div style="font-size: 0.8rem; color: #666; margin-top: 8px;">設定雲端目標</div>
+                </div>
+
+            </div>
+            
+            <p style="font-size: 0.9rem; color: #666; line-height: 1.5;">
+                點擊 <strong>自動匯入</strong> 從 Google Drive 綁定來源檔案。<br>
+                點擊 <strong>自動儲存</strong> 設定 Google Drive 自動同步儲存的資料夾。
+            </p>
+        </div>
+    </div>
+
     <!-- 隱藏的本機檔案 input -->
     <input type="file" id="local-file-input" accept=".json" style="display: none;"
         onchange="handleLocalFileImport(event)">
@@ -3421,6 +3474,40 @@
         }
 
         // =========================================================================
+        // UI & File Menus (Automation, Import, Export)
+        // =========================================================================
+        function openAutomationSettings() {
+            document.getElementById('automation-settings-modal').classList.add('show');
+        }
+        function closeAutomationSettings() {
+            document.getElementById('automation-settings-modal').classList.remove('show');
+        }
+
+        function openManualImportModal() {
+            const overlay = document.getElementById('modal-overlay');
+            document.getElementById('modal-title').textContent = '📥 手動匯入檔案';
+            document.getElementById('modal-message').innerHTML = '<p>請選擇您的匯入來源：</p>';
+            document.getElementById('modal-input').style.display = 'none';
+            document.getElementById('modal-actions').innerHTML = 
+                `<button class="modal-btn-cancel" onclick="document.getElementById('modal-overlay').classList.remove('show')">取消</button>` +
+                `<button class="modal-btn-primary" onclick="document.getElementById('modal-overlay').classList.remove('show'); importFromLocalFile();" style="background:#4caf50;">💻 從本機 (<span style="font-size:0.8em">.json</span>)</button>` +
+                `<button class="modal-btn-primary" onclick="document.getElementById('modal-overlay').classList.remove('show'); importFromDrive();" style="background:#2196f3;">☁️ 從 Google Drive</button>`;
+            overlay.classList.add('show');
+        }
+
+        function openManualExportModal() {
+            const overlay = document.getElementById('modal-overlay');
+            document.getElementById('modal-title').textContent = '📤 手動儲存檔案';
+            document.getElementById('modal-message').innerHTML = '<p>請選擇您的儲存目標：</p>';
+            document.getElementById('modal-input').style.display = 'none';
+            document.getElementById('modal-actions').innerHTML = 
+                `<button class="modal-btn-cancel" onclick="document.getElementById('modal-overlay').classList.remove('show')">取消</button>` +
+                `<button class="modal-btn-primary" onclick="document.getElementById('modal-overlay').classList.remove('show'); exportToLocalFile();" style="background:#4caf50;">💻 儲存至本機 (<span style="font-size:0.8em">.json</span>)</button>` +
+                `<button class="modal-btn-primary" onclick="document.getElementById('modal-overlay').classList.remove('show'); syncToDrive('manual_export');" style="background:#2196f3;">☁️ 儲存至 Google Drive</button>`;
+            overlay.classList.add('show');
+        }
+
+        // =========================================================================
         // Local File Export / Import
         // =========================================================================
         function exportToLocalFile() {
@@ -3600,13 +3687,10 @@
 
         function buildMoreDropdown(dropdownId) {
             const dropdown = document.getElementById(dropdownId);
-            const mode = getStorageMode();
-            const isLoggedIn = !!currentUser;
             const tosAccepted = getTosAccepted();
 
             let html = '';
 
-            // 如果未同意 TOS，只顯示同意按鈕與刪除按鈕
             if (!tosAccepted) {
                 html += '<div class="more-dropdown-header" style="color:var(--bad);">授權設定</div>';
                 html += `<label class="more-dropdown-item" style="cursor: pointer; display: flex; align-items: center; gap: 8px;">
@@ -3630,55 +3714,29 @@
                 return;
             }
 
-            html += '<div class="more-dropdown-header">儲存模式</div>';
+            html += '<div class="more-dropdown-header">檔案管理</div>';
 
-            // Local only
-            html += `<button class="more-dropdown-item ${mode === 'local' ? 'active' : ''}" onclick="switchMode('local')">
-                <span class="item-icon">📂</span> 僅使用本機 (Local Only)
+            html += `<button class="more-dropdown-item" onclick="openAutomationSettings(); closeAllDropdowns();">
+                <span class="item-icon">⚙️</span> 自動化檔案
+            </button>`;
+            
+            html += `<button class="more-dropdown-item" onclick="openManualImportModal(); closeAllDropdowns();">
+                <span class="item-icon">📥</span> 手動匯入檔案
             </button>`;
 
-            // Drive only (requires login)
-            if (isLoggedIn) {
-                html += `<button class="more-dropdown-item ${mode === 'drive' ? 'active' : ''}" onclick="switchMode('drive')">
-                    <span class="item-icon">☁️</span> 僅使用 Google Drive
-                </button>`;
-                html += `<button class="more-dropdown-item ${mode === 'both' ? 'active' : ''}" onclick="switchMode('both')">
-                    <span class="item-icon">🔄</span> 本機與雲端同步 (Sync Both)
-                </button>`;
-            }
-
+            html += `<button class="more-dropdown-item" onclick="openManualExportModal(); closeAllDropdowns();">
+                <span class="item-icon">📤</span> 手動儲存檔案
+            </button>`;
+            
             html += '<div class="more-dropdown-divider"></div>';
-            html += '<div class="more-dropdown-header">檔案操作</div>';
-
-            html += `<button class="more-dropdown-item" onclick="exportToLocalFile(); closeAllDropdowns();">
-                <span class="item-icon">💾</span> 匯出到本機檔案
-            </button>`;
-            html += `<button class="more-dropdown-item" onclick="importFromLocalFile(); closeAllDropdowns();">
-                <span class="item-icon">📂</span> 從本機檔案匯入
+            
+            html += `<button class="more-dropdown-item" onclick="window.open('/api/list-models', '_blank'); closeAllDropdowns();">
+                <span class="item-icon">🤖</span> AI 模型狀態
             </button>`;
 
-            // Import from Google Drive (manual, doesn't change mode)
-            if (isLoggedIn) {
-                html += `<button class="more-dropdown-item" onclick="importFromDrive(); closeAllDropdowns();">
-                    <span class="item-icon">☁️</span> 從 Google Drive 匯入
-                </button>`;
-            }
-
-            // Divider + change save path
-            html += '<div class="more-dropdown-divider"></div>';
-            html += '<div class="more-dropdown-header">儲存路徑</div>';
-
-            // Local path — show status based on mode
-            const localActive = (mode === 'local' || mode === 'both');
-            html += `<div class="more-dropdown-item" style="cursor:default; font-size:0.88rem;">
-                <span class="item-icon">💻</span> 本機儲存 <span style="color:#999; font-size:0.78rem;">(無法更改路徑)</span>
-            </div>`;
-
-            if (isLoggedIn) {
-                html += `<button class="more-dropdown-item" onclick="openDrivePicker(); closeAllDropdowns();">
-                    <span class="item-icon">📁</span> 更換 Google Drive 路徑
-                </button>`;
-            }
+            html += `<button class="more-dropdown-item" onclick="window.open('https://forms.gle/vPZ9v6S6m5cM385EA', '_blank'); closeAllDropdowns();">
+                <span class="item-icon">📝</span> 問卷調查
+            </button>`;
 
             // Legal links
             html += '<div class="more-dropdown-divider"></div>';

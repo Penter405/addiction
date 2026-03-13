@@ -85,6 +85,7 @@ module.exports = async function handler(req, res) {
             const response = await drive.files.get({ fileId, alt: 'media' });
 
             await AuditLog.create({
+                userInternalId: user.internalId,
                 userId,
                 action: 'load_drive_by_id',
                 fileId,
