@@ -1,39 +1,10 @@
-﻿# Fix Runtime Errors and Consolidate Logic into habit.js
+﻿after you cheak all in index.html .change the index.html to this, but keet let old.html(old.html is that i coped from index.html, maybe cors would block it) work(let them use same backend function )
+:
+1.remove welcome page and action edit page, but user still need to allow tos and privacy policy.
+2. change canva to the struct:
+root{human brain:human has some base demand need to be serve, and sometime they love try something new}  , and 5 more node below:
+提示 渴望 回應 獎賞 底層需求
 
-The application currently has runtime errors due to duplicate declarations (e.g., `API_BASE`) and missing function definitions (e.g., [checkAuth](file:///c:/Users/ba/OneDrive/%E6%A1%8C%E9%9D%A2/exam/docs/old.html#2808-2941)) in [habit.js](file:///c:/Users/ba/OneDrive/%E6%A1%8C%E9%9D%A2/exam/docs/js/habit.js) that rely on code currently in [index.html](file:///c:/Users/ba/OneDrive/%E6%A1%8C%E9%9D%A2/exam/docs/index.html). This plan moves all remaining logic to [habit.js](file:///c:/Users/ba/OneDrive/%E6%A1%8C%E9%9D%A2/exam/docs/js/habit.js).
-
-## User Review Required
-
-> [!IMPORTANT]
-> All custom JavaScript logic will be moved to [habit.js](file:///c:/Users/ba/OneDrive/獢/exam/docs/js/habit.js). The inline `<script>` in [index.html](file:///c:/Users/ba/OneDrive/%E6%A1%8C%E9%9D%A2/exam/docs/index.html) will be significantly reduced to avoid duplication and global namespace conflicts.
-
-## Proposed Changes
-
-### Component 1: Consolidate habit.js
-
-#### [MODIFY] [habit.js](file:///c:/Users/ba/OneDrive/獢/exam/docs/js/habit.js)
-
-1. **Move Auth Logic**: Add [authHeaders](file:///c:/Users/ba/OneDrive/%E6%A1%8C%E9%9D%A2/exam/docs/js/habit.js#588-594), [loginGoogle](file:///c:/Users/ba/OneDrive/%E6%A1%8C%E9%9D%A2/exam/docs/old.html#2793-2796), [logoutGoogle](file:///c:/Users/ba/OneDrive/%E6%A1%8C%E9%9D%A2/exam/docs/old.html#2797-2807), [checkAuth](file:///c:/Users/ba/OneDrive/%E6%A1%8C%E9%9D%A2/exam/docs/old.html#2808-2941), and [updateAuthUI](file:///c:/Users/ba/OneDrive/%E6%A1%8C%E9%9D%A2/exam/docs/old.html#2942-2983) to [habit.js](file:///c:/Users/ba/OneDrive/%E6%A1%8C%E9%9D%A2/exam/docs/js/habit.js).
-2. **Move UI Utilities**: Add [showToast](file:///c:/Users/ba/OneDrive/%E6%A1%8C%E9%9D%A2/exam/docs/old.html#1903-1914), [showModal](file:///c:/Users/ba/OneDrive/%E6%A1%8C%E9%9D%A2/exam/docs/index.html#430-473), and missing TOS functions ([getTosAccepted](file:///c:/Users/ba/OneDrive/%E6%A1%8C%E9%9D%A2/exam/docs/old.html#1840-1846), [setTosAccepted](file:///c:/Users/ba/OneDrive/%E6%A1%8C%E9%9D%A2/exam/docs/index.html#395-406)) to [habit.js](file:///c:/Users/ba/OneDrive/%E6%A1%8C%E9%9D%A2/exam/docs/js/habit.js).
-3. **Move View Transitions**: Add [updateLoadingStatus](file:///c:/Users/ba/OneDrive/%E6%A1%8C%E9%9D%A2/exam/docs/index.html#545-546) and [hideLoadingOverlay](file:///c:/Users/ba/OneDrive/%E6%A1%8C%E9%9D%A2/exam/docs/index.html#546-547) to [habit.js](file:///c:/Users/ba/OneDrive/%E6%A1%8C%E9%9D%A2/exam/docs/js/habit.js).
-4. **Ensure Global Access**: Ensure these functions are globally accessible since [index.html](file:///c:/Users/ba/OneDrive/%E6%A1%8C%E9%9D%A2/exam/docs/index.html) calls them via [onclick](file:///c:/Users/ba/OneDrive/%E6%A1%8C%E9%9D%A2/exam/docs/old.html#1967-1970) and other event listeners.
-
-### Component 2: Cleanup index.html
-
-#### [MODIFY] [index.html](file:///c:/Users/ba/OneDrive/獢/exam/docs/index.html)
-
-1. **Remove Duplicate `API_BASE`**: Remove the `const API_BASE` declaration from the inline script.
-2. **Remove Moved Functions**: Delete all functions that have been moved to [habit.js](file:///c:/Users/ba/OneDrive/%E6%A1%8C%E9%9D%A2/exam/docs/js/habit.js).
-3. **Maintain Minimal Script**: Keep only the initialization call and small bridge logic if necessary.
-
-## Verification Plan
-
-### Manual Verification (Browser)
-1. Open [index.html](file:///c:/Users/ba/OneDrive/%E6%A1%8C%E9%9D%A2/exam/docs/index.html) in the browser.
-2. Press `F12` to open the console and verify **zero errors** appear.
-3. Verify [checkAuth()](file:///c:/Users/ba/OneDrive/%E6%A1%8C%E9%9D%A2/exam/docs/old.html#2808-2941) runs successfully on load.
-4. Test ??menu items and "Start Analysis" flow.
-??閮剖?" ??verify settings view appears with pipeline visualization
-7. Click back button ??verify returns to canvas
-8. Click "? ??摮?" ??verify JSON file downloads
-9. Open [old.html](file:///c:/Users/ba/OneDrive/%E6%A1%8C%E9%9D%A2/exam/docs/old.html) ??verify original tree canvas works
+3. 在 not root node 的邊邊右邊，放3個button:"remove" ,"cp_value","link"
+4. every node can be add cp value of 長期短期, use the cp_value button to edit cp value
+5.user can user link button to link a node(or user can create a new node")
