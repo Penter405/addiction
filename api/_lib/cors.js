@@ -15,14 +15,15 @@ function handleCors(req, res) {
     }
 
     // 允許指定 origin 或任何 localhost
-    if (origin && (origin === allowed || origin.startsWith('http://localhost'))) {
+    if (origin && (origin === allowed || origin.startsWith('http://localhost') || origin.startsWith('https://localhost'))) {
         res.setHeader('Access-Control-Allow-Origin', origin);
     } else {
+        // 回收機制：如果 Origin 為空（例如某些測試工具）或不匹配，則回傳預設允許的 Origin
         res.setHeader('Access-Control-Allow-Origin', allowed);
     }
 
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, PATCH, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    res.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization');
     res.setHeader('Access-Control-Allow-Credentials', 'true');
     // 防止 Vercel edge cache 快取 CORS 回應（不同 Origin 需要不同回應）
     res.setHeader('Vary', 'Origin');
