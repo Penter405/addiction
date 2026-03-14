@@ -31,7 +31,7 @@ module.exports = async function handler(req, res) {
     }
 
     const isLegacyFormat = typeof treeData.name === 'string' && Array.isArray(treeData.children);
-    const isNewFormat = treeData.version === 2 && typeof treeData.humanTree === 'object' && typeof treeData.nodeTree === 'object';
+    const isNewFormat = treeData.version >= 2;
     
     if (!isLegacyFormat && !isNewFormat) {
         return res.status(400).json({ error: 'Invalid treeData format' });
@@ -46,7 +46,9 @@ module.exports = async function handler(req, res) {
         await connectDB();
         const user = await User.findOne({ googleId: userId });
 
-        if (!user || !user.driveFileId) {
+        const targetFileId = isNewFormat ? user.driveFileIdV2 : user.driveFileId;
+
+        if (!user || !targetFileId) {
             return res.status(400).json({ error: 'No Drive file selected' });
         }
 
@@ -100,7 +102,7 @@ module.exports = async function handler(req, res) {
         const drive = google.drive({ version: 'v3', auth: oauth2Client });
 
         await drive.files.update({
-            fileId: user.driveFileId,
+            fileId: targetFileId,
             media: {
                 mimeType: 'application/json',
                 body: fileContent,
@@ -108,9 +110,9 @@ module.exports = async function handler(req, res) {
         });
 
         await AuditLog.create({
-            userInternalId: user.internalId,
+            userInternalId: user.internalId || 0,
             action: 'sync_drive',
-            fileId: user.driveFileId,
+            fileId: targetFileId,
             ip: parseIp(req),
             status: 'success',
         });
@@ -121,7 +123,7 @@ module.exports = async function handler(req, res) {
 
         try {
             await AuditLog.create({
-                userInternalId: user ? user.internalId : 0,
+                userInternalId: user ? (user.internalId || 0) : 0,
                 action: 'sync_drive',
                 ip: parseIp(req),
                 status: 'error',

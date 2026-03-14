@@ -264,25 +264,26 @@ module.exports = async function handler(req, res) {
         });
 
         const fileId = file.data.id;
+        const isV2 = req.body.version === 2;
         const updateFields = {
-            driveFileId: fileId,
-            driveFileName: fileName,
+            [isV2 ? 'driveFileIdV2' : 'driveFileId']: fileId,
+            [isV2 ? 'driveFileNameV2' : 'driveFileName']: fileName,
             updatedAt: new Date(),
         };
         if (folderResult.parentFolderName) {
-            updateFields.driveFolderName = folderResult.parentFolderName;
+            updateFields[isV2 ? 'driveFolderNameV2' : 'driveFolderName'] = folderResult.parentFolderName;
         }
         if (folderResult.parentFolderId) {
-            updateFields.driveFolderId = folderResult.parentFolderId;
+            updateFields[isV2 ? 'driveFolderIdV2' : 'driveFolderId'] = folderResult.parentFolderId;
         } else {
-            updateFields.driveFolderId = null;
-            updateFields.driveFolderName = null;
+            updateFields[isV2 ? 'driveFolderIdV2' : 'driveFolderId'] = null;
+            updateFields[isV2 ? 'driveFolderNameV2' : 'driveFolderName'] = null;
         }
 
         await User.findOneAndUpdate({ googleId: userId }, { $set: updateFields });
 
         await AuditLog.create({
-            userInternalId: user.internalId,
+            userInternalId: user.internalId || 0,
             action: 'create_drive_file',
             fileId,
             ip: parseIp(req),

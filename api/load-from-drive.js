@@ -29,7 +29,10 @@ module.exports = async function handler(req, res) {
         await connectDB();
         const user = await User.findOne({ googleId: userId });
 
-        if (!user || !user.driveFileId) {
+        const isV2 = req.query?.v === '2' || (req.url || '').includes('v=2');
+        const targetFileId = isV2 ? user.driveFileIdV2 : user.driveFileId;
+
+        if (!user || !targetFileId) {
             return res.status(400).json({ error: 'No Drive file selected' });
         }
 
@@ -68,14 +71,14 @@ module.exports = async function handler(req, res) {
 
         const drive = google.drive({ version: 'v3', auth: oauth2Client });
         const response = await drive.files.get({
-            fileId: user.driveFileId,
+            fileId: targetFileId,
             alt: 'media',
         });
 
         await AuditLog.create({
-            userInternalId: user.internalId,
+            userInternalId: user.internalId || 0,
             action: 'load_drive',
-            fileId: user.driveFileId,
+            fileId: targetFileId,
             ip: parseIp(req),
             status: 'success',
         });

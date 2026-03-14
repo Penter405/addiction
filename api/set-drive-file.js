@@ -34,15 +34,16 @@ module.exports = async function handler(req, res) {
     try {
         await connectDB();
 
+        const isV2 = req.body.version === 2;
         await User.findOneAndUpdate(
             { googleId: userId },
-            { $set: { driveFileId: fileId, updatedAt: new Date() } }
+            { $set: { [isV2 ? 'driveFileIdV2' : 'driveFileId']: fileId, updatedAt: new Date() } }
         );
 
         const user = await User.findOne({ googleId: userId }, 'internalId');
 
         await AuditLog.create({
-            userInternalId: user ? user.internalId : 0,
+            userInternalId: user ? (user.internalId || 0) : 0,
             action: 'set_file',
             fileId,
             ip: parseIp(req),

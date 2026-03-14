@@ -25,7 +25,7 @@ module.exports = async function handler(req, res) {
             const user = await User.findOne({ googleId: userId }, 'internalId');
             if (user) {
                 await AuditLog.create({
-                    userInternalId: user.internalId,
+                    userInternalId: user.internalId || 0,
                     action: 'logout',
                     ip: parseIp(req),
                     status: 'success',

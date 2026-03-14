@@ -51,15 +51,18 @@ module.exports = async function handler(req, res) {
             return res.status(200).json({ loggedIn: false });
         }
 
+        const isV2 = req.query?.v === '2' || (req.url || '').includes('v=2');
         res.status(200).json({
             loggedIn: true,
             user: {
                 name: user.name,
                 email: user.email,
                 picture: user.picture,
-                hasDriveFile: !!user.driveFileId,
-                driveFolderName: user.driveFolderName || null,
-                driveFolderId: user.driveFolderId || null,
+                hasDriveFile: isV2 ? !!user.driveFileIdV2 : !!user.driveFileId,
+                driveFolderName: isV2 ? (user.driveFolderNameV2 || null) : (user.driveFolderName || null),
+                driveFolderId: isV2 ? (user.driveFolderIdV2 || null) : (user.driveFolderId || null),
+                importFolderName: isV2 ? (user.importFolderNameV2 || null) : (user.importFolderName || null),
+                importFolderId: isV2 ? (user.importFolderIdV2 || null) : (user.importFolderId || null),
                 tosAccepted: !!user.tosAccepted,
             },
         });
