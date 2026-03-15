@@ -1362,9 +1362,23 @@
         // Load / Sync to Drive
         // =========================================================================
         async function loadTreeFromDrive() {
+            if (!currentUser) {
+                showToast('⚠️ 請先登入 Google', 'error');
+                return;
+            }
+            if (!currentUser.hasDriveFile) {
+                showToast('⚠️ 您尚未設定同步檔案，請先選擇或建立 Google Drive 資料夾！', 'error');
+                openDrivePicker('save');
+                return;
+            }
+
             try {
                 const res = await fetch(API_BASE + '/api/load-from-drive', { headers: authHeaders() });
-                if (!res.ok) return;
+                if (!res.ok) {
+                    const errorData = await res.json().catch(() => ({}));
+                    showToast('⚠️ 匯入失敗：' + (errorData.error || '無法讀取雲端檔案'), 'error');
+                    return;
+                }
                 const data = await res.json();
                 if (data.success && data.data && data.data.treeData) {
                     if (restoreTreeFromSerialized(data.data.treeData)) {
@@ -1375,6 +1389,7 @@
                 }
             } catch (err) {
                 console.error('Load from Drive error:', err);
+                showToast('⚠️ 匯入發生例外錯誤：' + err.message, 'error');
             }
         }
 
@@ -1532,7 +1547,16 @@
 
         // Internal sync (used by conflict resolution + normal sync)
         async function syncToDriveInternal(triggerAction) {
-            if (!currentUser || !currentUser.hasDriveFile) return false;
+            if (!currentUser) return false;
+            
+            if (!currentUser.hasDriveFile) {
+                if (triggerAction === 'manual_save' || triggerAction === 'manual_export') {
+                    showToast('⚠️ 您尚未設定同步檔案，請先選擇或建立 Google Drive 資料夾！', 'error');
+                    openDrivePicker('save');
+                }
+                return false;
+            }
+
             try {
                 const payload = {
                     triggerAction,
