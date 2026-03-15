@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Habit Helper</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧠</text></svg>">
     <meta name="application-name" content="Habit Helper">
     <meta name="description"
         content="Habit Helper — Brain Behavior Tree. A visual tool to map and reshape your habits and decision-making patterns.">
@@ -3111,11 +3112,15 @@
         // Conflict Resolution
         // =========================================================================
         function treePreviewHTML(tree) {
-            if (!tree || !tree.children || tree.children.length === 0) {
+            let targetTree = tree;
+            if (tree && tree.humanTree) {
+                targetTree = tree.humanTree;
+            }
+            if (!targetTree || !targetTree.children || targetTree.children.length === 0) {
                 return '<div style="color:#999;">（無資料）</div>';
             }
             let html = '';
-            tree.children.forEach(d => {
+            targetTree.children.forEach(d => {
                 html += `<div class="demand-item">🔹 ${d.name}</div>`;
                 (d.actions || []).forEach(a => {
                     const cp = typeof a.cp === 'number' ? a.cp.toFixed(2) : '?';

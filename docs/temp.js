@@ -1234,11 +1234,15 @@
         // Conflict Resolution
         // =========================================================================
         function treePreviewHTML(tree) {
-            if (!tree || !tree.children || tree.children.length === 0) {
+            let targetTree = tree;
+            if (tree && tree.humanTree) {
+                targetTree = tree.humanTree;
+            }
+            if (!targetTree || !targetTree.children || targetTree.children.length === 0) {
                 return '<div style="color:#999;">（無資料）</div>';
             }
             let html = '';
-            tree.children.forEach(d => {
+            targetTree.children.forEach(d => {
                 html += `<div class="demand-item">🔹 ${d.name}</div>`;
                 (d.actions || []).forEach(a => {
                     const cp = typeof a.cp === 'number' ? a.cp.toFixed(2) : '?';
