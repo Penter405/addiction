@@ -1357,16 +1357,17 @@
             }
         }
 
-        // Google Drive Folder Picker — select or create a folder, then create file inside it
-        async function openDrivePicker() {
+        async function openDrivePicker(pickerType = 'save') {
             if (!currentUser) {
                 showToast('⚠️ 請先登入 Google', 'error');
                 return;
             }
 
+            const isImport = pickerType === 'import';
+
             // Show loading modal
             const overlay = document.getElementById('modal-overlay');
-            document.getElementById('modal-title').textContent = '📁 更換 Google Drive 路徑';
+            document.getElementById('modal-title').textContent = isImport ? '📥 設定自動匯入資料夾' : '📁 更換 Google Drive 路徑';
             document.getElementById('modal-message').innerHTML = '<div class="picker-loading">⏳ 正在載入資料夾列表...</div>';
             document.getElementById('modal-input').style.display = 'none';
             document.getElementById('modal-actions').innerHTML = `<button class="modal-btn-cancel" onclick="document.getElementById('modal-overlay').classList.remove('show')">取消</button>`;

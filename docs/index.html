@@ -1684,22 +1684,15 @@
                 <h3 style="margin: 0;">⚙️ 自動化檔案設定</h3>
                 <button onclick="closeAutomationSettings()" style="background:none; border:none; font-size:1.5rem; cursor:pointer; color:#999;">&times;</button>
             </div>
-            
-            <div style="text-align: center; margin-bottom: 15px; padding: 12px; background: #e8f0fe; border-radius: 8px;">
-                <label style="cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; font-weight: bold; color: #1a73e8;">
-                    <input type="checkbox" id="separate-sync-folders" onchange="toggleSeparateSync(this.checked)" style="width: 18px; height: 18px;">
-                    自動匯入與自動儲存可以用不同資料夾
-                </label>
-            </div>
 
             <div style="display: flex; align-items: center; justify-content: space-between; padding: 30px 20px; background: #f8f9fa; border-radius: 8px; margin-bottom: 20px;">
                 
                 <!-- Node 1: Auto Import -->
                 <div style="text-align: center; flex: 1;">
-                    <button id="btn-auto-import" onclick="closeAutomationSettings(); handleAutoImportClick();" class="modal-btn-primary" style="padding: 15px 25px; border-radius: 30px; font-weight: bold; background: #4caf50; border: none; color: white; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 100%;">
+                    <button id="btn-auto-import" onclick="closeAutomationSettings(); loadTreeFromDrive();" class="modal-btn-primary" style="padding: 15px 25px; border-radius: 30px; font-weight: bold; background: #4caf50; border: none; color: white; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 100%;">
                         📥 自動匯入
                     </button>
-                    <div style="font-size: 0.8rem; color: #666; margin-top: 8px;">設定雲端來源</div>
+                    <div style="font-size: 0.8rem; color: #666; margin-top: 8px;">從雲端最新紀錄匯入</div>
                 </div>
 
                 <!-- Line 1 -->
@@ -1722,17 +1715,17 @@
 
                 <!-- Node 3: Auto Save -->
                 <div style="text-align: center; flex: 1;">
-                    <button onclick="closeAutomationSettings(); openDrivePicker('save');" class="modal-btn-primary" style="padding: 15px 25px; border-radius: 30px; font-weight: bold; background: #ff9800; border: none; color: white; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 100%;">
+                    <button onclick="closeAutomationSettings(); syncToDrive('manual_save');" class="modal-btn-primary" style="padding: 15px 25px; border-radius: 30px; font-weight: bold; background: #ff9800; border: none; color: white; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 100%;">
                         📤 自動儲存
                     </button>
-                    <div style="font-size: 0.8rem; color: #666; margin-top: 8px;">設定雲端目標</div>
+                    <div style="font-size: 0.8rem; color: #666; margin-top: 8px;">將目前進度同步至雲端</div>
                 </div>
 
             </div>
             
             <p style="font-size: 0.9rem; color: #666; line-height: 1.5;">
-                點擊 <strong>自動匯入</strong> 設定 Google Drive 自動同步來源的資料夾。<br>
-                點擊 <strong>自動儲存</strong> 設定 Google Drive 自動同步儲存的資料夾。
+                點擊 <strong>自動匯入</strong> 從雲端最後自動儲存的備份還原您的資料。<br>
+                點擊 <strong>自動儲存</strong> 立即將目前的檔案狀態雲端覆蓋這份備份。
             </p>
         </div>
     </div>
@@ -3522,37 +3515,10 @@
         // UI & File Menus (Automation, Import, Export)
         // =========================================================================
         function openAutomationSettings() {
-            const isSeparate = localStorage.getItem('brain_separate_sync') === 'true';
-            document.getElementById('separate-sync-folders').checked = isSeparate;
-            toggleSeparateSync(isSeparate);
             document.getElementById('automation-settings-modal').classList.add('show');
         }
         function closeAutomationSettings() {
             document.getElementById('automation-settings-modal').classList.remove('show');
-        }
-
-        function toggleSeparateSync(isChecked) {
-            localStorage.setItem('brain_separate_sync', isChecked ? 'true' : 'false');
-            const btnImport = document.getElementById('btn-auto-import');
-            if (btnImport) {
-                if (!isChecked) {
-                    btnImport.style.opacity = '0.5';
-                    btnImport.title = '開啟「可以用不同資料夾」設定獨立來源';
-                } else {
-                    btnImport.style.opacity = '1';
-                    btnImport.title = '設定獨立的自動匯入資料夾';
-                }
-            }
-        }
-
-        function handleAutoImportClick() {
-            const isSeparate = localStorage.getItem('brain_separate_sync') === 'true';
-            if (!isSeparate) {
-                showToast('💡 目前設定與自動儲存共用同一資料夾及檔案，若欲獨立連線請開啟開關。', 'info');
-                // Could call openDrivePicker('save') here, but let user click "自動儲存" manually.
-            } else {
-                openDrivePicker('import');
-            }
         }
 
         function openManualImportModal() {
