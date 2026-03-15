@@ -5,7 +5,9 @@
 ```
 exam/
 ├── docs/
-│   └── index.html              # Frontend SPA (GitHub Pages)
+│   ├── index.html              # Frontend SPA (Version 2 - Visual Node Editor)
+│   ├── old.html                # Frontend SPA (Version 1 - Original Tree View)
+│   └── temp.js                 # Shared core logic and UI components
 ├── api/
 │   ├── auth/
 │   │   ├── google.js           # OAuth: redirect to Google
@@ -150,9 +152,11 @@ stateDiagram-v2
     encrypted: String
   },
   encryptedRefreshToken: Object,
-  driveFileId: String,     // Google Drive file ID
-  driveFileName: String,
-  driveFolderName: String, // Google Drive parent folder path
+  driveFileId: String,     // Google Drive file ID (V1 - old.html)
+  driveFileName: String,   // (V1)
+  driveFolderName: String, // Google Drive parent folder path (V1)
+  driveFolderIdV2: String, // Google Drive folder ID (V2 - index.html)
+  driveFileNameV2: String, // (V2)
   createdAt: Date,
   updatedAt: Date
 }
@@ -174,6 +178,7 @@ stateDiagram-v2
 
 ### Tree Data (JSON)
 
+**Version 1 Format (old.html)**
 ```js
 {
   name: "human",
@@ -196,6 +201,23 @@ stateDiagram-v2
       ]
     }
   ]
+}
+```
+
+**Version 2 Format (index.html)**
+```js
+{
+  version: 2,
+  humanTree: {
+    name: "human",
+    children: [ /* Same structure as Version 1 */ ]
+  },
+  nodeTree: {
+    nodes: [ /* Freestyle dragging visual nodes */ ],
+    links: [ /* Visual connections between nodes */ ]
+  },
+  hasInitialized: true,
+  savedAt: "2026-03-15T..."
 }
 ```
 
