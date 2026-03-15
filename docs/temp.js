@@ -942,9 +942,7 @@
         function saveToLocal() {
             try {
                 const data = JSON.stringify({
-                    version: 2,
-                    humanTree: serializeTreeForSync(), // for old.html
-                    nodeTree: nodeTree,                // for index.html
+                    ...serializeTreeForSync(),
                     hasInitialized,
                     savedAt: new Date().toISOString()
                 });
@@ -983,7 +981,11 @@
 
             // Always try to restore old format as well (incase saved only had humanTree)
             // It could be under saved.humanTree, or saved itself could be the humanTree
-            const oldRoot = saved.humanTree ? saved.humanTree : (saved.children ? saved : null);
+            let oldRoot = saved.humanTree ? saved.humanTree : (saved.children ? saved : null);
+            // Handle historical double-nesting bug from local storage
+            if (oldRoot && oldRoot.humanTree && oldRoot.humanTree.children) {
+                oldRoot = oldRoot.humanTree;
+            }
             if (oldRoot && oldRoot.children) {
                 const stageNames = ['dock', 'cue', 'craving', 'response', 'reward'];
                 humanTree = {
@@ -1237,19 +1239,38 @@
             let targetTree = tree;
             if (tree && tree.humanTree) {
                 targetTree = tree.humanTree;
+                // Handle historical double-nesting bug
+                if (targetTree.humanTree) {
+                    targetTree = targetTree.humanTree;
+                }
             }
-            if (!targetTree || !targetTree.children || targetTree.children.length === 0) {
-                return '<div style="color:#999;">（無資料）</div>';
-            }
-            let html = '';
-            targetTree.children.forEach(d => {
-                html += `<div class="demand-item">🔹 ${d.name}</div>`;
-                (d.actions || []).forEach(a => {
-                    const cp = typeof a.cp === 'number' ? a.cp.toFixed(2) : '?';
-                    html += `<div class="action-item">├ ${a.name} (CP: ${cp})</div>`;
+            
+            if (targetTree && targetTree.children && targetTree.children.length > 0) {
+                let html = '';
+                targetTree.children.forEach(d => {
+                    html += `<div class="demand-item">🔹 ${d.name}</div>`;
+                    (d.actions || []).forEach(a => {
+                        const cp = typeof a.cp === 'number' ? a.cp.toFixed(2) : '?';
+                        html += `<div class="action-item">├ ${a.name} (CP: ${cp})</div>`;
+                    });
                 });
-            });
-            return html;
+                return html;
+            }
+
+            // Fallback to nodeTree if humanTree is empty but nodeTree exists
+            if (tree && tree.nodeTree && tree.nodeTree.nodes && tree.nodeTree.nodes.length > 0) {
+                let html = '<div style="font-size:0.85rem; color:#666; margin-bottom:5px;">[新版圖譜資料]</div>';
+                const demandNodes = tree.nodeTree.nodes.filter(n => n.label === '底層需求');
+                demandNodes.forEach(d => {
+                    html += `<div class="demand-item">🔹 ${d.name || '未命名'}</div>`;
+                });
+                if(demandNodes.length === 0) {
+                    html += `<div class="demand-item">包含 ${tree.nodeTree.nodes.length} 個節點</div>`;
+                }
+                return html;
+            }
+
+            return '<div style="color:#999;">（無資料）</div>';
         }
 
         // conflictSource: 'auto' (page load), 'importLocal', 'importDrive'
