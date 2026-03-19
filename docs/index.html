@@ -3048,8 +3048,14 @@
             } else {
                 // mode === 'both' → compare local and Drive
                 if (localTree && driveTree) {
-                    const localStr = JSON.stringify(localTree);
-                    const driveStr = JSON.stringify(driveTree);
+                    // Only compare tree data, not metadata like savedAt/hasInitialized
+                    const extractTreeData = (t) => ({
+                        version: t.version,
+                        humanTree: t.humanTree,
+                        nodeTree: t.nodeTree
+                    });
+                    const localStr = JSON.stringify(extractTreeData(localTree));
+                    const driveStr = JSON.stringify(extractTreeData(driveTree));
                     if (localStr !== driveStr) {
                         hideLoadingOverlay();
                         showConflictDialog(localTree, driveTree, '📂 本機版本', '☁️ Google Drive 版本', 'auto');
@@ -3131,11 +3137,19 @@
             // Fallback to nodeTree if humanTree is empty but nodeTree exists
             if (tree && tree.nodeTree && tree.nodeTree.nodes && tree.nodeTree.nodes.length > 0) {
                 let html = '<div style="font-size:0.85rem; color:#666; margin-bottom:5px;">[新版圖譜資料]</div>';
-                const demandNodes = tree.nodeTree.nodes.filter(n => n.label === '底層需求');
-                demandNodes.forEach(d => {
-                    html += `<div class="demand-item">🔹 ${d.name || '未命名'}</div>`;
+                const nonRootNodes = tree.nodeTree.nodes.filter(n => !n.isRoot);
+                const grouped = {};
+                nonRootNodes.forEach(n => {
+                    const label = n.label || '其他';
+                    if (!grouped[label]) grouped[label] = [];
+                    grouped[label].push(n);
                 });
-                if(demandNodes.length === 0) {
+                Object.entries(grouped).forEach(([label, nodes]) => {
+                    nodes.forEach(n => {
+                        html += `<div class="demand-item">🔹 ${n.name || '(' + label + ')'}</div>`;
+                    });
+                });
+                if (nonRootNodes.length === 0) {
                     html += `<div class="demand-item">包含 ${tree.nodeTree.nodes.length} 個節點</div>`;
                 }
                 return html;

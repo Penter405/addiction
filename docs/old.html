@@ -2961,8 +2961,12 @@
             } else {
                 // mode === 'both' → compare local and Drive
                 if (localTree && driveTree) {
-                    const localStr = JSON.stringify(localTree);
-                    const driveStr = JSON.stringify(driveTree);
+                    // Only compare tree data, not metadata
+                    const extractOldTreeData = (t) => ({
+                        name: t.name, children: t.children
+                    });
+                    const localStr = JSON.stringify(extractOldTreeData(localTree));
+                    const driveStr = JSON.stringify(extractOldTreeData(driveTree));
                     if (localStr !== driveStr) {
                         hideLoadingOverlay();
                         showConflictDialog(localTree, driveTree, '📂 本機版本', '☁️ Google Drive 版本', 'auto');
