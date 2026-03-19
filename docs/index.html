@@ -1658,10 +1658,33 @@
             overflow: hidden;
             transition: all 0.3s ease;
             backdrop-filter: blur(10px);
+            display: none;
         }
-        .tips-panel.collapsed {
-            max-height: 44px;
+        .tips-panel.open {
+            display: block;
         }
+        .tips-panel-tab {
+            position: fixed;
+            top: 110px;
+            left: 20px;
+            background: rgba(255,255,255,0.95);
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 6px 12px;
+            cursor: pointer;
+            z-index: 15;
+            font-size: 0.85rem;
+            font-weight: bold;
+            color: var(--text-main);
+            user-select: none;
+            transition: all 0.2s;
+            backdrop-filter: blur(10px);
+        }
+        .tips-panel-tab:hover {
+            background: #eef5ff;
+            transform: scale(1.05);
+        }
+        .tips-panel-tab.hidden { display: none; }
         .tips-panel-header {
             display: flex;
             align-items: center;
@@ -1687,9 +1710,6 @@
             padding: 10px;
             overflow-y: auto;
             max-height: calc(100vh - 200px);
-        }
-        .tips-panel.collapsed .tips-panel-body {
-            display: none;
         }
         .tip-tag-row {
             display: flex;
@@ -2023,11 +2043,16 @@
             </div>
         </div>
 
-        <!-- 提示技巧面板 (左側可收合) -->
-        <div class="tips-panel collapsed" id="tips-panel">
-            <div class="tips-panel-header" onclick="toggleTipsPanel()">
+        <!-- 提示技巧 tab (always visible) -->
+        <div class="tips-panel-tab" id="tips-panel-tab" onclick="openTipsPanel()">
+            ▶ 📋 提示技巧
+        </div>
+
+        <!-- 提示技巧面板 (hidden by default, shown by JS) -->
+        <div class="tips-panel" id="tips-panel">
+            <div class="tips-panel-header">
                 <span>📋 提示技巧</span>
-                <span class="tips-panel-toggle" id="tips-panel-toggle">▼</span>
+                <span style="cursor:pointer; font-size:1.1rem; color:#999;" onclick="closeTipsPanel()">&times;</span>
             </div>
             <div class="tips-panel-body" id="tips-panel-body">
                 <!-- JS dynamically fills this -->
@@ -2418,12 +2443,12 @@
         // =========================================================================
         let nodeTree = {
             nodes: [
-                { id: 'root', label: 'Human Brain', desc: 'human has some base demand need to be serve, and sometime they love try something new', isRoot: true, columnId: 1, yOffset: 150, cpSt: null, cpLt: null },
-                { id: 'n1', label: '提示', isRoot: false, columnId: 2, yOffset: 60, cpSt: null, cpLt: null },
-                { id: 'n2', label: '渴望', isRoot: false, columnId: 3, yOffset: 60, cpSt: null, cpLt: null },
-                { id: 'n3', label: '回應', isRoot: false, columnId: 4, yOffset: 60, cpSt: null, cpLt: null },
-                { id: 'n4', label: '獎賞', isRoot: false, columnId: 5, yOffset: 60, cpSt: null, cpLt: null },
-                { id: 'n5', label: '底層需求', isRoot: false, columnId: 6, yOffset: 60, cpSt: null, cpLt: null },
+                { id: 'root', label: 'Human Brain', desc: 'human has some base demand need to be serve, and sometime they love try something new', isRoot: true, columnId: 1, yOffset: 150, cpSt: null, cpLt: null, cpTokens: [] },
+                { id: 'n1', label: '提示', isRoot: false, columnId: 2, yOffset: 60, cpSt: null, cpLt: null, cpTokens: [] },
+                { id: 'n2', label: '渴望', isRoot: false, columnId: 3, yOffset: 60, cpSt: null, cpLt: null, cpTokens: [] },
+                { id: 'n3', label: '回應', isRoot: false, columnId: 4, yOffset: 60, cpSt: null, cpLt: null, cpTokens: [] },
+                { id: 'n4', label: '獎賞', isRoot: false, columnId: 5, yOffset: 60, cpSt: null, cpLt: null, cpTokens: [] },
+                { id: 'n5', label: '底層需求', isRoot: false, columnId: 6, yOffset: 60, cpSt: null, cpLt: null, cpTokens: [] },
             ],
             links: [
                 { from: 'root', to: 'n1' },
@@ -2486,9 +2511,13 @@
             { title: '大腦的硬編碼', text: '大腦建立「提示 A = 習慣 B」的規則。可以遠離提示，但很難刪除連結。' },
         ];
 
-        function toggleTipsPanel() {
-            const panel = document.getElementById('tips-panel');
-            panel.classList.toggle('collapsed');
+        function openTipsPanel() {
+            document.getElementById('tips-panel').classList.add('open');
+            document.getElementById('tips-panel-tab').classList.add('hidden');
+        }
+        function closeTipsPanel() {
+            document.getElementById('tips-panel').classList.remove('open');
+            document.getElementById('tips-panel-tab').classList.remove('hidden');
         }
 
         function renderTipsPanel() {
@@ -2569,9 +2598,13 @@
             const timeType = prompt('選擇類型：輸入 st（短期）或 lt（長期）', 'st');
             if (timeType !== 'st' && timeType !== 'lt') { showToast('類型須為 st 或 lt', 'warning'); return; }
             if (timeType === 'st') {
-                node.cpSt = (node.cpSt || 0) + score;
+                if (!node.cpTokens) node.cpTokens = [];
+                node.cpTokens.push({ id: generateId(), name: tip.label, timeType: 'st', score });
+                node.cpSt = node.cpTokens.filter(t => t.timeType === 'st').reduce((s, t) => s + t.score, 0);
             } else {
-                node.cpLt = (node.cpLt || 0) + score;
+                if (!node.cpTokens) node.cpTokens = [];
+                node.cpTokens.push({ id: generateId(), name: tip.label, timeType: 'lt', score });
+                node.cpLt = node.cpTokens.filter(t => t.timeType === 'lt').reduce((s, t) => s + t.score, 0);
             }
             renderTree();
             showToast(`已將「${tip.label}」(${score}) 加入 ${node.label}`, 'success');
@@ -2669,9 +2702,18 @@
                 </div>
             </div>`;
             
+            // Show tips panel while editing
+            openTipsPanel();
+            
             let tempTokens = [];
-            if (node.cpSt !== null && node.cpSt !== 0) tempTokens.push({ id: generateId(), name: '預設短期', timeType: 'st', score: node.cpSt });
-            if (node.cpLt !== null && node.cpLt !== 0) tempTokens.push({ id: generateId(), name: '預設長期', timeType: 'lt', score: node.cpLt });
+            // Load existing tokens from node.cpTokens array
+            if (node.cpTokens && node.cpTokens.length > 0) {
+                tempTokens = node.cpTokens.map(t => ({ ...t }));
+            } else {
+                // Backward compatibility: create tokens from old cpSt/cpLt values
+                if (node.cpSt !== null && node.cpSt !== 0) tempTokens.push({ id: generateId(), name: '預設短期', timeType: 'st', score: node.cpSt });
+                if (node.cpLt !== null && node.cpLt !== 0) tempTokens.push({ id: generateId(), name: '預設長期', timeType: 'lt', score: node.cpLt });
+            }
 
             const renderTokens = () => {
                 const stList = document.getElementById('st-token-list');
@@ -2757,14 +2799,22 @@
             }, 100);
 
             const ok = await showModal({ title: `📊 編輯 CP 值 — ${node.label}`, message: html, confirmText: '儲存', cancelText: '取消' });
+            
+            // Close tips panel when modal closes
+            closeTipsPanel();
+            
             if (!ok) return;
             
+            // Store individual tokens
+            node.cpTokens = tempTokens.map(t => ({ id: t.id, name: t.name, timeType: t.timeType, score: t.score }));
+            
+            // Compute cpSt/cpLt from tokens
             let finalSt = tempTokens.filter(t => t.timeType === 'st').reduce((sum, t) => sum + t.score, 0);
             let finalLt = tempTokens.filter(t => t.timeType === 'lt').reduce((sum, t) => sum + t.score, 0);
             
-            node.cpSt = tempTokens.length > 0 && tempTokens.some(t => t.timeType === 'st') ? finalSt : null;
-            node.cpLt = tempTokens.length > 0 && tempTokens.some(t => t.timeType === 'lt') ? finalLt : null;
-            if (tempTokens.length === 0) { node.cpSt = null; node.cpLt = null; }
+            node.cpSt = tempTokens.some(t => t.timeType === 'st') ? finalSt : null;
+            node.cpLt = tempTokens.some(t => t.timeType === 'lt') ? finalLt : null;
+            if (tempTokens.length === 0) { node.cpSt = null; node.cpLt = null; node.cpTokens = []; }
             
             renderTree(); showToast('CP 值已更新', 'success'); syncToDrive('editCpValue');
         }
@@ -2832,7 +2882,7 @@
                     const newId = 'n_' + generateId(); 
                     const nodesInCol = getNodesByColumn(colId);
                     const lastY = nodesInCol.length > 0 ? Math.max(...nodesInCol.map(n => n.yOffset || 60)) + 80 : 60;
-                    nodeTree.nodes.push({ id: newId, label: newLabel, isRoot: false, columnId: colId, yOffset: lastY, cpSt: null, cpLt: null }); 
+                    nodeTree.nodes.push({ id: newId, label: newLabel, isRoot: false, columnId: colId, yOffset: lastY, cpSt: null, cpLt: null, cpTokens: [] }); 
                     renderTree(); 
                     syncToDrive('addNode');
                 }
@@ -3987,18 +4037,19 @@
         }
 
         function handleAutoImport() {
+            closeAutomationSettings();
+            console.log('[handleAutoImport] currentUser:', currentUser);
             if (!currentUser) {
                 showToast('⚠️ 請先登入 Google 帳號才能使用雲端匯入', 'error');
                 return;
             }
-            closeAutomationSettings();
             loadTreeFromDrive();
         }
 
         function handleAutoSave() {
             closeAutomationSettings();
+            console.log('[handleAutoSave] currentUser:', currentUser, 'hasDriveFile:', currentUser?.hasDriveFile);
             if (!currentUser) {
-                // Still save locally
                 saveToLocal();
                 showToast('💾 已儲存至本機（請先登入 Google 以使用雲端儲存）', 'warning');
                 return;
@@ -4008,6 +4059,7 @@
                 openDrivePicker('save');
                 return;
             }
+            saveToLocal();
             syncToDrive('manual_save');
         }
 
