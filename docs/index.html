@@ -1647,7 +1647,7 @@
         /* ================= Tips Panel (Left Side) ================= */
         .tips-panel {
             position: fixed;
-            top: 110px;
+            top: 250px;
             left: 20px;
             width: 260px;
             max-height: calc(100vh - 140px);
@@ -1662,10 +1662,11 @@
         }
         .tips-panel.open {
             display: block;
+            z-index: 10000;
         }
         .tips-panel-tab {
             position: fixed;
-            top: 110px;
+            top: 250px;
             left: 20px;
             background: rgba(255,255,255,0.95);
             border-radius: 8px;
@@ -1899,12 +1900,12 @@
 
             <div style="display: flex; align-items: center; justify-content: space-between; padding: 30px 20px; background: #f8f9fa; border-radius: 8px; margin-bottom: 20px;">
                 
-                <!-- Node 1: Auto Import -->
+                <!-- Node 1: Set Import Folder -->
                 <div style="text-align: center; flex: 1;">
-                    <button id="btn-auto-import" onclick="handleAutoImport()" class="modal-btn-primary" style="padding: 15px 25px; border-radius: 30px; font-weight: bold; background: #4caf50; border: none; color: white; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 100%;">
-                        📥 自動匯入
+                    <button id="btn-auto-import" onclick="handleSetImportFolder()" class="modal-btn-primary" style="padding: 15px 25px; border-radius: 30px; font-weight: bold; background: #4caf50; border: none; color: white; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 100%;">
+                        📥 設定匯入資料夾
                     </button>
-                    <div style="font-size: 0.8rem; color: #666; margin-top: 8px;">從雲端最新紀錄匯入</div>
+                    <div style="font-size: 0.8rem; color: #666; margin-top: 8px;">選擇雲端匯入來源</div>
                 </div>
 
                 <!-- Line 1 -->
@@ -1925,19 +1926,20 @@
                     <div style="position: absolute; right: -5px; top: -4px; border-top: 6px solid transparent; border-bottom: 6px solid transparent; border-left: 8px solid #ccc;"></div>
                 </div>
 
-                <!-- Node 3: Auto Save -->
+                <!-- Node 3: Set Export Folder -->
                 <div style="text-align: center; flex: 1;">
-                    <button onclick="handleAutoSave()" class="modal-btn-primary" style="padding: 15px 25px; border-radius: 30px; font-weight: bold; background: #ff9800; border: none; color: white; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 100%;">
-                        📤 自動儲存
+                    <button onclick="handleSetExportFolder()" class="modal-btn-primary" style="padding: 15px 25px; border-radius: 30px; font-weight: bold; background: #ff9800; border: none; color: white; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 100%;">
+                        📤 設定儲存資料夾
                     </button>
-                    <div style="font-size: 0.8rem; color: #666; margin-top: 8px;">將目前進度同步至雲端</div>
+                    <div style="font-size: 0.8rem; color: #666; margin-top: 8px;">選擇雲端儲存目標</div>
                 </div>
 
             </div>
             
             <p style="font-size: 0.9rem; color: #666; line-height: 1.5;">
-                點擊 <strong>自動匯入</strong> 從雲端最後自動儲存的備份還原您的資料。<br>
-                點擊 <strong>自動儲存</strong> 立即將目前的檔案狀態雲端覆蓋這份備份。
+                點擊 <strong>設定匯入資料夾</strong> 選擇或建立要從 Google Drive 讀取資料的資料夾。<br>
+                點擊 <strong>設定儲存資料夾</strong> 選擇或建立要儲存資料到 Google Drive 的資料夾。<br>
+                若資料夾名稱已存在，系統會詢問您使用現有資料夾或建立新的。
             </p>
         </div>
     </div>
@@ -4036,31 +4038,22 @@
             document.getElementById('automation-settings-modal').classList.remove('show');
         }
 
-        function handleAutoImport() {
+        function handleSetImportFolder() {
             closeAutomationSettings();
-            console.log('[handleAutoImport] currentUser:', currentUser);
             if (!currentUser) {
-                showToast('⚠️ 請先登入 Google 帳號才能使用雲端匯入', 'error');
+                showToast('⚠️ 請先登入 Google 帳號', 'error');
                 return;
             }
-            loadTreeFromDrive();
+            openDrivePicker('import');
         }
 
-        function handleAutoSave() {
+        function handleSetExportFolder() {
             closeAutomationSettings();
-            console.log('[handleAutoSave] currentUser:', currentUser, 'hasDriveFile:', currentUser?.hasDriveFile);
             if (!currentUser) {
-                saveToLocal();
-                showToast('💾 已儲存至本機（請先登入 Google 以使用雲端儲存）', 'warning');
+                showToast('⚠️ 請先登入 Google 帳號', 'error');
                 return;
             }
-            if (!currentUser.hasDriveFile) {
-                showToast('⚠️ 尚未設定同步檔案，正在為您開啟設定...', 'warning');
-                openDrivePicker('save');
-                return;
-            }
-            saveToLocal();
-            syncToDrive('manual_save');
+            openDrivePicker('save');
         }
 
         function openManualImportModal() {
