@@ -1837,6 +1837,7 @@
             overflow-y: auto;
             max-height: 200px;
             min-height: 60px;
+            padding-right: 8px;
         }
         .cp-token.dragging-token {
             opacity: 0.5;
@@ -2489,22 +2490,50 @@
         // =========================================================================
         // 提示技巧 (Hint Tips) 系統
         // =========================================================================
-        const HINT_TIPS = [
-            { id: 'tip1', label: '習慣評分表', color: '#e74c3c', icon: '📝',
-              desc: '寫下你典型一天中做的所有事情，標註短期與長期的「優點」或「缺點」。' },
-            { id: 'tip2', label: '身份認同', color: '#3498db', icon: '🪪',
-              desc: '用身份定義自己。如果你認定自己是「健康的人」，就會自動排斥壞習慣的提示。' },
-            { id: 'tip3', label: '明確時間地點', color: '#2ecc71', icon: '📍',
-              desc: '使用公式：「當我在 [A地點]、聽到 [B事情] 時，我就做 [C習慣]。」' },
-            { id: 'tip4', label: '習慣疊加', color: '#f39c12', icon: '🔗',
-              desc: '讓前一個習慣的結束，成為下一個習慣的「提示」，形成連鎖反應。' },
-            { id: 'tip5', label: '新環境新開始', color: '#9b59b6', icon: '🏠',
-              desc: '在新環境中建立新習慣最容易，因為還沒有舊的「關係」連結。' },
-            { id: 'tip6', label: '降低摩擦', color: '#1abc9c', icon: '🧹',
-              desc: '減少啟動好習慣的步驟數，讓行動變得更容易、更自動化。' },
-            { id: 'tip7', label: '遠離誘惑', color: '#e67e22', icon: '🚫',
-              desc: '既然大腦很難直接抹除提示，最強效的做法就是遠離觸發惡習的提示。' },
-        ];
+        const COLUMN_TIPS = {
+            2: { title: '提示技巧', icon: '👁️', tips: [
+                { id: 'cue1', label: '習慣評分表', color: '#e74c3c', icon: '📝', desc: '寫下典型一天做的事，標註短期與長期的優缺點。' },
+                { id: 'cue2', label: '身份認同', color: '#3498db', icon: '🪪', desc: '用身份定義自己，排斥壞習慣的提示。' },
+                { id: 'cue3', label: '明確時間地點', color: '#2ecc71', icon: '📍', desc: '「當我在 [A地點] 時，我就做 [C習慣]。」' },
+                { id: 'cue4', label: '習慣疊加', color: '#f39c12', icon: '🔗', desc: '前一個習慣結束 = 下一個習慣的提示。' },
+                { id: 'cue5', label: '新環境新開始', color: '#9b59b6', icon: '🏠', desc: '新環境沒有舊連結，最適合建立新習慣。' },
+                { id: 'cue6', label: '降低摩擦', color: '#1abc9c', icon: '🧹', desc: '減少啟動好習慣的步驟數。' },
+                { id: 'cue7', label: '遠離誘惑', color: '#e67e22', icon: '🚫', desc: '遠離觸發惡習的提示最有效。' },
+            ]},
+            3: { title: '渴望技巧', icon: '🔥', tips: [
+                { id: 'crav1', label: '誘惑綑綁', color: '#e74c3c', icon: '🎁', desc: '把「想做的事」跟「該做的事」綁在一起。' },
+                { id: 'crav2', label: '想像結果', color: '#3498db', icon: '🧠', desc: '在腦中預演完成習慣後的獎賞感覺。' },
+                { id: 'crav3', label: '社群動力', color: '#2ecc71', icon: '👥', desc: '加入一個已經有你想要習慣的群體。' },
+                { id: 'crav4', label: '重新定義', color: '#f39c12', icon: '🔄', desc: '把「我必須」改成「我可以」，改變內心渴望。' },
+            ]},
+            4: { title: '回應技巧', icon: '⚡', tips: [
+                { id: 'resp1', label: '兩分鐘法則', color: '#e74c3c', icon: '⏱️', desc: '新習慣開始時不超過兩分鐘。' },
+                { id: 'resp2', label: '減少步驟', color: '#2ecc71', icon: '🪜', desc: '讓好習慣的執行步驟越少越好。' },
+                { id: 'resp3', label: '增加壞習慣摩擦', color: '#e67e22', icon: '🚧', desc: '讓壞習慣的執行需要更多步驟。' },
+                { id: 'resp4', label: '承諾裝置', color: '#9b59b6', icon: '🔒', desc: '預先做出選擇，讓未來的行為被鎖定。' },
+            ]},
+            5: { title: '獎賞技巧', icon: '🏆', tips: [
+                { id: 'rew1', label: '立即獎勵', color: '#f39c12', icon: '🎉', desc: '好習慣完成後立即給自己小獎勵。' },
+                { id: 'rew2', label: '習慣追蹤', color: '#3498db', icon: '📊', desc: '用日曆或表格記錄連續完成的天數。' },
+                { id: 'rew3', label: '不中斷原則', color: '#e74c3c', icon: '🔥', desc: '即使狀態不好，也要做最低版本維持連續。' },
+                { id: 'rew4', label: '問責夥伴', color: '#2ecc71', icon: '🤝', desc: '找一個夥伴互相監督，增加社會成本。' },
+            ]},
+            6: { title: '底層需求技巧', icon: '💎', tips: [
+                { id: 'base1', label: '找出根本原因', color: '#9b59b6', icon: '🔍', desc: '辨識驅動行為的核心需求（安全、歸屬、成就）。' },
+                { id: 'base2', label: '替代滿足', color: '#1abc9c', icon: '🔀', desc: '用健康的方式滿足同一個底層需求。' },
+                { id: 'base3', label: '長期願景', color: '#3498db', icon: '🎯', desc: '將習慣連結到人生目標和核心價值。' },
+            ]},
+        };
+
+        function findTipById(tipId) {
+            for (const colId in COLUMN_TIPS) {
+                const found = COLUMN_TIPS[colId].tips.find(t => t.id === tipId);
+                if (found) return found;
+            }
+            return null;
+        }
+
+        const HINT_TIPS = Object.values(COLUMN_TIPS).flatMap(c => c.tips);
 
         const HINT_MEANING = [
             { title: '環境即提示', text: '最強大的提示就是環境。你居住的空間每天相對固定，環境是習慣最穩固的基底。' },
@@ -2513,32 +2542,52 @@
             { title: '大腦的硬編碼', text: '大腦建立「提示 A = 習慣 B」的規則。可以遠離提示，但很難刪除連結。' },
         ];
 
-        function openTipsPanel() {
+        let currentTipsPanelColId = null;
+
+        function openTipsPanel(columnId) {
+            currentTipsPanelColId = columnId || null;
+            renderTipsPanel(columnId);
             document.getElementById('tips-panel').classList.add('open');
             document.getElementById('tips-panel-tab').classList.add('hidden');
         }
         function closeTipsPanel() {
             document.getElementById('tips-panel').classList.remove('open');
             document.getElementById('tips-panel-tab').classList.remove('hidden');
+            currentTipsPanelColId = null;
         }
 
-        function renderTipsPanel() {
+        function renderTipsPanel(columnId) {
             const body = document.getElementById('tips-panel-body');
+            const headerSpan = document.querySelector('#tips-panel .tips-panel-header span:first-child');
             if (!body) return;
-            body.innerHTML = HINT_TIPS.map(tip => `
-                <div class="tip-tag-row" draggable="true" data-tip-id="${tip.id}"
+            if (columnId && COLUMN_TIPS[columnId]) {
+                const col = COLUMN_TIPS[columnId];
+                if (headerSpan) headerSpan.textContent = `${col.icon} ${col.title}`;
+                body.innerHTML = col.tips.map(tip => renderTipTagRow(tip)).join('');
+            } else {
+                if (headerSpan) headerSpan.textContent = '📋 所有技巧';
+                let html = '';
+                for (const colId in COLUMN_TIPS) {
+                    const col = COLUMN_TIPS[colId];
+                    html += `<div style="font-weight:bold; margin:8px 0 4px; color:#555; font-size:0.85rem;">${col.icon} ${col.title}</div>`;
+                    html += col.tips.map(tip => renderTipTagRow(tip)).join('');
+                }
+                body.innerHTML = html;
+            }
+        }
+
+        function renderTipTagRow(tip) {
+            return `<div class="tip-tag-row" draggable="true" data-tip-id="${tip.id}"
                      ondragstart="handleTipDragStart(event, '${tip.id}')"
                      ondragend="handleTipDragEnd(event)">
                     <div class="tip-tag-circle" style="background:${tip.color};">${tip.icon}</div>
                     <span class="tip-tag-label">${tip.label}</span>
                     <span class="tip-tag-info" onmouseenter="showTipTooltip(event, '${tip.id}')" onmouseleave="hideTipTooltip()" onclick="event.stopPropagation();">ℹ</span>
-                </div>
-            `).join('');
+                </div>`;
         }
 
-        // --- Tip tooltip ---
         function showTipTooltip(event, tipId) {
-            const tip = HINT_TIPS.find(t => t.id === tipId);
+            const tip = findTipById(tipId);
             if (!tip) return;
             const el = document.getElementById('tip-tooltip');
             el.innerHTML = `<strong>${tip.icon} ${tip.label}</strong>${tip.desc}`;
@@ -2551,13 +2600,11 @@
             document.getElementById('tip-tooltip').style.display = 'none';
         }
 
-        // --- Drag tip from panel ---
         let draggingTipId = null;
         function handleTipDragStart(event, tipId) {
             draggingTipId = tipId;
             event.dataTransfer.setData('text/plain', tipId);
             event.dataTransfer.effectAllowed = 'copy';
-            // Highlight all node boxes
             setTimeout(() => {
                 document.querySelectorAll('.node-box').forEach(el => {
                     el.addEventListener('dragover', handleNodeDragOver);
@@ -2587,27 +2634,35 @@
             event.preventDefault();
             this.classList.remove('drag-over');
             const tipId = event.dataTransfer.getData('text/plain');
-            const tip = HINT_TIPS.find(t => t.id === tipId);
+            const tip = findTipById(tipId);
             if (!tip) return;
-            // Get the node ID from the el's id
             const nodeId = this.id.replace('node-', '');
             const node = getNode(nodeId);
             if (!node) return;
-            // Ask for score and type
-            const scoreStr = prompt(`為「${tip.label}」設定分數（正數=有利，負數=有害）：`, '0');
-            if (scoreStr === null) return;
-            const score = parseFloat(scoreStr) || 0;
-            const timeType = prompt('選擇類型：輸入 st（短期）或 lt（長期）', 'st');
-            if (timeType !== 'st' && timeType !== 'lt') { showToast('類型須為 st 或 lt', 'warning'); return; }
-            if (timeType === 'st') {
-                if (!node.cpTokens) node.cpTokens = [];
-                node.cpTokens.push({ id: generateId(), name: tip.label, timeType: 'st', score });
-                node.cpSt = node.cpTokens.filter(t => t.timeType === 'st').reduce((s, t) => s + t.score, 0);
-            } else {
-                if (!node.cpTokens) node.cpTokens = [];
-                node.cpTokens.push({ id: generateId(), name: tip.label, timeType: 'lt', score });
-                node.cpLt = node.cpTokens.filter(t => t.timeType === 'lt').reduce((s, t) => s + t.score, 0);
-            }
+            const scoreHtml = `
+                <div style="text-align:left;">
+                    <p>為「<strong>${tip.icon} ${tip.label}</strong>」設定分數</p>
+                    <div style="display:flex; gap:10px; align-items:center; margin:10px 0;">
+                        <label>分數：</label>
+                        <input type="number" id="drop-score-input" value="0" style="width:80px; padding:6px; border-radius:6px; border:1px solid #ccc;">
+                        <span style="font-size:0.8rem; color:#888;">正=有利，負=有害</span>
+                    </div>
+                    <div style="display:flex; gap:10px; align-items:center; margin:10px 0;">
+                        <label>類型：</label>
+                        <select id="drop-type-input" style="padding:6px; border-radius:6px; border:1px solid #ccc;">
+                            <option value="st">⚡ 短期 (ST)</option>
+                            <option value="lt">🌱 長期 (LT)</option>
+                        </select>
+                    </div>
+                </div>`;
+            const ok = await showModal({ title: `📋 加入「${tip.label}」到 ${node.label}`, message: scoreHtml, confirmText: '確定', cancelText: '取消' });
+            if (!ok) return;
+            const score = parseFloat(document.getElementById('drop-score-input')?.value) || 0;
+            const timeType = document.getElementById('drop-type-input')?.value || 'st';
+            if (!node.cpTokens) node.cpTokens = [];
+            node.cpTokens.push({ id: generateId(), name: tip.label, timeType, score });
+            node.cpSt = node.cpTokens.filter(t => t.timeType === 'st').reduce((s, t) => s + t.score, 0) || null;
+            node.cpLt = node.cpTokens.filter(t => t.timeType === 'lt').reduce((s, t) => s + t.score, 0) || null;
             renderTree();
             showToast(`已將「${tip.label}」(${score}) 加入 ${node.label}`, 'success');
             syncToDrive('addTipToNode');
@@ -2704,8 +2759,8 @@
                 </div>
             </div>`;
             
-            // Show tips panel while editing
-            openTipsPanel();
+            // Show tips panel for this node's column
+            openTipsPanel(node.columnId);
             
             let tempTokens = [];
             // Load existing tokens from node.cpTokens array
@@ -2781,7 +2836,7 @@
                         renderTokens();
                     };
                 }
-                // Drop zone for tips tags
+                // Drop zone for tips tags (general)
                 const dropZone = document.getElementById('cp-tip-drop-zone');
                 if (dropZone) {
                     dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('drag-hover'); });
@@ -2790,7 +2845,7 @@
                         e.preventDefault();
                         dropZone.classList.remove('drag-hover');
                         const tipId = e.dataTransfer.getData('text/plain');
-                        const tip = HINT_TIPS.find(t => t.id === tipId);
+                        const tip = findTipById(tipId);
                         if (!tip) return;
                         const type = document.getElementById('modal-cp-time').value;
                         tempTokens.push({ id: generateId(), name: tip.label, timeType: type, score: 0 });
@@ -2798,6 +2853,23 @@
                         showToast(`已加入「${tip.label}」，請編輯分數`, 'success');
                     });
                 }
+                // Also allow drop directly onto ST/LT token lists
+                ['st', 'lt'].forEach(tt => {
+                    const listEl = document.getElementById(tt + '-token-list');
+                    if (!listEl) return;
+                    listEl.addEventListener('dragover', (e) => { e.preventDefault(); listEl.style.background = 'rgba(0,0,0,0.05)'; });
+                    listEl.addEventListener('dragleave', () => { listEl.style.background = ''; });
+                    listEl.addEventListener('drop', (e) => {
+                        e.preventDefault();
+                        listEl.style.background = '';
+                        const tipId = e.dataTransfer.getData('text/plain');
+                        const tip = findTipById(tipId);
+                        if (!tip) return;
+                        tempTokens.push({ id: generateId(), name: tip.label, timeType: tt, score: 0 });
+                        renderTokens();
+                        showToast(`已加入「${tip.label}」到${tt === 'st' ? '短期' : '長期'}`, 'success');
+                    });
+                });
             }, 100);
 
             const ok = await showModal({ title: `📊 編輯 CP 值 — ${node.label}`, message: html, confirmText: '儲存', cancelText: '取消' });
