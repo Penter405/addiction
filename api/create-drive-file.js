@@ -124,15 +124,35 @@ async function resolveParentFolder(drive, folderName, folderConflictStrategy, ex
     }
 
     if (folderConflictStrategy === 'use_existing') {
-        const chosenFolder =
-            existingFolderId && existingFolders.find((f) => f.id === existingFolderId)
-                ? existingFolders.find((f) => f.id === existingFolderId)
-                : existingFolders[0];
+        // If an explicit folder ID was provided, verify and use it directly
+        if (existingFolderId) {
+            const verified = await verifyFolderAccess(drive, existingFolderId);
+            if (verified) {
+                return {
+                    parentFolderId: verified.id,
+                    parentFolderName: verified.name,
+                    resolution: 'used_existing',
+                };
+            }
+            // If the specified folder can't be accessed, fall back to name search
+        }
 
+        // Fall back to using the first folder found by name
+        const chosenFolder = existingFolders[0];
+        if (chosenFolder) {
+            return {
+                parentFolderId: chosenFolder.id,
+                parentFolderName: chosenFolder.name,
+                resolution: 'used_existing',
+            };
+        }
+
+        // No folder found at all — create a new one
+        const folder = await createDriveFolder(drive, trimmedFolderName);
         return {
-            parentFolderId: chosenFolder.id,
-            parentFolderName: chosenFolder.name,
-            resolution: 'used_existing',
+            parentFolderId: folder.id,
+            parentFolderName: folder.name,
+            resolution: 'created_new',
         };
     }
 

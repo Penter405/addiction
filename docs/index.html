@@ -1343,7 +1343,7 @@
             background: white;
             border-radius: 16px;
             width: 90%;
-            max-width: 440px;
+            max-width: 650px;
             padding: 28px;
             box-shadow: 0 16px 50px rgba(0, 0, 0, 0.25);
             animation: dropIn 0.25s ease;
@@ -1643,6 +1643,198 @@
                 min-width: 120px;
             }
         }
+
+        /* ================= Tips Panel (Left Side) ================= */
+        .tips-panel {
+            position: fixed;
+            top: 110px;
+            left: 20px;
+            width: 260px;
+            max-height: calc(100vh - 140px);
+            background: rgba(255,255,255,0.95);
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            z-index: 15;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+        .tips-panel.collapsed {
+            max-height: 44px;
+        }
+        .tips-panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 15px;
+            cursor: pointer;
+            user-select: none;
+            font-weight: bold;
+            font-size: 0.95rem;
+            color: var(--text-main);
+            border-bottom: 1px solid #eee;
+        }
+        .tips-panel-header:hover { background: #f8f9fa; }
+        .tips-panel-toggle {
+            transition: transform 0.3s;
+            font-size: 0.8rem;
+            color: #999;
+        }
+        .tips-panel.collapsed .tips-panel-toggle {
+            transform: rotate(-90deg);
+        }
+        .tips-panel-body {
+            padding: 10px;
+            overflow-y: auto;
+            max-height: calc(100vh - 200px);
+        }
+        .tips-panel.collapsed .tips-panel-body {
+            display: none;
+        }
+        .tip-tag-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px;
+            border-radius: 8px;
+            margin-bottom: 6px;
+            cursor: grab;
+            transition: all 0.2s;
+            background: #fafafa;
+        }
+        .tip-tag-row:hover {
+            background: #f0f4f8;
+            transform: translateX(3px);
+        }
+        .tip-tag-row:active { cursor: grabbing; }
+        .tip-tag-circle {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 0.7rem;
+            font-weight: bold;
+            flex-shrink: 0;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        }
+        .tip-tag-label {
+            font-size: 0.85rem;
+            font-weight: bold;
+            color: #333;
+            flex: 1;
+        }
+        .tip-tag-info {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #e0e0e0;
+            color: #666;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            cursor: pointer;
+            flex-shrink: 0;
+            transition: all 0.2s;
+        }
+        .tip-tag-info:hover {
+            background: var(--st-color);
+            color: white;
+            transform: scale(1.15);
+        }
+
+        /* Info popup near column header */
+        .col-info-popup {
+            position: absolute;
+            top: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.18);
+            padding: 15px;
+            width: 280px;
+            z-index: 100;
+            font-size: 0.82rem;
+            line-height: 1.6;
+            color: #555;
+            animation: dropIn 0.2s ease;
+        }
+        .col-info-popup h4 {
+            margin: 0 0 8px 0;
+            font-size: 0.95rem;
+            color: var(--text-main);
+        }
+        .col-info-popup .info-item {
+            margin-bottom: 6px;
+            padding-left: 8px;
+            border-left: 3px solid var(--cue);
+        }
+        .col-info-popup .info-close {
+            position: absolute;
+            top: 8px;
+            right: 10px;
+            cursor: pointer;
+            font-size: 1rem;
+            color: #999;
+        }
+        .col-info-popup .info-close:hover { color: #333; }
+
+        /* Drag highlight on nodes */
+        .node-box.drag-over {
+            outline: 3px dashed var(--st-color) !important;
+            outline-offset: 4px;
+            background: #eef5ff !important;
+        }
+
+        /* Tip info tooltip popup */
+        .tip-tooltip {
+            position: fixed;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.18);
+            padding: 12px 16px;
+            max-width: 250px;
+            z-index: 9999;
+            font-size: 0.82rem;
+            line-height: 1.5;
+            color: #555;
+            animation: dropIn 0.15s ease;
+            pointer-events: none;
+        }
+        .tip-tooltip strong {
+            color: var(--text-main);
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        /* Scrollable & reorderable CP tokens */
+        .cp-token-list-scroll {
+            overflow-y: auto;
+            max-height: 200px;
+            min-height: 60px;
+        }
+        .cp-token.dragging-token {
+            opacity: 0.5;
+        }
+        .cp-token-drop-zone {
+            border: 2px dashed #ccc;
+            border-radius: 8px;
+            padding: 8px;
+            text-align: center;
+            color: #aaa;
+            font-size: 0.8rem;
+            margin-bottom: 8px;
+            transition: all 0.2s;
+        }
+        .cp-token-drop-zone.drag-hover {
+            border-color: var(--st-color);
+            background: #eef5ff;
+            color: var(--st-color);
+        }
     </style>
 </head>
 
@@ -1689,7 +1881,7 @@
                 
                 <!-- Node 1: Auto Import -->
                 <div style="text-align: center; flex: 1;">
-                    <button id="btn-auto-import" onclick="closeAutomationSettings(); loadTreeFromDrive();" class="modal-btn-primary" style="padding: 15px 25px; border-radius: 30px; font-weight: bold; background: #4caf50; border: none; color: white; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 100%;">
+                    <button id="btn-auto-import" onclick="handleAutoImport()" class="modal-btn-primary" style="padding: 15px 25px; border-radius: 30px; font-weight: bold; background: #4caf50; border: none; color: white; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 100%;">
                         📥 自動匯入
                     </button>
                     <div style="font-size: 0.8rem; color: #666; margin-top: 8px;">從雲端最新紀錄匯入</div>
@@ -1715,7 +1907,7 @@
 
                 <!-- Node 3: Auto Save -->
                 <div style="text-align: center; flex: 1;">
-                    <button onclick="closeAutomationSettings(); syncToDrive('manual_save');" class="modal-btn-primary" style="padding: 15px 25px; border-radius: 30px; font-weight: bold; background: #ff9800; border: none; color: white; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 100%;">
+                    <button onclick="handleAutoSave()" class="modal-btn-primary" style="padding: 15px 25px; border-radius: 30px; font-weight: bold; background: #ff9800; border: none; color: white; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 100%;">
                         📤 自動儲存
                     </button>
                     <div style="font-size: 0.8rem; color: #666; margin-top: 8px;">將目前進度同步至雲端</div>
@@ -1830,6 +2022,20 @@
                 </div>
             </div>
         </div>
+
+        <!-- 提示技巧面板 (左側可收合) -->
+        <div class="tips-panel collapsed" id="tips-panel">
+            <div class="tips-panel-header" onclick="toggleTipsPanel()">
+                <span>📋 提示技巧</span>
+                <span class="tips-panel-toggle" id="tips-panel-toggle">▼</span>
+            </div>
+            <div class="tips-panel-body" id="tips-panel-body">
+                <!-- JS dynamically fills this -->
+            </div>
+        </div>
+
+        <!-- Tooltip container for tip info -->
+        <div id="tip-tooltip" class="tip-tooltip" style="display:none;"></div>
 
         <!-- 無邊界畫布容器 -->
         <div class="tree-canvas-container" id="tree-canvas">
@@ -2247,9 +2453,163 @@
 
         function initApp() {
             renderTree();
+            renderTipsPanel();
             switchView('view-tree');
             resetCanvasView();
             handleTosUI();
+        }
+
+        // =========================================================================
+        // 提示技巧 (Hint Tips) 系統
+        // =========================================================================
+        const HINT_TIPS = [
+            { id: 'tip1', label: '習慣評分表', color: '#e74c3c', icon: '📝',
+              desc: '寫下你典型一天中做的所有事情，標註短期與長期的「優點」或「缺點」。' },
+            { id: 'tip2', label: '身份認同', color: '#3498db', icon: '🪪',
+              desc: '用身份定義自己。如果你認定自己是「健康的人」，就會自動排斥壞習慣的提示。' },
+            { id: 'tip3', label: '明確時間地點', color: '#2ecc71', icon: '📍',
+              desc: '使用公式：「當我在 [A地點]、聽到 [B事情] 時，我就做 [C習慣]。」' },
+            { id: 'tip4', label: '習慣疊加', color: '#f39c12', icon: '🔗',
+              desc: '讓前一個習慣的結束，成為下一個習慣的「提示」，形成連鎖反應。' },
+            { id: 'tip5', label: '新環境新開始', color: '#9b59b6', icon: '🏠',
+              desc: '在新環境中建立新習慣最容易，因為還沒有舊的「關係」連結。' },
+            { id: 'tip6', label: '降低摩擦', color: '#1abc9c', icon: '🧹',
+              desc: '減少啟動好習慣的步驟數，讓行動變得更容易、更自動化。' },
+            { id: 'tip7', label: '遠離誘惑', color: '#e67e22', icon: '🚫',
+              desc: '既然大腦很難直接抹除提示，最強效的做法就是遠離觸發惡習的提示。' },
+        ];
+
+        const HINT_MEANING = [
+            { title: '環境即提示', text: '最強大的提示就是環境。你居住的空間每天相對固定，環境是習慣最穩固的基底。' },
+            { title: '視覺的主導性', text: '在所有感官中，眼睛是接收並意識到提示最核心的器官。' },
+            { title: '提示是一種「關係」', text: '提示不只是物體本身，而是你與該物體的互動關係。' },
+            { title: '大腦的硬編碼', text: '大腦建立「提示 A = 習慣 B」的規則。可以遠離提示，但很難刪除連結。' },
+        ];
+
+        function toggleTipsPanel() {
+            const panel = document.getElementById('tips-panel');
+            panel.classList.toggle('collapsed');
+        }
+
+        function renderTipsPanel() {
+            const body = document.getElementById('tips-panel-body');
+            if (!body) return;
+            body.innerHTML = HINT_TIPS.map(tip => `
+                <div class="tip-tag-row" draggable="true" data-tip-id="${tip.id}"
+                     ondragstart="handleTipDragStart(event, '${tip.id}')"
+                     ondragend="handleTipDragEnd(event)">
+                    <div class="tip-tag-circle" style="background:${tip.color};">${tip.icon}</div>
+                    <span class="tip-tag-label">${tip.label}</span>
+                    <span class="tip-tag-info" onmouseenter="showTipTooltip(event, '${tip.id}')" onmouseleave="hideTipTooltip()" onclick="event.stopPropagation();">ℹ</span>
+                </div>
+            `).join('');
+        }
+
+        // --- Tip tooltip ---
+        function showTipTooltip(event, tipId) {
+            const tip = HINT_TIPS.find(t => t.id === tipId);
+            if (!tip) return;
+            const el = document.getElementById('tip-tooltip');
+            el.innerHTML = `<strong>${tip.icon} ${tip.label}</strong>${tip.desc}`;
+            el.style.display = 'block';
+            const rect = event.target.getBoundingClientRect();
+            el.style.left = (rect.right + 10) + 'px';
+            el.style.top = rect.top + 'px';
+        }
+        function hideTipTooltip() {
+            document.getElementById('tip-tooltip').style.display = 'none';
+        }
+
+        // --- Drag tip from panel ---
+        let draggingTipId = null;
+        function handleTipDragStart(event, tipId) {
+            draggingTipId = tipId;
+            event.dataTransfer.setData('text/plain', tipId);
+            event.dataTransfer.effectAllowed = 'copy';
+            // Highlight all node boxes
+            setTimeout(() => {
+                document.querySelectorAll('.node-box').forEach(el => {
+                    el.addEventListener('dragover', handleNodeDragOver);
+                    el.addEventListener('dragleave', handleNodeDragLeave);
+                    el.addEventListener('drop', handleNodeDrop);
+                });
+            }, 0);
+        }
+        function handleTipDragEnd(event) {
+            draggingTipId = null;
+            document.querySelectorAll('.node-box').forEach(el => {
+                el.classList.remove('drag-over');
+                el.removeEventListener('dragover', handleNodeDragOver);
+                el.removeEventListener('dragleave', handleNodeDragLeave);
+                el.removeEventListener('drop', handleNodeDrop);
+            });
+        }
+        function handleNodeDragOver(event) {
+            event.preventDefault();
+            event.dataTransfer.dropEffect = 'copy';
+            this.classList.add('drag-over');
+        }
+        function handleNodeDragLeave(event) {
+            this.classList.remove('drag-over');
+        }
+        async function handleNodeDrop(event) {
+            event.preventDefault();
+            this.classList.remove('drag-over');
+            const tipId = event.dataTransfer.getData('text/plain');
+            const tip = HINT_TIPS.find(t => t.id === tipId);
+            if (!tip) return;
+            // Get the node ID from the el's id
+            const nodeId = this.id.replace('node-', '');
+            const node = getNode(nodeId);
+            if (!node) return;
+            // Ask for score and type
+            const scoreStr = prompt(`為「${tip.label}」設定分數（正數=有利，負數=有害）：`, '0');
+            if (scoreStr === null) return;
+            const score = parseFloat(scoreStr) || 0;
+            const timeType = prompt('選擇類型：輸入 st（短期）或 lt（長期）', 'st');
+            if (timeType !== 'st' && timeType !== 'lt') { showToast('類型須為 st 或 lt', 'warning'); return; }
+            if (timeType === 'st') {
+                node.cpSt = (node.cpSt || 0) + score;
+            } else {
+                node.cpLt = (node.cpLt || 0) + score;
+            }
+            renderTree();
+            showToast(`已將「${tip.label}」(${score}) 加入 ${node.label}`, 'success');
+            syncToDrive('addTipToNode');
+        }
+
+        // --- Column info popup ---
+        let activeInfoPopup = null;
+        function toggleColumnInfo(colId, event) {
+            if (event) event.stopPropagation();
+            // Close existing
+            if (activeInfoPopup) { activeInfoPopup.remove(); activeInfoPopup = null; return; }
+            const header = event.target.closest('.canvas-column-header');
+            if (!header) return;
+            header.style.position = 'relative';
+            const popup = document.createElement('div');
+            popup.className = 'col-info-popup';
+            let content = `<span class="info-close" onclick="closeColumnInfo()">&times;</span>`;
+            content += `<h4>💡 「提示」的意義</h4>`;
+            HINT_MEANING.forEach(m => {
+                content += `<div class="info-item"><strong>${m.title}：</strong>${m.text}</div>`;
+            });
+            popup.innerHTML = content;
+            header.appendChild(popup);
+            activeInfoPopup = popup;
+            // Auto-close on click outside
+            setTimeout(() => {
+                document.addEventListener('click', closeColumnInfoOnClickOutside);
+            }, 0);
+        }
+        function closeColumnInfo() {
+            if (activeInfoPopup) { activeInfoPopup.remove(); activeInfoPopup = null; }
+            document.removeEventListener('click', closeColumnInfoOnClickOutside);
+        }
+        function closeColumnInfoOnClickOutside(e) {
+            if (activeInfoPopup && !activeInfoPopup.contains(e.target)) {
+                closeColumnInfo();
+            }
         }
 
         // =========================================================================
@@ -2291,15 +2651,19 @@
                     <button class="primary" id="btn-add-cp-token" style="padding: 10px;">➕ 加入</button>
                 </div>
 
+                <div class="cp-token-drop-zone" id="cp-tip-drop-zone">
+                    📋 從左側面板拖曳提示技巧標籤到此處
+                </div>
+
                 <div style="display: flex; gap: 15px; flex: 1;">
                     <div style="flex: 1; border: 2px dashed var(--st-color); border-radius: 8px; padding: 10px; display: flex; flex-direction: column;">
                         <div style="color: var(--st-color); font-weight: bold; text-align: center; margin-bottom: 10px;">⚡ 短期 (ST)</div>
-                        <div id="st-token-list" style="flex: 1; display: flex; flex-direction: column; gap: 8px;"></div>
+                        <div id="st-token-list" class="cp-token-list-scroll" style="flex: 1; display: flex; flex-direction: column; gap: 8px;"></div>
                         <div style="text-align: center; margin-top: 10px; font-weight: bold; border-top: 1px solid #ddd; padding-top: 5px;">總短期: <span id="modal-st-total">0</span></div>
                     </div>
                     <div style="flex: 1; border: 2px dashed var(--lt-color); border-radius: 8px; padding: 10px; display: flex; flex-direction: column;">
                         <div style="color: var(--lt-color); font-weight: bold; text-align: center; margin-bottom: 10px;">🌱 長期 (LT)</div>
-                        <div id="lt-token-list" style="flex: 1; display: flex; flex-direction: column; gap: 8px;"></div>
+                        <div id="lt-token-list" class="cp-token-list-scroll" style="flex: 1; display: flex; flex-direction: column; gap: 8px;"></div>
                         <div style="text-align: center; margin-top: 10px; font-weight: bold; border-top: 1px solid #ddd; padding-top: 5px;">總長期: <span id="modal-lt-total">0</span></div>
                     </div>
                 </div>
@@ -2319,8 +2683,17 @@
                 
                 tempTokens.forEach((t, i) => {
                     const el = document.createElement('div');
+                    // Check if this token came from a tip
+                    const tipMatch = HINT_TIPS.find(tip => t.name === tip.label);
+                    const dotColor = tipMatch ? tipMatch.color : (t.timeType === 'st' ? 'var(--st-color)' : 'var(--lt-color)');
                     el.className = 'cp-token ' + (t.timeType === 'st' ? 'st-token' : 'lt-token');
-                    el.innerHTML = `<span>${t.name} (${t.score})</span> <span class="token-del" data-idx="${i}">✖</span>`;
+                    el.style.alignItems = 'center';
+                    el.innerHTML = `
+                        <span style="display:inline-block; width:10px; height:10px; border-radius:50%; background:${dotColor}; margin-right:6px; flex-shrink:0;"></span>
+                        <span style="flex:1;">${t.name} (${t.score})</span>
+                        <span class="token-move-up" data-idx="${i}" style="cursor:pointer; margin-left:4px; opacity:0.6;" title="上移">▲</span>
+                        <span class="token-move-down" data-idx="${i}" style="cursor:pointer; margin-left:2px; opacity:0.6;" title="下移">▼</span>
+                        <span class="token-del" data-idx="${i}" style="margin-left:6px;">✖</span>`;
                     
                     if (t.timeType === 'st') { stList.appendChild(el); stSum += t.score; }
                     else { ltList.appendChild(el); ltSum += t.score; }
@@ -2329,10 +2702,25 @@
                 document.getElementById('modal-st-total').innerText = stSum;
                 document.getElementById('modal-lt-total').innerText = ltSum;
                 
+                // Delete buttons
                 document.querySelectorAll('.token-del').forEach(delBtn => {
                     delBtn.onclick = function() {
                         tempTokens.splice(parseInt(this.getAttribute('data-idx')), 1);
                         renderTokens();
+                    };
+                });
+                // Move up buttons
+                document.querySelectorAll('.token-move-up').forEach(btn => {
+                    btn.onclick = function() {
+                        const idx = parseInt(this.getAttribute('data-idx'));
+                        if (idx > 0) { [tempTokens[idx - 1], tempTokens[idx]] = [tempTokens[idx], tempTokens[idx - 1]]; renderTokens(); }
+                    };
+                });
+                // Move down buttons
+                document.querySelectorAll('.token-move-down').forEach(btn => {
+                    btn.onclick = function() {
+                        const idx = parseInt(this.getAttribute('data-idx'));
+                        if (idx < tempTokens.length - 1) { [tempTokens[idx], tempTokens[idx + 1]] = [tempTokens[idx + 1], tempTokens[idx]]; renderTokens(); }
                     };
                 });
             };
@@ -2348,6 +2736,23 @@
                         tempTokens.push({ id: generateId(), name, timeType: type, score });
                         renderTokens();
                     };
+                }
+                // Drop zone for tips tags
+                const dropZone = document.getElementById('cp-tip-drop-zone');
+                if (dropZone) {
+                    dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('drag-hover'); });
+                    dropZone.addEventListener('dragleave', () => { dropZone.classList.remove('drag-hover'); });
+                    dropZone.addEventListener('drop', (e) => {
+                        e.preventDefault();
+                        dropZone.classList.remove('drag-hover');
+                        const tipId = e.dataTransfer.getData('text/plain');
+                        const tip = HINT_TIPS.find(t => t.id === tipId);
+                        if (!tip) return;
+                        const type = document.getElementById('modal-cp-time').value;
+                        tempTokens.push({ id: generateId(), name: tip.label, timeType: type, score: 0 });
+                        renderTokens();
+                        showToast(`已加入「${tip.label}」，請編輯分數`, 'success');
+                    });
                 }
             }, 100);
 
@@ -2503,6 +2908,7 @@
                 <div class="canvas-column" data-col="${i}">
                     <div class="canvas-column-header" data-col="${i}">
                         ${colNames[i]}
+                        ${i === 2 ? `<span style="cursor:pointer; color: #aaa; margin-left:4px; font-size:0.9rem;" onclick="toggleColumnInfo(${i}, event)" title="什麼是提示？">ℹ️</span>` : ''}
                         ${i > 1 ? `<span style="cursor:pointer; color: #888; margin-left:8px;" onclick="addLooseNode(${i})" title="新增獨立節點">➕</span>` : ''}
                     </div>
                     <div class="nodes-container">
@@ -3487,11 +3893,11 @@
                 });
                 if (res.ok) return true;
 
-                const data = await res.json();
+                const data = await res.json().catch(() => ({}));
                 if (res.status === 402 || res.status === 403) {
                     showToast('⚠️ Google Drive 空間不足，無法同步，請清理雲端空間', 'error');
                 }
-                throw new Error(data.error || '同步失敗');
+                throw new Error(data.error || '伺服器錯誤 (' + res.status + ')');
             } catch (err) {
                 throw err;
             }
@@ -3578,6 +3984,31 @@
         }
         function closeAutomationSettings() {
             document.getElementById('automation-settings-modal').classList.remove('show');
+        }
+
+        function handleAutoImport() {
+            if (!currentUser) {
+                showToast('⚠️ 請先登入 Google 帳號才能使用雲端匯入', 'error');
+                return;
+            }
+            closeAutomationSettings();
+            loadTreeFromDrive();
+        }
+
+        function handleAutoSave() {
+            closeAutomationSettings();
+            if (!currentUser) {
+                // Still save locally
+                saveToLocal();
+                showToast('💾 已儲存至本機（請先登入 Google 以使用雲端儲存）', 'warning');
+                return;
+            }
+            if (!currentUser.hasDriveFile) {
+                showToast('⚠️ 尚未設定同步檔案，正在為您開啟設定...', 'warning');
+                openDrivePicker('save');
+                return;
+            }
+            syncToDrive('manual_save');
         }
 
         function openManualImportModal() {
