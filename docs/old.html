@@ -2845,7 +2845,7 @@
         }
 
         function loginGoogle() {
-            window.location.href = API_BASE + '/api/auth/google';
+            window.location.href = API_BASE + '/api/auth/google?redirect=old.html';
         }
 
         async function logoutGoogle() {
@@ -3481,9 +3481,36 @@
             reader.onload = function (e) {
                 try {
                     const parsed = JSON.parse(e.target.result);
-                    const importedTree = parsed.treeData || parsed.humanTree || parsed;
+                    let importedTree = null;
+
+                    // Try multiple extraction strategies for different file formats:
+                    // 1. Sync file: { syncTimestamp, triggerAction, treeData: { version, humanTree, nodeTree } }
+                    // 2. Export file: { exportedAt, treeData: { name, children } }
+                    // 3. V2 format: { version: 2, humanTree: {...}, nodeTree: {...} }
+                    // 4. Direct tree: { name: "human", children: [...] }
+                    // 5. Wrapped: { humanTree: { name, children } }
+
+                    if (parsed.treeData) {
+                        importedTree = parsed.treeData;
+                    } else if (parsed.humanTree) {
+                        importedTree = parsed.humanTree;
+                    } else {
+                        importedTree = parsed;
+                    }
+
+                    // Handle v2 format: { version: 2, humanTree: {...}, nodeTree: {...} }
+                    if (importedTree && importedTree.version && importedTree.humanTree) {
+                        importedTree = importedTree.humanTree;
+                    }
+
+                    // Handle double-nested humanTree (edge case)
+                    if (importedTree && importedTree.humanTree && !importedTree.children) {
+                        importedTree = importedTree.humanTree;
+                    }
+
                     if (!importedTree || !importedTree.children || importedTree.children.length === 0) {
-                        showToast('⚠️ 檔案格式不正確，無法匯入', 'error');
+                        console.error('[Import] 無法解析的結構:', JSON.stringify(parsed).slice(0, 500));
+                        showToast('⚠️ 檔案格式不正確或資料為空，無法匯入', 'error');
                         return;
                     }
                     // Compare with current web data

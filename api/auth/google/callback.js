@@ -29,8 +29,14 @@ module.exports = async function handler(req, res) {
             return [key, rest.join('=')];
         })
     );
+    // Parse state as JSON: { nonce, redirect } — nonce is validated against cookie
+    let stateData = {};
+    try { stateData = JSON.parse(state); } catch (e) { /* legacy: state was plain hex */ }
+    const stateNonce = stateData.nonce || state; // fallback: treat entire state as nonce (legacy)
+    const stateRedirect = stateData.redirect || '';
+
     const savedState = cookies.oauth_state;
-    if (!state || state !== savedState) {
+    if (!stateNonce || stateNonce !== savedState) {
         return res.status(403).json({ error: 'State validation failed' });
     }
 
@@ -98,18 +104,25 @@ module.exports = async function handler(req, res) {
         const isProduction = process.env.VERCEL === '1' || process.env.NODE_ENV === 'production';
         const clearSameSite = isProduction ? 'None' : 'Lax';
         let clearState = `oauth_state=; Path=/; HttpOnly; SameSite=${clearSameSite}; Max-Age=0`;
-        if (isProduction) clearState += '; Secure';
+        let clearRedirect = `oauth_redirect=; Path=/; HttpOnly; SameSite=${clearSameSite}; Max-Age=0`;
+        if (isProduction) { clearState += '; Secure'; clearRedirect += '; Secure'; }
         const existingCookies = res.getHeader('Set-Cookie');
+        const clearCookies = [clearState, clearRedirect];
         if (Array.isArray(existingCookies)) {
-            res.setHeader('Set-Cookie', [...existingCookies, clearState]);
+            res.setHeader('Set-Cookie', [...existingCookies, ...clearCookies]);
         } else if (existingCookies) {
-            res.setHeader('Set-Cookie', [existingCookies, clearState]);
+            res.setHeader('Set-Cookie', [existingCookies, ...clearCookies]);
         } else {
-            res.setHeader('Set-Cookie', clearState);
+            res.setHeader('Set-Cookie', clearCookies);
         }
 
-        const frontendUrl = process.env.FRONTEND_URL || 'https://penter405.github.io/addiction/';
-        res.redirect(302, `${frontendUrl}?token=${encodeURIComponent(token)}`);
+        // Read redirect page from state param (reliable) or cookie (fallback)
+        const redirectPage = stateRedirect || decodeURIComponent(cookies.oauth_redirect || '');
+        const frontendBase = process.env.FRONTEND_URL || 'https://penter405.github.io/addiction/';
+        const redirectUrl = redirectPage
+            ? `${frontendBase.replace(/\/$/, '')}/${redirectPage}?token=${encodeURIComponent(token)}`
+            : `${frontendBase}?token=${encodeURIComponent(token)}`;
+        res.redirect(302, redirectUrl);
     } catch (err) {
         console.error('OAuth callback error:', err);
         res.status(500).json({ error: 'OAuth processing failed', detail: err.message });

@@ -20,7 +20,14 @@ module.exports = async function handler(req, res) {
         process.env.GOOGLE_REDIRECT_URI
     );
 
-    const state = crypto.randomBytes(16).toString('hex');
+    const nonce = crypto.randomBytes(16).toString('hex');
+
+    // Store redirect page if provided (e.g. 'old.html')
+    const redirectPage = req.query.redirect || '';
+
+    // Encode redirect into state so it survives the full OAuth redirect chain
+    // (cross-site cookies with SameSite=None can be blocked by some browsers)
+    const state = JSON.stringify({ nonce, redirect: redirectPage });
 
     const authUrl = oauth2Client.generateAuthUrl({
         access_type: 'offline',
@@ -35,8 +42,10 @@ module.exports = async function handler(req, res) {
 
     const isProduction = process.env.VERCEL === '1' || process.env.NODE_ENV === 'production';
     const sameSite = isProduction ? 'None' : 'Lax';
-    const stateCookie = `oauth_state=${state}; Path=/; HttpOnly; SameSite=${sameSite}; Max-Age=600`;
-    res.setHeader('Set-Cookie', isProduction ? `${stateCookie}; Secure` : stateCookie);
+    const nonceCookie = `oauth_state=${nonce}; Path=/; HttpOnly; SameSite=${sameSite}; Max-Age=600`;
+    const redirectCookie = `oauth_redirect=${encodeURIComponent(redirectPage)}; Path=/; HttpOnly; SameSite=${sameSite}; Max-Age=600`;
+    const cookies = [isProduction ? `${nonceCookie}; Secure` : nonceCookie, isProduction ? `${redirectCookie}; Secure` : redirectCookie];
+    res.setHeader('Set-Cookie', cookies);
 
     res.redirect(302, authUrl);
 };
