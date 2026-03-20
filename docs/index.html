@@ -4450,7 +4450,20 @@
         }
 
         // Public sync function: respects storage mode + next-day detection
-        async function syncToDrive(triggerAction, isFromImportDiff = false) {
+        // Debounce: buffer rapid calls within 2s, only execute the last one
+        let _syncDebounceTimer = null;
+        function syncToDrive(triggerAction, isFromImportDiff = false) {
+            if (isFromImportDiff) {
+                // Import diff needs immediate sync, no debounce
+                return _syncToDriveImpl(triggerAction, true);
+            }
+            if (_syncDebounceTimer) clearTimeout(_syncDebounceTimer);
+            _syncDebounceTimer = setTimeout(() => {
+                _syncDebounceTimer = null;
+                _syncToDriveImpl(triggerAction, false);
+            }, 2000);
+        }
+        async function _syncToDriveImpl(triggerAction, isFromImportDiff = false) {
             const mode = getStorageMode();
             const today = new Date().toISOString().slice(0, 10);
             const lastSaveDate = localStorage.getItem(STORAGE_KEY_SAVE_DATE);

@@ -2747,7 +2747,7 @@
         function isFirstTimeUser() {
             return !localStorage.getItem(STORAGE_KEY_MODE)
                 && !localStorage.getItem(STORAGE_KEY_TREE)
-                && !localStorage.getItem('brain_session_token');
+                && !localStorage.getItem('brain_session_token_old');
         }
 
         // Storage mode: 'local' | 'drive' | 'both'
@@ -2831,14 +2831,14 @@
             const params = new URLSearchParams(window.location.search);
             const token = params.get('token');
             if (token) {
-                localStorage.setItem('brain_session_token', token);
+                localStorage.setItem('brain_session_token_old', token);
                 const cleanUrl = window.location.origin + window.location.pathname;
                 window.history.replaceState({}, document.title, cleanUrl);
             }
         })();
 
         function authHeaders() {
-            const token = localStorage.getItem('brain_session_token');
+            const token = localStorage.getItem('brain_session_token_old');
             const headers = {};
             if (token) headers['Authorization'] = 'Bearer ' + token;
             return headers;
@@ -2852,7 +2852,7 @@
             await fetch(API_BASE + '/api/auth/logout', {
                 method: 'POST', headers: authHeaders(),
             });
-            localStorage.removeItem('brain_session_token');
+            localStorage.removeItem('brain_session_token_old');
             currentUser = null;
             setStorageMode('local');
             updateAuthUI();
@@ -2861,7 +2861,7 @@
 
         async function checkAuth() {
             updateLoadingStatus('⏳ 正在檢查登入狀態...');
-            const token = localStorage.getItem('brain_session_token');
+            const token = localStorage.getItem('brain_session_token_old');
 
             // ===== First-time user: hide overlay and let welcome page handle =====
             if (isFirstTimeUser()) {
@@ -3362,7 +3362,19 @@
         }
 
         // Public sync function: respects storage mode + next-day detection
-        async function syncToDrive(triggerAction, isFromImportDiff = false) {
+        // Debounce: buffer rapid calls within 2s, only execute the last one
+        let _syncDebounceTimer = null;
+        function syncToDrive(triggerAction, isFromImportDiff = false) {
+            if (isFromImportDiff) {
+                return _syncToDriveImpl(triggerAction, true);
+            }
+            if (_syncDebounceTimer) clearTimeout(_syncDebounceTimer);
+            _syncDebounceTimer = setTimeout(() => {
+                _syncDebounceTimer = null;
+                _syncToDriveImpl(triggerAction, false);
+            }, 2000);
+        }
+        async function _syncToDriveImpl(triggerAction, isFromImportDiff = false) {
             const mode = getStorageMode();
             const today = new Date().toISOString().slice(0, 10);
             const lastSaveDate = localStorage.getItem(STORAGE_KEY_SAVE_DATE);
