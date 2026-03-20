@@ -2,7 +2,9 @@
 
 > 基於《原子習慣》理論的互動式行為決策樹系統，幫助使用者分析習慣的短期 / 長期性價比（CP 值），並透過大腦的「最小阻力法則」找出改變行為的關鍵槓桿點。
 
-**Live Demo**: [https://penter405.github.io/addiction/](https://penter405.github.io/addiction/)
+**pro user**: [https://penter405.github.io/addiction/](https://penter405.github.io/addiction/)
+
+**beginner user**: [https://penter405.github.io/addiction/old.html](https://penter405.github.io/addiction/old.html)
 
 ---
 
