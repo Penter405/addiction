@@ -596,6 +596,7 @@
             padding: 40px;
             gap: 120px; /* Wider Space between columns */
             position: relative;
+            height: max-content; /* Allow content to define height */
         }
 
         .canvas-column {
@@ -706,7 +707,7 @@
             background-image: linear-gradient(to bottom, #ccc 50%, transparent 50%);
             background-size: 2px 20px;
             background-repeat: repeat-y;
-            height: 100%;
+            min-height: 100000px; /* unlimited height */
             position: absolute;
             top: 0;
             z-index: 0;
@@ -1350,6 +1351,25 @@
             text-align: center;
         }
 
+        /* Fixed large size for CP value modal */
+        .modal-box.modal-box-cp {
+            max-width: 750px;
+            min-height: 600px;
+            display: flex;
+            flex-direction: column;
+        }
+        .modal-box.modal-box-cp #modal-message {
+            flex: 1;
+            display: flex;
+            min-height: 0;
+        }
+        .modal-box.modal-box-cp #modal-message > div {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+
         .modal-box h3 {
             margin: 0 0 12px 0;
             font-size: 1.15rem;
@@ -1857,6 +1877,68 @@
             background: #eef5ff;
             color: var(--st-color);
         }
+
+        /* Inline score editing in CP modal */
+        .cp-token .token-score-display {
+            cursor: pointer;
+            padding: 1px 4px;
+            border-radius: 4px;
+            transition: background 0.2s;
+        }
+        .cp-token .token-score-display:hover {
+            background: rgba(255,255,255,0.3);
+            text-decoration: underline;
+        }
+        .cp-token .token-score-input {
+            width: 55px;
+            padding: 2px 4px;
+            border: 1px solid rgba(255,255,255,0.5);
+            border-radius: 4px;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            font-size: 0.85rem;
+            font-weight: bold;
+        }
+
+        /* Drag reorder styles for CP tokens */
+        .cp-token.drag-reordering {
+            opacity: 0.4;
+            transform: scale(0.95);
+        }
+        .cp-token.drag-ghost {
+            position: fixed;
+            z-index: 99999;
+            pointer-events: none;
+            opacity: 0.85;
+            transform: scale(1.05);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+        }
+        /* Drop slots: pre-inserted between tokens during drag */
+        .cp-drop-slot {
+            height: 30px;
+            border: 2px dashed #ddd;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            color: #ccc;
+            transition: background 0.15s, border-color 0.15s, color 0.15s;
+            flex-shrink: 0;
+        }
+        .cp-drop-slot.active {
+            border-color: var(--st-color);
+            background: rgba(52, 152, 219, 0.12);
+            color: var(--st-color);
+            font-weight: bold;
+        }
+
+        /* Global cursor lock during drag reorder */
+        body.dragging-active,
+        body.dragging-active * {
+            cursor: grabbing !important;
+            user-select: none !important;
+        }
     </style>
 </head>
 
@@ -2048,13 +2130,13 @@
 
         <!-- 提示技巧 tab (always visible) -->
         <div class="tips-panel-tab" id="tips-panel-tab" onclick="openTipsPanel()">
-            ▶ 📋 提示技巧
+            ▶ 📋 所有技巧
         </div>
 
         <!-- 提示技巧面板 (hidden by default, shown by JS) -->
         <div class="tips-panel" id="tips-panel">
             <div class="tips-panel-header">
-                <span>📋 提示技巧</span>
+                <span>📋 所有技巧</span>
                 <span style="cursor:pointer; font-size:1.1rem; color:#999;" onclick="closeTipsPanel()">&times;</span>
             </div>
             <div class="tips-panel-body" id="tips-panel-body">
@@ -2161,10 +2243,14 @@
         function showModal(opts) {
             return new Promise(resolve => {
                 const overlay = document.getElementById('modal-overlay');
+                const modalBox = overlay.querySelector('.modal-box');
                 const titleEl = document.getElementById('modal-title');
                 const msgEl = document.getElementById('modal-message');
                 const inputEl = document.getElementById('modal-input');
                 const actionsEl = document.getElementById('modal-actions');
+
+                // Apply optional extra class (e.g. modal-box-cp)
+                if (opts.className) modalBox.classList.add(opts.className);
 
                 titleEl.textContent = opts.title || '';
                 msgEl.innerHTML = opts.message || '';
@@ -2181,6 +2267,7 @@
 
                 function close(val) {
                     overlay.classList.remove('show');
+                    if (opts.className) modalBox.classList.remove(opts.className);
                     resolve(val);
                 }
 
@@ -2705,20 +2792,21 @@
         // =========================================================================
         // Node Operations
         // =========================================================================
-        function removeNode(id, event) {
+        async function removeNode(id, event) {
             if (event) event.stopPropagation();
             if (draggedNodeId || linkingFromNodeId) { showToast('請先完成或取消當前的動作', 'warning'); return; }
-            if (!confirm('確定要刪除此節點及其所有連結嗎？')) return;
+            const ok = await showModal({ title: '⚠️ 確認刪除', message: '確定要刪除此節點及其所有連結嗎？', danger: true, confirmText: '刪除', cancelText: '取消' });
+            if (!ok) return;
             // Remove children recursively
-            const removeRec = (id) => {
-                getChildIds(id).forEach(cid => {
-                    nodeTree.links = nodeTree.links.filter(l => !(l.from === id && l.to === cid));
+            const removeRec = (nid) => {
+                getChildIds(nid).forEach(cid => {
+                    nodeTree.links = nodeTree.links.filter(l => !(l.from === nid && l.to === cid));
                     if (!nodeTree.links.some(l => l.to === cid)) { removeRec(cid); nodeTree.nodes = nodeTree.nodes.filter(n => n.id !== cid); }
                 });
             };
-            removeRec(nodeId);
-            nodeTree.links = nodeTree.links.filter(l => l.from !== nodeId && l.to !== nodeId);
-            nodeTree.nodes = nodeTree.nodes.filter(n => n.id !== nodeId);
+            removeRec(id);
+            nodeTree.links = nodeTree.links.filter(l => l.from !== id && l.to !== id);
+            nodeTree.nodes = nodeTree.nodes.filter(n => n.id !== id);
             renderTree(); showToast('節點已刪除', 'success'); syncToDrive('removeNode');
         }
 
@@ -2728,8 +2816,8 @@
             const node = getNode(nodeId); if (!node) return;
             
             const html = `
-            <div style="text-align:left; max-width: 600px; margin: 0 auto; min-height: 400px; display: flex; flex-direction: column;">
-                <div class="token-creator" style="margin-bottom: 20px;">
+            <div style="text-align:left; max-width: 600px; margin: 0 auto; flex: 1; display: flex; flex-direction: column; min-height: 0;">
+                <div class="token-creator" style="margin-bottom: 15px; flex-shrink: 0;">
                     <input type="text" id="modal-cp-name" placeholder="CP名稱(例:看到甜點)" style="flex: 2; min-width: 150px;">
                     <div style="display: flex; align-items: center; gap: 4px; flex: 1; min-width: 100px;">
                         <input type="number" id="modal-cp-score" placeholder="分數" style="flex: 1; min-width: 60px;">
@@ -2741,20 +2829,20 @@
                     <button class="primary" id="btn-add-cp-token" style="padding: 10px;">➕ 加入</button>
                 </div>
 
-                <div class="cp-token-drop-zone" id="cp-tip-drop-zone">
+                <div class="cp-token-drop-zone" id="cp-tip-drop-zone" style="flex-shrink: 0;">
                     📋 從左側面板拖曳提示技巧標籤到此處
                 </div>
 
-                <div style="display: flex; gap: 15px; flex: 1;">
-                    <div style="flex: 1; border: 2px dashed var(--st-color); border-radius: 8px; padding: 10px; display: flex; flex-direction: column;">
-                        <div style="color: var(--st-color); font-weight: bold; text-align: center; margin-bottom: 10px;">⚡ 短期 (ST)</div>
-                        <div id="st-token-list" class="cp-token-list-scroll" style="flex: 1; display: flex; flex-direction: column; gap: 8px;"></div>
-                        <div style="text-align: center; margin-top: 10px; font-weight: bold; border-top: 1px solid #ddd; padding-top: 5px;">總短期: <span id="modal-st-total">0</span></div>
+                <div style="display: flex; gap: 15px; flex: 1; min-height: 0; overflow: hidden;">
+                    <div style="flex: 1; border: 2px dashed var(--st-color); border-radius: 8px; padding: 10px; display: flex; flex-direction: column; min-height: 0;">
+                        <div style="color: var(--st-color); font-weight: bold; text-align: center; margin-bottom: 10px; flex-shrink: 0;">⚡ 短期 (ST)</div>
+                        <div id="st-token-list" class="cp-token-list-scroll" style="flex: 1; display: flex; flex-direction: column; gap: 8px; overflow-y: auto; min-height: 0;"></div>
+                        <div style="text-align: center; margin-top: 10px; font-weight: bold; border-top: 1px solid #ddd; padding-top: 5px; flex-shrink: 0;">總短期: <span id="modal-st-total">0</span></div>
                     </div>
-                    <div style="flex: 1; border: 2px dashed var(--lt-color); border-radius: 8px; padding: 10px; display: flex; flex-direction: column;">
-                        <div style="color: var(--lt-color); font-weight: bold; text-align: center; margin-bottom: 10px;">🌱 長期 (LT)</div>
-                        <div id="lt-token-list" class="cp-token-list-scroll" style="flex: 1; display: flex; flex-direction: column; gap: 8px;"></div>
-                        <div style="text-align: center; margin-top: 10px; font-weight: bold; border-top: 1px solid #ddd; padding-top: 5px;">總長期: <span id="modal-lt-total">0</span></div>
+                    <div style="flex: 1; border: 2px dashed var(--lt-color); border-radius: 8px; padding: 10px; display: flex; flex-direction: column; min-height: 0;">
+                        <div style="color: var(--lt-color); font-weight: bold; text-align: center; margin-bottom: 10px; flex-shrink: 0;">🌱 長期 (LT)</div>
+                        <div id="lt-token-list" class="cp-token-list-scroll" style="flex: 1; display: flex; flex-direction: column; gap: 8px; overflow-y: auto; min-height: 0;"></div>
+                        <div style="text-align: center; margin-top: 10px; font-weight: bold; border-top: 1px solid #ddd; padding-top: 5px; flex-shrink: 0;">總長期: <span id="modal-lt-total">0</span></div>
                     </div>
                 </div>
             </div>`;
@@ -2772,6 +2860,40 @@
                 if (node.cpLt !== null && node.cpLt !== 0) tempTokens.push({ id: generateId(), name: '預設長期', timeType: 'lt', score: node.cpLt });
             }
 
+            // --- Long-press drag reorder state ---
+            let dragReorderState = null; // { idx, ghost, origList, scrollEl, autoScrollRAF }
+
+            function startAutoScroll(scrollEl, clientY) {
+                if (!scrollEl) return;
+                const rect = scrollEl.getBoundingClientRect();
+                const edgeZone = 40; // pixels from edge to trigger scroll
+                const scrollSpeed = 5;
+                
+                function tick() {
+                    if (!dragReorderState) return;
+                    const r = scrollEl.getBoundingClientRect();
+                    const y = dragReorderState.lastClientY;
+                    if (y < r.top + edgeZone) {
+                        scrollEl.scrollTop -= scrollSpeed;
+                    } else if (y > r.bottom - edgeZone) {
+                        scrollEl.scrollTop += scrollSpeed;
+                    }
+                    dragReorderState.autoScrollRAF = requestAnimationFrame(tick);
+                }
+                dragReorderState.autoScrollRAF = requestAnimationFrame(tick);
+            }
+
+            function cleanupDragReorder() {
+                if (!dragReorderState) return;
+                if (dragReorderState.ghost) dragReorderState.ghost.remove();
+                if (dragReorderState.autoScrollRAF) cancelAnimationFrame(dragReorderState.autoScrollRAF);
+                document.querySelectorAll('.cp-token.drag-reordering').forEach(el => el.classList.remove('drag-reordering'));
+                document.querySelectorAll('.cp-drop-slot').forEach(el => el.remove());
+                // Restore cursor and selection
+                document.body.classList.remove('dragging-active');
+                dragReorderState = null;
+            }
+
             const renderTokens = () => {
                 const stList = document.getElementById('st-token-list');
                 const ltList = document.getElementById('lt-token-list');
@@ -2782,14 +2904,16 @@
                 
                 tempTokens.forEach((t, i) => {
                     const el = document.createElement('div');
-                    // Check if this token came from a tip
                     const tipMatch = HINT_TIPS.find(tip => t.name === tip.label);
                     const dotColor = tipMatch ? tipMatch.color : (t.timeType === 'st' ? 'var(--st-color)' : 'var(--lt-color)');
                     el.className = 'cp-token ' + (t.timeType === 'st' ? 'st-token' : 'lt-token');
                     el.style.alignItems = 'center';
+                    el.setAttribute('data-token-idx', i);
                     el.innerHTML = `
                         <span style="display:inline-block; width:10px; height:10px; border-radius:50%; background:${dotColor}; margin-right:6px; flex-shrink:0;"></span>
-                        <span style="flex:1;">${t.name} (${t.score})</span>
+                        <span style="flex:1;">${t.name}</span>
+                        <span class="token-score-display" data-idx="${i}" title="點擊編輯分數" style="cursor:pointer; margin-left:4px;">(${t.score})</span>
+                        <span class="token-score-edit" data-idx="${i}" style="cursor:pointer; margin-left:2px; opacity:0.7; font-size:0.75rem;" title="編輯分數">✏️</span>
                         <span class="token-move-up" data-idx="${i}" style="cursor:pointer; margin-left:4px; opacity:0.6;" title="上移">▲</span>
                         <span class="token-move-down" data-idx="${i}" style="cursor:pointer; margin-left:2px; opacity:0.6;" title="下移">▼</span>
                         <span class="token-del" data-idx="${i}" style="margin-left:6px;">✖</span>`;
@@ -2803,24 +2927,299 @@
                 
                 // Delete buttons
                 document.querySelectorAll('.token-del').forEach(delBtn => {
-                    delBtn.onclick = function() {
+                    delBtn.onclick = function(e) {
+                        e.stopPropagation();
                         tempTokens.splice(parseInt(this.getAttribute('data-idx')), 1);
                         renderTokens();
                     };
                 });
                 // Move up buttons
                 document.querySelectorAll('.token-move-up').forEach(btn => {
-                    btn.onclick = function() {
+                    btn.onclick = function(e) {
+                        e.stopPropagation();
                         const idx = parseInt(this.getAttribute('data-idx'));
                         if (idx > 0) { [tempTokens[idx - 1], tempTokens[idx]] = [tempTokens[idx], tempTokens[idx - 1]]; renderTokens(); }
                     };
                 });
                 // Move down buttons
                 document.querySelectorAll('.token-move-down').forEach(btn => {
-                    btn.onclick = function() {
+                    btn.onclick = function(e) {
+                        e.stopPropagation();
                         const idx = parseInt(this.getAttribute('data-idx'));
                         if (idx < tempTokens.length - 1) { [tempTokens[idx], tempTokens[idx + 1]] = [tempTokens[idx + 1], tempTokens[idx]]; renderTokens(); }
                     };
+                });
+                
+                // Fix 3: Inline score editing — click score or ✏️ to edit
+                const startScoreEdit = function(idx) {
+                    const t = tempTokens[idx];
+                    if (!t) return;
+                    // Find the score display span for this token
+                    const scoreSpan = document.querySelector(`.token-score-display[data-idx="${idx}"]`);
+                    if (!scoreSpan) return;
+                    const input = document.createElement('input');
+                    input.type = 'number';
+                    input.className = 'token-score-input';
+                    input.value = t.score;
+                    input.setAttribute('data-idx', idx);
+                    scoreSpan.replaceWith(input);
+                    input.focus();
+                    input.select();
+                    
+                    const commitScore = () => {
+                        const newScore = parseFloat(input.value) || 0;
+                        tempTokens[idx].score = newScore;
+                        renderTokens();
+                    };
+                    input.addEventListener('blur', commitScore);
+                    input.addEventListener('keydown', (ev) => {
+                        if (ev.key === 'Enter') { ev.preventDefault(); commitScore(); }
+                        if (ev.key === 'Escape') { renderTokens(); }
+                    });
+                };
+                document.querySelectorAll('.token-score-display').forEach(scoreEl => {
+                    scoreEl.onclick = function(e) {
+                        e.stopPropagation();
+                        startScoreEdit(parseInt(this.getAttribute('data-idx')));
+                    };
+                });
+                document.querySelectorAll('.token-score-edit').forEach(editBtn => {
+                    editBtn.onclick = function(e) {
+                        e.stopPropagation();
+                        startScoreEdit(parseInt(this.getAttribute('data-idx')));
+                    };
+                });
+
+                // Fix 4: Allow dropping tips onto existing tokens to attach
+                // NOTE: do NOT stopPropagation so the parent list still gets drop events for empty areas
+                document.querySelectorAll('.cp-token[data-token-idx]').forEach(tokenEl => {
+                    tokenEl.addEventListener('dragover', function(e) {
+                        e.preventDefault();
+                        e.dataTransfer.dropEffect = 'copy';
+                        this.style.outline = '2px dashed var(--st-color)';
+                        this.style.outlineOffset = '2px';
+                    });
+                    tokenEl.addEventListener('dragleave', function() {
+                        this.style.outline = '';
+                        this.style.outlineOffset = '';
+                    });
+                    tokenEl.addEventListener('drop', function(e) {
+                        e.preventDefault();
+                        // Only attach if the drop is directly on this token element
+                        this.style.outline = '';
+                        this.style.outlineOffset = '';
+                        const tipId = e.dataTransfer.getData('text/plain');
+                        const tip = findTipById(tipId);
+                        if (!tip) return;
+                        e.stopPropagation(); // prevent parent list from also creating a new token
+                        const idx = parseInt(this.getAttribute('data-token-idx'));
+                        if (idx >= 0 && idx < tempTokens.length) {
+                            // Attach tip to existing token: append tip name
+                            tempTokens[idx].name = tempTokens[idx].name + ' + ' + tip.label;
+                            renderTokens();
+                            showToast(`已將「${tip.label}」附加到「${tempTokens[idx].name}」`, 'success');
+                        }
+                    });
+                });
+
+                // Fix 5 & 7: Long-press drag reorder with drop slots
+                // Insert drop slots between all tokens when drag starts
+                function insertDropSlots(dragIdx) {
+                    ['st-token-list', 'lt-token-list'].forEach(listId => {
+                        const list = document.getElementById(listId);
+                        if (!list) return;
+                        const tt = listId === 'st-token-list' ? 'st' : 'lt';
+                        const tokens = list.querySelectorAll('.cp-token[data-token-idx]');
+                        // Build ordered list of token indices in this list
+                        const indices = Array.from(tokens).map(t => parseInt(t.getAttribute('data-token-idx')));
+                        
+                        // Insert slot before first token
+                        const firstSlot = document.createElement('div');
+                        firstSlot.className = 'cp-drop-slot';
+                        firstSlot.dataset.insertIdx = indices.length > 0 ? String(indices[0]) : '0';
+                        firstSlot.dataset.timeType = tt;
+                        firstSlot.dataset.position = 'before';
+                        firstSlot.textContent = '↕ 放在這裡';
+                        if (tokens.length > 0) {
+                            list.insertBefore(firstSlot, tokens[0]);
+                        } else {
+                            list.appendChild(firstSlot);
+                        }
+                        
+                        // Insert slot after each token
+                        tokens.forEach((token, i) => {
+                            const idx = indices[i];
+                            if (idx === dragIdx) {
+                                token.classList.add('drag-reordering');
+                            }
+                            const slot = document.createElement('div');
+                            slot.className = 'cp-drop-slot';
+                            // Insert position = after this token
+                            slot.dataset.insertIdx = String(idx);
+                            slot.dataset.timeType = tt;
+                            slot.dataset.position = 'after';
+                            slot.textContent = '↕ 放在這裡';
+                            // Insert after the token
+                            if (token.nextSibling) {
+                                list.insertBefore(slot, token.nextSibling);
+                            } else {
+                                list.appendChild(slot);
+                            }
+                        });
+                    });
+                }
+                
+                function removeDropSlots() {
+                    document.querySelectorAll('.cp-drop-slot').forEach(el => el.remove());
+                }
+                
+                function findNearestSlot(clientX, clientY) {
+                    // First try elementFromPoint
+                    const el = document.elementFromPoint(clientX, clientY);
+                    if (el) {
+                        const slot = el.closest('.cp-drop-slot');
+                        if (slot) return slot;
+                    }
+                    // Fallback: find closest slot by Y distance
+                    let bestSlot = null;
+                    let bestDist = Infinity;
+                    document.querySelectorAll('.cp-drop-slot').forEach(slot => {
+                        const rect = slot.getBoundingClientRect();
+                        const centerY = rect.top + rect.height / 2;
+                        const dist = Math.abs(clientY - centerY);
+                        // Only consider slots that are horizontally overlapping
+                        if (clientX >= rect.left - 50 && clientX <= rect.right + 50 && dist < bestDist) {
+                            bestDist = dist;
+                            bestSlot = slot;
+                        }
+                    });
+                    return bestSlot;
+                }
+                
+                function highlightSlot(clientX, clientY) {
+                    document.querySelectorAll('.cp-drop-slot.active').forEach(s => s.classList.remove('active'));
+                    const slot = findNearestSlot(clientX, clientY);
+                    if (slot) {
+                        slot.classList.add('active');
+                        dragReorderState.activeSlot = slot;
+                    }
+                }
+                
+                function doSlotDrop(fromIdx) {
+                    const slot = dragReorderState.activeSlot;
+                    if (!slot) return;
+                    const targetTimeType = slot.dataset.timeType;
+                    const refIdx = parseInt(slot.dataset.insertIdx);
+                    const position = slot.dataset.position; // 'before' or 'after'
+                    
+                    // Update time type
+                    tempTokens[fromIdx].timeType = targetTimeType;
+                    
+                    // Remove from old position
+                    const [moved] = tempTokens.splice(fromIdx, 1);
+                    
+                    // Calculate new position
+                    let insertAt;
+                    if (position === 'before') {
+                        // Insert before the reference token
+                        // After splice, indices shift if from was before ref
+                        insertAt = refIdx > fromIdx ? refIdx - 1 : refIdx;
+                    } else {
+                        // Insert after the reference token
+                        insertAt = refIdx > fromIdx ? refIdx : refIdx + 1;
+                    }
+                    insertAt = Math.max(0, Math.min(insertAt, tempTokens.length));
+                    tempTokens.splice(insertAt, 0, moved);
+                }
+
+                function beginDragReorder(idx, origEl, clientX, clientY) {
+                    const rect = origEl.getBoundingClientRect();
+                    const ghost = origEl.cloneNode(true);
+                    ghost.className = origEl.className + ' drag-ghost';
+                    ghost.style.width = rect.width + 'px';
+                    ghost.style.left = rect.left + 'px';
+                    ghost.style.top = rect.top + 'px';
+                    document.body.appendChild(ghost);
+                    
+                    const scrollEl = origEl.closest('.cp-token-list-scroll');
+                    dragReorderState = { idx, ghost, origEl, scrollEl, lastClientY: clientY, startType: tempTokens[idx].timeType, activeSlot: null };
+                    document.body.classList.add('dragging-active');
+                    // Insert drop slots
+                    insertDropSlots(idx);
+                    startAutoScroll(scrollEl, clientY);
+                }
+
+                document.querySelectorAll('.cp-token[data-token-idx]').forEach(tokenEl => {
+                    let longPressTimer = null;
+                    
+                    tokenEl.addEventListener('touchstart', function(e) {
+                        const idx = parseInt(this.getAttribute('data-token-idx'));
+                        const touch = e.touches[0];
+                        const thisEl = this;
+                        longPressTimer = setTimeout(() => {
+                            e.preventDefault();
+                            beginDragReorder(idx, thisEl, touch.clientX, touch.clientY);
+                        }, 400);
+                    }, { passive: false });
+
+                    tokenEl.addEventListener('touchmove', function(e) {
+                        if (longPressTimer && !dragReorderState) {
+                            clearTimeout(longPressTimer);
+                            longPressTimer = null;
+                            return;
+                        }
+                        if (!dragReorderState) return;
+                        e.preventDefault();
+                        const touch = e.touches[0];
+                        dragReorderState.lastClientY = touch.clientY;
+                        dragReorderState.ghost.style.top = (touch.clientY - 20) + 'px';
+                        dragReorderState.ghost.style.left = (touch.clientX - 30) + 'px';
+                        highlightSlot(touch.clientX, touch.clientY);
+                    }, { passive: false });
+
+                    tokenEl.addEventListener('touchend', function(e) {
+                        if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
+                        if (!dragReorderState) return;
+                        doSlotDrop(dragReorderState.idx);
+                        cleanupDragReorder();
+                        renderTokens();
+                    });
+
+                    tokenEl.addEventListener('touchcancel', function() {
+                        if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
+                        cleanupDragReorder();
+                    });
+
+                    // Mouse-based drag reorder for desktop
+                    let mouseDownTimer = null;
+                    tokenEl.addEventListener('mousedown', function(e) {
+                        if (e.target.closest('.token-del, .token-move-up, .token-move-down, .token-score-display, .token-score-input, .token-score-edit')) return;
+                        const idx = parseInt(this.getAttribute('data-token-idx'));
+                        const thisEl = this;
+                        mouseDownTimer = setTimeout(() => {
+                            beginDragReorder(idx, thisEl, e.clientX, e.clientY);
+                            
+                            const onMouseMove = (me) => {
+                                if (!dragReorderState) return;
+                                dragReorderState.lastClientY = me.clientY;
+                                dragReorderState.ghost.style.top = (me.clientY - 20) + 'px';
+                                dragReorderState.ghost.style.left = (me.clientX - 30) + 'px';
+                                highlightSlot(me.clientX, me.clientY);
+                            };
+                            const onMouseUp = (me) => {
+                                window.removeEventListener('mousemove', onMouseMove);
+                                window.removeEventListener('mouseup', onMouseUp);
+                                if (!dragReorderState) return;
+                                doSlotDrop(dragReorderState.idx);
+                                cleanupDragReorder();
+                                renderTokens();
+                            };
+                            window.addEventListener('mousemove', onMouseMove);
+                            window.addEventListener('mouseup', onMouseUp);
+                        }, 400);
+                    });
+                    tokenEl.addEventListener('mouseup', function() { if (mouseDownTimer) { clearTimeout(mouseDownTimer); mouseDownTimer = null; } });
+                    tokenEl.addEventListener('mouseleave', function() { if (mouseDownTimer && !dragReorderState) { clearTimeout(mouseDownTimer); mouseDownTimer = null; } });
                 });
             };
 
@@ -2850,7 +3249,7 @@
                         const type = document.getElementById('modal-cp-time').value;
                         tempTokens.push({ id: generateId(), name: tip.label, timeType: type, score: 0 });
                         renderTokens();
-                        showToast(`已加入「${tip.label}」，請編輯分數`, 'success');
+                        showToast(`已加入「${tip.label}」，請點擊分數設定`, 'success');
                     });
                 }
                 // Also allow drop directly onto ST/LT token lists
@@ -2872,7 +3271,7 @@
                 });
             }, 100);
 
-            const ok = await showModal({ title: `📊 編輯 CP 值 — ${node.label}`, message: html, confirmText: '儲存', cancelText: '取消' });
+            const ok = await showModal({ title: `📊 編輯 CP 值 — ${node.label}`, message: html, confirmText: '儲存', cancelText: '取消', className: 'modal-box-cp' });
             
             // Close tips panel when modal closes
             closeTipsPanel();
@@ -2891,6 +3290,27 @@
             if (tempTokens.length === 0) { node.cpSt = null; node.cpLt = null; node.cpTokens = []; }
             
             renderTree(); showToast('CP 值已更新', 'success'); syncToDrive('editCpValue');
+        }
+
+        // Rename node (non-root only)
+        async function renameNode(nodeId, event) {
+            if (event) event.stopPropagation();
+            if (draggedNodeId || linkingFromNodeId) { showToast('請先完成或取消當前的動作', 'warning'); return; }
+            const node = getNode(nodeId);
+            if (!node || node.isRoot) return;
+            const newName = await showModal({
+                title: '✏️ 重新命名節點',
+                message: `當前名稱：<strong>${node.label}</strong>`,
+                inputPlaceholder: '輸入新名稱',
+                inputDefault: node.label,
+                confirmText: '儲存',
+                cancelText: '取消'
+            });
+            if (newName === null || newName.trim() === '') return;
+            node.label = newName.trim();
+            renderTree();
+            showToast(`節點已重新命名為「${node.label}」`, 'success');
+            syncToDrive('renameNode');
         }
 
         let linkingFromNodeId = null;
@@ -3016,7 +3436,7 @@
             let html = '<div class="canvas-columns" id="canvas-columns-container">';
             
             // Background SVG for Drawing Links
-            html += `<svg id="canvas-links-svg" style="position: absolute; top:0; left:0; width:100%; height:100%; pointer-events: none; z-index: 1;">
+            html += `<svg id="canvas-links-svg" style="position: absolute; top:0; left:0; width:100%; height:100%; pointer-events: none; z-index: 1; overflow: visible;">
                 <defs>
                     <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
                         <polygon points="0 0, 10 3.5, 0 7" fill="#888" />
@@ -3081,9 +3501,9 @@
                             if (nd.isRoot) {
                                 innerContent = `<strong>${nd.label}</strong><br><small>${nd.desc || '預設尋求高性價比'}</small>`;
                             } else if (nd.columnId === 6) {
-                                innerContent = `<strong>Demand: <br>${nd.label}</strong>`;
+                                innerContent = `<strong ondblclick="renameNode('${nd.id}', event)" style="cursor:pointer;" title="雙擊重新命名">Demand: <br>${nd.label}</strong>`;
                             } else {
-                                innerContent = `<strong>${nd.label}</strong>`;
+                                innerContent = `<strong ondblclick="renameNode('${nd.id}', event)" style="cursor:pointer;" title="雙擊重新命名">${nd.label}</strong>`;
                                 if (dynamicCp !== null) {
                                     innerContent += `<div class="action-cp-text" style="${cpLabelColor}">當下體感 CP: ${dynamicCp.toFixed(2)}</div>`;
                                 }
@@ -3115,9 +3535,11 @@
             if (!container) return;
             
             const contRect = container.getBoundingClientRect();
-            // Match dimensions
-            svg.setAttribute('width', container.scrollWidth);
-            svg.setAttribute('height', container.scrollHeight);
+            // Use large dimensions to ensure lines can draw anywhere
+            const maxW = Math.max(container.scrollWidth, 100000);
+            const maxH = Math.max(container.scrollHeight, 100000);
+            svg.setAttribute('width', maxW);
+            svg.setAttribute('height', maxH);
             
             // Keep defs in innerHTML
             let svgHTML = `<defs>
