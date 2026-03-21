@@ -4299,11 +4299,39 @@
                 document.getElementById('btn-create-folder').onclick = async () => {
                     const newName = document.getElementById('new-folder-name').value.trim();
                     if (!newName) { showToast('⚠️ 請輸入資料夾名稱', 'error'); return; }
-                    selectedFolderName = newName;
-                    selectedFolderId = null; // backend will create it
+
+                    // Check if a folder with this name already exists
+                    const existingFolder = folders.find(f => f.name === newName);
+                    if (existingFolder) {
+                        // Close the picker overlay temporarily so the conflict modal can show
+                        overlay.classList.remove('show');
+                        const choice = await showModal({
+                            title: '📂 資料夾已存在',
+                            message: `「${newName}」資料夾已存在於 Google Drive。<br>請選擇要使用現有資料夾，還是建立同名的新資料夾。`,
+                            buttons: [
+                                { text: '📂 使用現有資料夾', className: 'modal-btn-primary', value: 'use_existing' },
+                                { text: '➕ 建立新資料夾', className: 'modal-btn-primary', value: 'create_new' },
+                                { text: '取消', className: 'modal-btn-cancel', value: 'cancel' },
+                            ]
+                        });
+                        if (choice === 'cancel') {
+                            overlay.classList.add('show'); // Re-open the picker
+                            return;
+                        }
+                        selectedFolderName = newName;
+                        if (choice === 'use_existing') {
+                            selectedFolderId = existingFolder.id;
+                        } else {
+                            selectedFolderId = null; // backend will create it
+                        }
+                    } else {
+                        selectedFolderName = newName;
+                        selectedFolderId = null; // backend will create it
+                    }
+
                     // Visual feedback
                     document.querySelectorAll('.picker-item').forEach(i => i.classList.remove('active'));
-                    showToast(`📂 將建立新資料夾「${newName}」`, 'success');
+                    showToast(`📂 ${selectedFolderId ? '將使用現有' : '將建立新'}資料夾「${newName}」`, 'success');
                     // Auto-confirm
                     await doPickerConfirm(selectedFolderName);
                 };

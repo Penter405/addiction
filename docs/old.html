@@ -1555,12 +1555,12 @@
 
             <div style="display: flex; align-items: center; justify-content: space-between; padding: 30px 20px; background: #f8f9fa; border-radius: 8px; margin-bottom: 20px;">
                 
-                <!-- Node 1: Auto Import -->
+                <!-- Node 1: Set Import Folder -->
                 <div style="text-align: center; flex: 1;">
-                    <button id="btn-auto-import" onclick="closeAutomationSettings(); loadTreeFromDrive();" class="modal-btn-primary" style="padding: 15px 25px; border-radius: 30px; font-weight: bold; background: #4caf50; border: none; color: white; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 100%;">
-                        📥 自動匯入
+                    <button id="btn-auto-import" onclick="handleSetImportFolder()" class="modal-btn-primary" style="padding: 15px 25px; border-radius: 30px; font-weight: bold; background: #4caf50; border: none; color: white; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 100%;">
+                        📥 設定匯入資料夾
                     </button>
-                    <div style="font-size: 0.8rem; color: #666; margin-top: 8px;">從雲端最新紀錄匯入</div>
+                    <div style="font-size: 0.8rem; color: #666; margin-top: 8px;">選擇雲端匯入來源</div>
                 </div>
 
                 <!-- Line 1 -->
@@ -1581,19 +1581,20 @@
                     <div style="position: absolute; right: -5px; top: -4px; border-top: 6px solid transparent; border-bottom: 6px solid transparent; border-left: 8px solid #ccc;"></div>
                 </div>
 
-                <!-- Node 3: Auto Save -->
+                <!-- Node 3: Set Export Folder -->
                 <div style="text-align: center; flex: 1;">
-                    <button onclick="closeAutomationSettings(); syncToDrive('manual_save');" class="modal-btn-primary" style="padding: 15px 25px; border-radius: 30px; font-weight: bold; background: #ff9800; border: none; color: white; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 100%;">
-                        📤 自動儲存
+                    <button onclick="handleSetExportFolder()" class="modal-btn-primary" style="padding: 15px 25px; border-radius: 30px; font-weight: bold; background: #ff9800; border: none; color: white; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 100%;">
+                        📤 設定儲存資料夾
                     </button>
-                    <div style="font-size: 0.8rem; color: #666; margin-top: 8px;">將目前進度同步至雲端</div>
+                    <div style="font-size: 0.8rem; color: #666; margin-top: 8px;">選擇雲端儲存目標</div>
                 </div>
 
             </div>
             
             <p style="font-size: 0.9rem; color: #666; line-height: 1.5;">
-                點擊 <strong>自動匯入</strong> 從雲端最後自動儲存的備份還原您的資料。<br>
-                點擊 <strong>自動儲存</strong> 立即將目前的檔案狀態雲端覆蓋這份備份。
+                點擊 <strong>設定匯入資料夾</strong> 選擇或建立要從 Google Drive 讀取資料的資料夾。<br>
+                點擊 <strong>設定儲存資料夾</strong> 選擇或建立要儲存資料到 Google Drive 的資料夾。<br>
+                若資料夾名稱已存在，系統會詢問您使用現有資料夾或建立新的。
             </p>
         </div>
     </div>
@@ -3635,6 +3636,201 @@
         }
         function closeAutomationSettings() {
             document.getElementById('automation-settings-modal').classList.remove('show');
+        }
+
+        function handleSetImportFolder() {
+            closeAutomationSettings();
+            if (!currentUser) {
+                showToast('⚠️ 請先登入 Google 帳號', 'error');
+                return;
+            }
+            openDriveFolderPicker('import');
+        }
+
+        function handleSetExportFolder() {
+            closeAutomationSettings();
+            if (!currentUser) {
+                showToast('⚠️ 請先登入 Google 帳號', 'error');
+                return;
+            }
+            openDriveFolderPicker('save');
+        }
+
+        async function openDriveFolderPicker(pickerType = 'save') {
+            if (!currentUser) {
+                showToast('⚠️ 請先登入 Google', 'error');
+                return;
+            }
+
+            const isImport = pickerType === 'import';
+
+            // Show loading modal
+            const overlay = document.getElementById('modal-overlay');
+            document.getElementById('modal-title').textContent = isImport ? '📥 設定自動匯入資料夾' : '📁 更換 Google Drive 路徑';
+            document.getElementById('modal-message').innerHTML = '<div class="picker-loading">⏳ 正在載入資料夾列表...</div>';
+            document.getElementById('modal-input').style.display = 'none';
+            document.getElementById('modal-actions').innerHTML = `<button class="modal-btn-cancel" onclick="document.getElementById('modal-overlay').classList.remove('show')">取消</button>`;
+            overlay.classList.add('show');
+
+            try {
+                const res = await fetch(API_BASE + '/api/browse-drive?action=folders', { headers: authHeaders() });
+                const data = await res.json();
+                if (!data.success) throw new Error(data.error || '載入失敗');
+
+                const folders = data.folders || [];
+                let selectedFolderId = data.currentFolderId || null;
+                let selectedFolderName = data.currentFolder || '';
+
+                // Build folder list HTML
+                let listHTML = '<div class="picker-list">';
+                // Root (no folder) option
+                listHTML += `<div class="picker-item${!selectedFolderId ? ' active' : ''}" data-id="" data-name="">
+                    <span>📁</span> <span>根目錄 (My Drive)</span>
+                </div>`;
+                folders.forEach(f => {
+                    const isActive = selectedFolderId && f.id === selectedFolderId;
+                    const date = new Date(f.modifiedTime).toLocaleDateString();
+                    listHTML += `<div class="picker-item${isActive ? ' active' : ''}" data-id="${f.id}" data-name="${f.name}">
+                        <span>📂</span> <span>${f.name}</span> <span class="picker-meta">${date}</span>
+                    </div>`;
+                });
+                if (folders.length === 0) {
+                    listHTML += '<div class="picker-empty">目前沒有任何資料夾</div>';
+                }
+                listHTML += '</div>';
+
+                // Create new folder input
+                listHTML += `<div class="picker-create-row">
+                    <input type="text" id="new-folder-name" placeholder="輸入新資料夾名稱..." class="modal-box input">
+                    <button class="modal-btn-primary" id="btn-create-folder" style="padding:10px 16px;">➕ 建立</button>
+                </div>`;
+
+                document.getElementById('modal-message').innerHTML = '選擇現有資料夾，或建立新的：' + listHTML;
+                document.getElementById('modal-actions').innerHTML =
+                    `<button class="modal-btn-cancel" id="picker-cancel">取消</button>` +
+                    `<button class="modal-btn-primary" id="picker-confirm">✅ 使用此資料夾</button>`;
+
+                // Event: click folder item
+                document.querySelectorAll('.picker-item').forEach(item => {
+                    item.addEventListener('click', () => {
+                        document.querySelectorAll('.picker-item').forEach(i => i.classList.remove('active'));
+                        item.classList.add('active');
+                        selectedFolderId = item.getAttribute('data-id');
+                        selectedFolderName = item.getAttribute('data-name');
+                    });
+                });
+
+                // Event: create new folder
+                document.getElementById('btn-create-folder').onclick = async () => {
+                    const newName = document.getElementById('new-folder-name').value.trim();
+                    if (!newName) { showToast('⚠️ 請輸入資料夾名稱', 'error'); return; }
+
+                    // Check if a folder with this name already exists
+                    const existingFolder = folders.find(f => f.name === newName);
+                    if (existingFolder) {
+                        // Close the picker overlay temporarily so the conflict modal can show
+                        overlay.classList.remove('show');
+                        const choice = await showModal({
+                            title: '📂 資料夾已存在',
+                            message: `「${newName}」資料夾已存在於 Google Drive。<br>請選擇要使用現有資料夾，還是建立同名的新資料夾。`,
+                            buttons: [
+                                { text: '📂 使用現有資料夾', className: 'modal-btn-primary', value: 'use_existing' },
+                                { text: '➕ 建立新資料夾', className: 'modal-btn-primary', value: 'create_new' },
+                                { text: '取消', className: 'modal-btn-cancel', value: 'cancel' },
+                            ]
+                        });
+                        if (choice === 'cancel') {
+                            overlay.classList.add('show'); // Re-open the picker
+                            return;
+                        }
+                        selectedFolderName = newName;
+                        if (choice === 'use_existing') {
+                            selectedFolderId = existingFolder.id;
+                        } else {
+                            selectedFolderId = null; // backend will create it
+                        }
+                    } else {
+                        selectedFolderName = newName;
+                        selectedFolderId = null; // backend will create it
+                    }
+
+                    // Visual feedback
+                    document.querySelectorAll('.picker-item').forEach(i => i.classList.remove('active'));
+                    showToast(`📂 ${selectedFolderId ? '將使用現有' : '將建立新'}資料夾「${newName}」`, 'success');
+                    // Auto-confirm
+                    await doPickerConfirm(selectedFolderName);
+                };
+
+                // Event: cancel
+                document.getElementById('picker-cancel').onclick = () => overlay.classList.remove('show');
+
+                // Event: confirm
+                document.getElementById('picker-confirm').onclick = () => doPickerConfirm(selectedFolderName);
+
+                async function doPickerConfirm(folderName) {
+                    overlay.classList.remove('show');
+                    
+                    if (isImport) {
+                        // For Import Folder, update the DB with importFolderId
+                        showToast('⏳ 正在設定匯入資料夾...', 'warning');
+                        try {
+                            const reqBody = { pickerType: 'import', version: 2, folderName: folderName || undefined };
+                            if (selectedFolderId) {
+                                reqBody.existingFolderId = selectedFolderId;
+                            }
+                            const createRes = await fetch(API_BASE + '/api/set-import-folder', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json', ...authHeaders() },
+                                body: JSON.stringify(reqBody),
+                            });
+                            const createData = await createRes.json();
+                            if (createData.success) {
+                                currentUser.importFolderId = createData.folderId || null;
+                                currentUser.importFolderName = createData.folderName || null;
+                                showToast(`☁️ 已設定「${folderName || '根目錄'}」為自動匯入來源資料夾`, 'success');
+                            } else {
+                                showToast('⚠️ 設定失敗：' + (createData.error || '未知錯誤'), 'error');
+                            }
+                        } catch (err) {
+                            showToast('⚠️ 操作失敗：' + err.message, 'error');
+                        }
+                        return;
+                    }
+
+                    const fileName = generateFileName();
+                    showToast('⏳ 正在建立檔案...', 'warning');
+                    try {
+                        const reqBody = { fileName, version: 2, folderName: folderName || undefined };
+                        // Tell backend how to handle existing folders
+                        if (selectedFolderId) {
+                            reqBody.folderConflictStrategy = 'use_existing';
+                            reqBody.existingFolderId = selectedFolderId;
+                        } else if (folderName) {
+                            reqBody.folderConflictStrategy = 'create_new';
+                        }
+                        const createRes = await fetch(API_BASE + '/api/create-drive-file', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', ...authHeaders() },
+                            body: JSON.stringify(reqBody),
+                        });
+                        const createData = await createRes.json();
+                        if (createData.success) {
+                            currentUser.hasDriveFile = true;
+                            currentUser.driveFolderName = createData.folderName || null;
+                            currentUser.driveFolderId = createData.folderId || null;
+                            updateAuthUI();
+                            showToast(`☁️ 已在${folderName ? `「${folderName}」` : '根目錄'}建立同步檔案`, 'success');
+                        } else {
+                            showToast('⚠️ 建立失敗：' + (createData.error || '未知錯誤'), 'error');
+                        }
+                    } catch (err) {
+                        showToast('⚠️ 操作失敗：' + err.message, 'error');
+                    }
+                }
+            } catch (err) {
+                overlay.classList.remove('show');
+                showToast('⚠️ 載入資料夾失敗：' + err.message, 'error');
+            }
         }
 
         function openManualImportModal() {
